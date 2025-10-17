@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-primary-900 text-gray-100 font-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 cursor-pointer;
+  }
+  
+  .btn-secondary {
+    @apply bg-primary-800 hover:bg-primary-700 text-gray-100 font-medium py-2 px-4 rounded-lg transition-colors duration-200 border border-primary-600 cursor-pointer;
+  }
+  
+  .card {
+    @apply bg-primary-800 rounded-xl shadow-lg border border-primary-700 p-6;
+  }
+  
+  .input-field {
+    @apply w-full px-3 py-2 bg-primary-700 border border-primary-600 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400;
+  }
+  
+  .section-padding {
+    @apply py-16 px-4 sm:px-6 lg:px-8;
+  }
+  
+  .container-custom {
+    @apply max-w-7xl mx-auto;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #0ea5e9 0%, #036572 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+  
+  .bg-gradient-cool {
+    background: linear-gradient(135deg, #0f172a 0%, #0369a1 50%, #0ea5e9 100%);
+  }
+}
