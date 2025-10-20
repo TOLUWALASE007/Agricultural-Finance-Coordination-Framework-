@@ -191,6 +191,48 @@ const Home: React.FC = () => {
         </section>
       </LazySection>
 
+      {/* Media Showcase */}
+      <LazySection animation="fade-up" delay={300}>
+        <section className="section-padding bg-primary-900">
+          <div className="container-custom">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold font-sans text-gray-100 mb-4">Farm Media Showcase</h2>
+              <p className="text-xl text-gray-300 max-w-3xl mx-auto font-serif">
+                Explore real farming activities across our value chains through images and videos
+              </p>
+            </div>
+
+            {/* Image Gallery */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+              {[
+                'https://imgs.search.brave.com/Cb2JjQopir9XwHO5mvQeQYJFimhbiRXVMBx4he6wZLY/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvNjI4/MzQ1MDEyL3Bob3Rv/L3RlYS1mYXJtZXJz/LmpwZz9zPTYxMng2/MTImdz0wJms9MjAm/Yz1GT1dpcG5YdS14/VUZpMWxUWDF5UDEy/bjA3UnhJLTZfeDly/MGFDVWhId21rPQ',
+                'https://media.istockphoto.com/id/543185364/photo/young-african-male-and-adult-african-woman-working-in-garden.jpg?s=612x612&w=0&k=20&c=guwG7IudOUwIDYypM3-ivbcg8jfGVHwhNQByhA22raY=',
+                'https://media.istockphoto.com/id/1210772424/photo/count-your-wealth-by-the-richnesses-of-your-soil.jpg?s=612x612&w=0&k=20&c=qjR4z9qMIUyXGhnZ6EV5RFLJ4vuSgic3hYBesTTBUUA=',
+                'https://media.istockphoto.com/id/140398173/photo/hands-holding-seeds-2.jpg?s=612x612&w=0&k=20&c=Lh48kEptvqoAvnOiEtmkibhdXR6OODzMqy-GIzNwgVs='
+              ].map((src, idx) => (
+                <div key={idx} className="overflow-hidden rounded-xl border border-primary-700 bg-primary-800">
+                  <img src={src} alt="Farm activity" className="w-full h-44 object-cover hover:scale-105 transition-transform duration-300" />
+                </div>
+              ))}
+            </div>
+
+            {/* Video Section */}
+            <div className="card">
+              <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Featured Field Video</h3>
+              <div className="aspect-w-16 aspect-h-9">
+                <iframe
+                  className="w-full h-96 rounded-lg"
+                  src="https://www.youtube.com/embed/Twggtl-DLvA?rel=0"
+                  title="Farming Showcase"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      </LazySection>
+
       {/* CTA Section */}
       <LazySection animation="fade-up" delay={400}>
         <section className="section-padding bg-primary-900">

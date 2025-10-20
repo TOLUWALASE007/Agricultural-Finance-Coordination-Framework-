@@ -89,40 +89,48 @@ const About: React.FC = () => {
         </section>
       </LazySection>
 
-      {/* System Architecture */}
-      <LazySection animation="fade-up" delay={200}>
+      {/* Field Gallery */}
+      <LazySection animation="fade-up" delay={150}>
         <section className="section-padding bg-primary-800">
-        <div className="container-custom">
-          <h2 className="text-3xl font-bold font-sans text-gray-100 mb-12 text-center">
-            System Architecture
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {systemArchitecture.map((layer, index) => (
-              <LazySection key={index} animation="slide-left" delay={index * 150 + 300}>
-                <div className="card text-center">
-                  <h3 className="text-xl font-semibold font-sans text-gray-100 mb-4">
-                    {layer.tier}
-                  </h3>
-                  <p className="text-gray-300 mb-4 font-serif">
-                    {layer.description}
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {layer.technologies.map((tech, techIndex) => (
-                      <span 
-                        key={techIndex}
-                        className="bg-accent-500 text-white px-3 py-1 rounded-full text-sm font-medium font-sans"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
+          <div className="container-custom">
+            <h2 className="text-3xl font-bold font-sans text-gray-100 mb-8 text-center">Field Gallery</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                'https://media.istockphoto.com/id/532203295/photo/tea-harvest.jpg?s=612x612&w=0&k=20&c=4NXcvPzzFY5zkhK-A-mlNjXSnO3wfwPwhTtWfJsLqNs=',
+                'https://media.istockphoto.com/id/1460297386/video/african-women-plucking-tea-leaves-on-plantation-east-africa.avif?s=640x640&k=20&c=uxwhzkojijfm2c43K4SMCyYrE1beWxxCyWksi5eQecs=',
+                'https://media.istockphoto.com/id/627210216/photo/young-african-woman-collecting-coffee-cherries-east-africa.jpg?s=612x612&w=0&k=20&c=5jBbLQ-P0fZSTGvLijf9Gc-ncg-1QzOIRUWMNKtCcTY=',
+                'https://media.istockphoto.com/id/1419252068/photo/african-american-workers-sorting-out-coffee-beans.jpg?s=612x612&w=0&k=20&c=zs-KTruZk5ml_lj4YL71gBcqugLnkuSvdqMqPVloGus='
+              ].map((src, i) => (
+                <div key={i} className="overflow-hidden rounded-xl border border-primary-700 bg-primary-900">
+                  <img src={src} alt="Field" className="w-full h-44 object-cover hover:scale-105 transition-transform duration-300" />
                 </div>
-              </LazySection>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
         </section>
       </LazySection>
+
+      {/* About Video */}
+      <LazySection animation="fade-up" delay={200}>
+        <section className="section-padding bg-primary-900">
+          <div className="container-custom">
+            <div className="card">
+              <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">AFCF in Action</h3>
+              <div className="aspect-w-16 aspect-h-9">
+                <iframe
+                  className="w-full h-96 rounded-lg"
+                  src="https://www.youtube.com/embed/Twggtl-DLvA?rel=0"
+                  title="AFCF Overview"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      </LazySection>
+
+      
 
       {/* Portal Details */}
       <section className="section-padding bg-primary-900">

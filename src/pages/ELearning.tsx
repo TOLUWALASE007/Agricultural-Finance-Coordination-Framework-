@@ -129,6 +129,37 @@ const ELearning: React.FC = () => {
         </div>
       </section>
 
+      {/* Media Section */}
+      <section className="section-padding bg-primary-900">
+        <div className="container-custom">
+          <h2 className="text-3xl font-bold font-sans text-gray-100 mb-8 text-center">Farm Media</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            {[
+              'https://media.istockphoto.com/id/1373228664/photo/shot-of-an-unrecognisable-woman-using-a-digital-tablet-while-working-on-a-farm.jpg?s=612x612&w=0&k=20&c=ZJLjl264ER1qQH_eS5ASSDLfhc696Fvyl2Ca0m-WkaA=',
+              'https://media.istockphoto.com/id/1703931443/photo/happy-black-man-tablet-and-animals-in-agriculture-farming-or-sustainability-in-the.jpg?s=612x612&w=0&k=20&c=4fj6bwPS0YZ0d1KxZoEeAb6G9KXbVXMJZOlZRXAGSYo=',
+              'https://media.istockphoto.com/id/539454508/photo/young-african-male-checking-his-tablet-in-vegetable-garden.jpg?s=612x612&w=0&k=20&c=hMohegLNjIoHcBTce5tbqWeDMmsoYFGHdPn6k4RYRas='
+            ].map((src, idx) => (
+              <div key={idx} className="overflow-hidden rounded-xl border border-primary-700 bg-primary-800">
+                <img src={src} alt="Farm media" className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300" />
+              </div>
+            ))}
+          </div>
+
+          <div className="card">
+            <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Learning Highlight Video</h3>
+            <div className="aspect-w-16 aspect-h-9">
+              <iframe
+                className="w-full h-96 rounded-lg"
+                src="https://www.youtube.com/embed/Twggtl-DLvA?rel=0"
+                title="Learning Highlight"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Course Categories */}
       <section className="section-padding bg-primary-900">
         <div className="container-custom">
