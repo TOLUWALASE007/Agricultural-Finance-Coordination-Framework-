@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
             <div className="flex items-center mb-4">
               <Link to="/" className="flex items-center">
                 <img 
-                  src="/images/logo/LOGO.svg" 
+                  src="./images/logo/LOGO.svg" 
                   alt="AFCF Logo" 
                   className="h-8 w-auto hover:opacity-80 transition-opacity duration-200"
                 />

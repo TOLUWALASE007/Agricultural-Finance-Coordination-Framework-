@@ -29,7 +29,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
         <div className="flex items-center justify-between h-16 px-4 border-b border-primary-700">
           <div className="flex items-center">
             <img 
-              src="/images/logo/LOGO.svg" 
+              src="./images/logo/LOGO.svg" 
               alt="AFCF Logo" 
               className="h-8 w-auto"
             />

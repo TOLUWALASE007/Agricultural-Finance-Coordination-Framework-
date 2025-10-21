@@ -70,7 +70,7 @@ const Login: React.FC = () => {
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
               <img 
-                src="/images/logo/LOGO.svg" 
+                src="./images/logo/LOGO.svg" 
                 alt="AFCF Logo" 
                 className="h-12 w-auto"
               />
