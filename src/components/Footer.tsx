@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
             <div className="flex items-center mb-4">
               <Link to="/" className="flex items-center">
                 <img 
-                  src="./images/logo/LOGO.svg" 
+                  src={`${process.env.PUBLIC_URL}/images/logo/LOGO.svg`} 
                   alt="AFCF Logo" 
                   className="h-8 w-auto hover:opacity-80 transition-opacity duration-200"
                 />
@@ -28,6 +28,11 @@ const Footer: React.FC = () => {
             <h4 className="text-lg font-semibold font-sans mb-4">Quick Links</h4>
                  <ul className="space-y-2">
                    <li>
+                     <Link to="/about" className="text-gray-400 hover:text-accent-400 transition-colors duration-200">
+                       About AFCF
+                     </Link>
+                   </li>
+                   <li>
                      <Link to="/elearning" className="text-gray-400 hover:text-accent-400 transition-colors duration-200">
                        E-Learning
                      </Link>
@@ -35,11 +40,6 @@ const Footer: React.FC = () => {
                    <li>
                      <Link to="/contact" className="text-gray-400 hover:text-accent-400 transition-colors duration-200">
                        Contact Us
-                     </Link>
-                   </li>
-                   <li>
-                     <Link to="/about" className="text-gray-400 hover:text-accent-400 transition-colors duration-200">
-                       About AFCF
                      </Link>
                    </li>
                    <li>

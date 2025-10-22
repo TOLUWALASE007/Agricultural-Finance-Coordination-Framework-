@@ -37,10 +37,8 @@ const Settings: React.FC = () => {
 
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/fund-provider' },
-    { id: 'funds', name: 'Fund Management', icon: '💰', href: '/portal/fund-provider/funds' },
+    { id: 'funds', name: 'Fund Management', icon: '₦', href: '/portal/fund-provider/funds' },
     { id: 'applications', name: 'Loan Applications', icon: '📋', href: '/portal/fund-provider/applications' },
-    { id: 'pfis', name: 'PFI Partners', icon: '🏦', href: '/portal/fund-provider/pfis' },
-    { id: 'insurance', name: 'Insurance Claims', icon: '🛡️', href: '/portal/fund-provider/insurance' },
     { id: 'reports', name: 'Reports & Analytics', icon: '📈', href: '/portal/fund-provider/reports' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }
   ];
@@ -72,7 +70,7 @@ const Settings: React.FC = () => {
   return (
     <PortalLayout 
       role="Fund Provider" 
-      roleIcon="💰" 
+      roleIcon="₦" 
       sidebarItems={sidebarItems}
     >
       <div className="space-y-6">
@@ -106,7 +104,7 @@ const Settings: React.FC = () => {
 
         {/* Fund Configuration */}
         <div className="card">
-          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">💰 Fund Configuration</h3>
+          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">₦ Fund Configuration</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium font-sans text-gray-300 mb-2">Fund Name</label>

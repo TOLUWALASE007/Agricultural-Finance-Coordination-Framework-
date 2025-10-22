@@ -229,7 +229,7 @@ const About: React.FC = () => {
               </p>
             </div>
             <div className="card text-center">
-              <div className="text-4xl mb-4">💰</div>
+              <div className="text-4xl mb-4">₦</div>
               <h3 className="text-xl font-semibold font-sans text-gray-100 mb-3">
                 Increased Access
               </h3>

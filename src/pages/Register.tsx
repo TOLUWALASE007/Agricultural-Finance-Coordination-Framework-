@@ -66,7 +66,7 @@ const Register: React.FC = () => {
     {
       id: 'fund-provider',
       name: 'Fund Provider',
-      icon: '💰',
+      icon: '₦',
       description: 'Financial institutions and organizations providing agricultural financing',
       registrationTypes: ['individual', 'company']
     },
@@ -1001,7 +1001,7 @@ const Register: React.FC = () => {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <img 
-              src="./images/logo/LOGO.svg" 
+              src={`${process.env.PUBLIC_URL}/images/logo/LOGO.svg`} 
               alt="AFCF Logo" 
               className="h-12 w-auto"
             />

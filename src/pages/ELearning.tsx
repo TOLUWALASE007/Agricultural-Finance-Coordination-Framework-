@@ -5,7 +5,7 @@ const ELearning: React.FC = () => {
 
   const categories = [
     { id: 'all', name: 'All Courses', icon: '📚' },
-    { id: 'fund-providers', name: 'Fund Providers', icon: '💰' },
+    { id: 'fund-providers', name: 'Fund Providers', icon: '₦' },
     { id: 'pfis', name: 'PFIs', icon: '🏦' },
     { id: 'anchors', name: 'Anchors', icon: '⚓' },
     { id: 'farmers', name: 'Farmers', icon: '🌾' },
@@ -31,7 +31,7 @@ const ELearning: React.FC = () => {
       duration: '1.5 hours',
       level: 'Intermediate',
       category: 'fund-providers',
-      thumbnail: '💰',
+      thumbnail: '₦',
       modules: 3
     },
     {

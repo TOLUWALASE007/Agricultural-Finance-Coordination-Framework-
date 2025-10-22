@@ -4,7 +4,7 @@ import PortalLayout from '../../components/PortalLayout';
 const ProducerPortal: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/producer' },
-    { id: 'loans', name: 'Loan Applications', icon: '💰', href: '/portal/producer/loans' },
+    { id: 'loans', name: 'Loan Applications', icon: '₦', href: '/portal/producer/loans' },
     { id: 'anchor', name: 'Anchor Partners', icon: '⚓', href: '/portal/producer/anchors' },
     { id: 'insurance', name: 'Crop Insurance', icon: '🛡️', href: '/portal/producer/insurance' },
     { id: 'inputs', name: 'Input Suppliers', icon: '🌱', href: '/portal/producer/inputs' },
@@ -15,7 +15,7 @@ const ProducerPortal: React.FC = () => {
   ];
 
   const stats = [
-    { title: 'Active Loans', value: '₦2.4M', change: '+₦800K', icon: '💰' },
+    { title: 'Active Loans', value: '₦2.4M', change: '+₦800K', icon: '₦' },
     { title: 'Crop Insurance', value: '₦150K', change: 'Covered', icon: '🛡️' },
     { title: 'Yield This Season', value: '45 Tons', change: '+12%', icon: '🌾' },
     { title: 'Market Price', value: '₦28K/Ton', change: '+5%', icon: '📈' }
@@ -109,7 +109,7 @@ const ProducerPortal: React.FC = () => {
           <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <button className="btn-primary">
-              💰 Apply for Loan
+              ₦ Apply for Loan
             </button>
             <button className="btn-secondary">
               🛡️ Claim Insurance

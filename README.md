@@ -196,8 +196,6 @@ Each portal provides a comprehensive dashboard with role-specific features:
 #### 1. **Fund Provider Portal**
 - Fund Management
 - Loan Applications
-- PFI Partners
-- Insurance Claims
 - Reports & Analytics
 - Settings
 

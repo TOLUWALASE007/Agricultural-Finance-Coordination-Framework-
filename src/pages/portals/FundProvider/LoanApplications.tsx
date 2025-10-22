@@ -5,10 +5,8 @@ import { generateReport, processAction, scheduleAction, exportData } from '../..
 const LoanApplications: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/fund-provider' },
-    { id: 'funds', name: 'Fund Management', icon: '💰', href: '/portal/fund-provider/funds' },
+    { id: 'funds', name: 'Fund Management', icon: '₦', href: '/portal/fund-provider/funds' },
     { id: 'applications', name: 'Loan Applications', icon: '📋', href: '/portal/fund-provider/applications' },
-    { id: 'pfis', name: 'PFI Partners', icon: '🏦', href: '/portal/fund-provider/pfis' },
-    { id: 'insurance', name: 'Insurance Claims', icon: '🛡️', href: '/portal/fund-provider/insurance' },
     { id: 'reports', name: 'Reports & Analytics', icon: '📈', href: '/portal/fund-provider/reports' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }
   ];
@@ -17,7 +15,7 @@ const LoanApplications: React.FC = () => {
     { title: 'Total Applications', value: '1,847', change: '+89', icon: '📋' },
     { title: 'Pending Review', value: '234', change: '-12', icon: '⏳' },
     { title: 'Approved', value: '1,456', change: '+67', icon: '✅' },
-    { title: 'Total Amount', value: '₦12.3B', change: '+₦1.2B', icon: '💰' }
+    { title: 'Total Amount', value: '₦12.3B', change: '+₦1.2B', icon: '₦' }
   ];
 
   const recentApplications = [
@@ -87,7 +85,7 @@ const LoanApplications: React.FC = () => {
   ];
 
   return (
-    <PortalLayout role="Fund Provider" roleIcon="💰" sidebarItems={sidebarItems}>
+    <PortalLayout role="Fund Provider" roleIcon="₦" sidebarItems={sidebarItems}>
       <div className="space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary-500 to-primary-700 rounded-xl p-6 text-white">
@@ -227,7 +225,7 @@ const LoanApplications: React.FC = () => {
               <p className="text-sm text-gray-400 font-serif">Approved</p>
             </div>
             <div className="text-center p-4 bg-primary-700 rounded-lg">
-              <div className="text-2xl mb-2">💰</div>
+              <div className="text-2xl mb-2">₦</div>
               <p className="text-2xl font-bold font-sans text-gray-100">1,234</p>
               <p className="text-sm text-gray-400 font-serif">Disbursed</p>
             </div>

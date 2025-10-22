@@ -5,10 +5,8 @@ import { generateReport, addNewRecord, processAction, scheduleAction } from '../
 const FundManagement: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/fund-provider' },
-    { id: 'funds', name: 'Fund Management', icon: '💰', href: '/portal/fund-provider/funds' },
+    { id: 'funds', name: 'Fund Management', icon: '₦', href: '/portal/fund-provider/funds' },
     { id: 'applications', name: 'Loan Applications', icon: '📋', href: '/portal/fund-provider/applications' },
-    { id: 'pfis', name: 'PFI Partners', icon: '🏦', href: '/portal/fund-provider/pfis' },
-    { id: 'insurance', name: 'Insurance Claims', icon: '🛡️', href: '/portal/fund-provider/insurance' },
     { id: 'reports', name: 'Reports & Analytics', icon: '📈', href: '/portal/fund-provider/reports' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }
   ];
@@ -37,7 +35,7 @@ const FundManagement: React.FC = () => {
   ];
 
   return (
-    <PortalLayout role="Fund Provider" roleIcon="💰" sidebarItems={sidebarItems}>
+    <PortalLayout role="Fund Provider" roleIcon="₦" sidebarItems={sidebarItems}>
       <div className="space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary-500 to-primary-700 rounded-xl p-6 text-white">
@@ -56,7 +54,7 @@ const FundManagement: React.FC = () => {
                 <p className="text-2xl font-bold font-sans text-gray-100">₦16.1B</p>
                 <p className="text-sm text-accent-400 font-serif">+₦2.1B this quarter</p>
               </div>
-              <div className="text-3xl">💰</div>
+              <div className="text-3xl">₦</div>
             </div>
           </div>
           <div className="card">
@@ -214,24 +212,18 @@ const FundManagement: React.FC = () => {
         {/* Quick Actions */}
         <div className="card">
           <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button 
               className="btn-primary"
               onClick={() => processAction('Fund Deployment')}
             >
-              💰 Deploy New Funds
+              ₦ Deploy New Funds
             </button>
             <button 
               className="btn-secondary"
               onClick={() => generateReport('Monthly Fund Performance', 'PDF')}
             >
               📊 Generate Report
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => addNewRecord('PFI Partner')}
-            >
-              🏦 Add PFI Partner
             </button>
             <button 
               className="btn-secondary"

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -24,8 +24,7 @@ import ResearcherPortal from './pages/portals/ResearcherPortal';
 // Fund Provider sub-pages
 import FundManagement from './pages/portals/FundProvider/FundManagement';
 import LoanApplications from './pages/portals/FundProvider/LoanApplications';
-import PFIPartners from './pages/portals/FundProvider/PFIPartners';
-import InsuranceClaims from './pages/portals/FundProvider/InsuranceClaims';
+// Removed PFI Partners and Insurance Claims from Fund Provider portal
 import ReportsAnalytics from './pages/portals/FundProvider/ReportsAnalytics';
 // Producer sub-pages
 import ProducerLoanApplications from './pages/portals/Producer/LoanApplications';
@@ -142,8 +141,7 @@ function App() {
         <Route path="/portal/fund-provider" element={<FundProviderPortal />} />
         <Route path="/portal/fund-provider/funds" element={<FundManagement />} />
         <Route path="/portal/fund-provider/applications" element={<LoanApplications />} />
-        <Route path="/portal/fund-provider/pfis" element={<PFIPartners />} />
-        <Route path="/portal/fund-provider/insurance" element={<InsuranceClaims />} />
+        { /* PFI Partners and Insurance Claims routes removed */ }
         <Route path="/portal/fund-provider/reports" element={<ReportsAnalytics />} />
         <Route path="/portal/fund-provider/settings" element={<FundProviderSettings />} />
         <Route path="/portal/coordinating-agency" element={<CoordinatingAgencyPortal />} />

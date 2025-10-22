@@ -43,7 +43,7 @@ const Navbar: React.FC = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <img 
-                src="./images/logo/LOGO.svg" 
+                src={`${process.env.PUBLIC_URL}/images/logo/LOGO.svg`} 
                 alt="AFCF Logo" 
                 className="h-10 w-auto"
               />

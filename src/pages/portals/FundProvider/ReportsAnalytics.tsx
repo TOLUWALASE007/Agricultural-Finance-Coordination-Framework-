@@ -5,17 +5,15 @@ import { generateReport, exportData, processAction, scheduleAction } from '../..
 const ReportsAnalytics: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/fund-provider' },
-    { id: 'funds', name: 'Fund Management', icon: '💰', href: '/portal/fund-provider/funds' },
+    { id: 'funds', name: 'Fund Management', icon: '₦', href: '/portal/fund-provider/funds' },
     { id: 'applications', name: 'Loan Applications', icon: '📋', href: '/portal/fund-provider/applications' },
-    { id: 'pfis', name: 'PFI Partners', icon: '🏦', href: '/portal/fund-provider/pfis' },
-    { id: 'insurance', name: 'Insurance Claims', icon: '🛡️', href: '/portal/fund-provider/insurance' },
     { id: 'reports', name: 'Reports & Analytics', icon: '📈', href: '/portal/fund-provider/reports' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }
   ];
 
   const analyticsMetrics = [
     { title: 'Fund Utilization Rate', value: '87.3%', change: '+2.1%', icon: '📈', trend: 'up' },
-    { title: 'Average Loan Size', value: '₦2.8M', change: '+₦150K', icon: '💰', trend: 'up' },
+    { title: 'Average Loan Size', value: '₦2.8M', change: '+₦150K', icon: '₦', trend: 'up' },
     { title: 'Repayment Rate', value: '94.2%', change: '+1.8%', icon: '✅', trend: 'up' },
     { title: 'Processing Time', value: '7.3 days', change: '-1.2 days', icon: '⏱️', trend: 'up' },
     { title: 'PFI Performance Score', value: '8.7/10', change: '+0.3', icon: '⭐', trend: 'up' },
@@ -54,7 +52,7 @@ const ReportsAnalytics: React.FC = () => {
   ];
 
   return (
-    <PortalLayout role="Fund Provider" roleIcon="💰" sidebarItems={sidebarItems}>
+    <PortalLayout role="Fund Provider" roleIcon="₦" sidebarItems={sidebarItems}>
       <div className="space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary-500 to-primary-700 rounded-xl p-6 text-white">
