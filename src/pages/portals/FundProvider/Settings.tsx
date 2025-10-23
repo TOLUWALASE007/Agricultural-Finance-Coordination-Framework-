@@ -4,6 +4,20 @@ import { showNotification } from '../../../utils/quickActions';
 
 const Settings: React.FC = () => {
   const [formData, setFormData] = useState({
+    // Company Profile
+    companyName: 'AFCF Development Fund',
+    companyId: 'AFCF-2024-001',
+    taxId: 'TIN-234567890',
+    officeAddress: '123 Agricultural Plaza, Abuja, Nigeria',
+    state: 'FCT Abuja',
+    companyEmail: 'info@afcf.gov',
+    companyPhone: '+234-801-234-5678',
+    websiteUrl: 'https://afcf.gov.ng',
+    contactPersonName: 'Dr. Sarah Johnson',
+    contactPersonTitle: 'Dr.',
+    contactPersonDesignation: 'Fund Manager',
+    contactPersonEmail: 'sarah.johnson@afcf.gov',
+    
     // Fund Provider Settings
     fundName: 'AFCF Development Fund',
     fundType: 'Agricultural Development',
@@ -15,12 +29,6 @@ const Settings: React.FC = () => {
     smsNotifications: false,
     monthlyReports: true,
     quarterlyReports: true,
-    
-    // Contact Information
-    primaryContact: 'Dr. Sarah Johnson',
-    contactEmail: 'sarah.johnson@afcf.gov',
-    contactPhone: '+234-801-234-5678',
-    officeAddress: '123 Agricultural Plaza, Abuja, Nigeria',
     
     // Security Settings
     sessionTimeout: 30,
@@ -38,7 +46,7 @@ const Settings: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/fund-provider' },
     { id: 'funds', name: 'Fund Management', icon: '₦', href: '/portal/fund-provider/funds' },
-    { id: 'applications', name: 'Loan Applications', icon: '📋', href: '/portal/fund-provider/applications' },
+    { id: 'applications', name: 'Schemes', icon: '📋', href: '/portal/fund-provider/applications' },
     { id: 'reports', name: 'Reports & Analytics', icon: '📈', href: '/portal/fund-provider/reports' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }
   ];
@@ -75,30 +83,183 @@ const Settings: React.FC = () => {
     >
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold font-sans text-gray-100">Settings</h1>
-            <p className="text-gray-400 font-serif mt-2">Manage your fund provider account settings and preferences</p>
+            <h1 className="text-2xl md:text-3xl font-bold font-sans text-gray-100">Settings</h1>
+            <p className="text-sm md:text-base text-gray-400 font-serif mt-2">Manage your fund provider account settings and preferences</p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button 
-              className="btn-secondary"
+              className="btn-secondary w-full sm:w-auto justify-center"
               onClick={handleReset}
             >
               🔄 Reset to Defaults
             </button>
             <button 
-              className="btn-secondary"
+              className="btn-secondary w-full sm:w-auto justify-center"
               onClick={handleExport}
             >
               📤 Export Settings
             </button>
             <button 
-              className="btn-primary"
+              className="btn-primary w-full sm:w-auto justify-center"
               onClick={handleSave}
             >
               💾 Save Changes
             </button>
+          </div>
+        </div>
+
+        {/* Company Profile Information */}
+        <div className="card">
+          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">🏢 Company Profile Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">Company Name</label>
+              <input
+                type="text"
+                name="companyName"
+                value={formData.companyName}
+                onChange={handleInputChange}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                Company ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="companyId"
+                value={formData.companyId}
+                onChange={handleInputChange}
+                required
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                Tax ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="taxId"
+                value={formData.taxId}
+                onChange={handleInputChange}
+                required
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">Office Address</label>
+              <input
+                type="text"
+                name="officeAddress"
+                value={formData.officeAddress}
+                onChange={handleInputChange}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">State</label>
+              <input
+                type="text"
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">Company Email</label>
+              <input
+                type="email"
+                name="companyEmail"
+                value={formData.companyEmail}
+                onChange={handleInputChange}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">Company Phone Number</label>
+              <input
+                type="tel"
+                name="companyPhone"
+                value={formData.companyPhone}
+                onChange={handleInputChange}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">Website URL</label>
+              <input
+                type="url"
+                name="websiteUrl"
+                value={formData.websiteUrl}
+                onChange={handleInputChange}
+                placeholder="https://"
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                Contact Person Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="contactPersonName"
+                value={formData.contactPersonName}
+                onChange={handleInputChange}
+                required
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                Contact Person Title <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="contactPersonTitle"
+                value={formData.contactPersonTitle}
+                onChange={handleInputChange}
+                required
+                className="input-field"
+              >
+                <option value="">Select Title</option>
+                <option value="Mr.">Mr.</option>
+                <option value="Mrs.">Mrs.</option>
+                <option value="Ms.">Ms.</option>
+                <option value="Dr.">Dr.</option>
+                <option value="Prof.">Prof.</option>
+                <option value="Engr.">Engr.</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                Contact Person Designation <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="contactPersonDesignation"
+                value={formData.contactPersonDesignation}
+                onChange={handleInputChange}
+                required
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                Contact Person Email Address <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                name="contactPersonEmail"
+                value={formData.contactPersonEmail}
+                onChange={handleInputChange}
+                required
+                className="input-field"
+              />
+            </div>
           </div>
         </div>
 
@@ -220,53 +381,6 @@ const Settings: React.FC = () => {
                 className="w-4 h-4 text-primary-500 bg-primary-700 border-primary-600 rounded focus:ring-primary-500"
               />
               <label className="text-sm font-medium font-sans text-gray-300">Quarterly Reports</label>
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Information */}
-        <div className="card">
-          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">📞 Contact Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">Primary Contact</label>
-              <input
-                type="text"
-                name="primaryContact"
-                value={formData.primaryContact}
-                onChange={handleInputChange}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">Contact Email</label>
-              <input
-                type="email"
-                name="contactEmail"
-                value={formData.contactEmail}
-                onChange={handleInputChange}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">Contact Phone</label>
-              <input
-                type="tel"
-                name="contactPhone"
-                value={formData.contactPhone}
-                onChange={handleInputChange}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium font-sans text-gray-300 mb-2">Office Address</label>
-              <input
-                type="text"
-                name="officeAddress"
-                value={formData.officeAddress}
-                onChange={handleInputChange}
-                className="input-field"
-              />
             </div>
           </div>
         </div>
@@ -409,6 +523,9 @@ const Settings: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+        <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
+          Powered by Mc. George
         </div>
       </div>
     </PortalLayout>

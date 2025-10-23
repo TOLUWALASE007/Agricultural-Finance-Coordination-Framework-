@@ -23,7 +23,7 @@ import ExtensionPortal from './pages/portals/ExtensionPortal';
 import ResearcherPortal from './pages/portals/ResearcherPortal';
 // Fund Provider sub-pages
 import FundManagement from './pages/portals/FundProvider/FundManagement';
-import LoanApplications from './pages/portals/FundProvider/LoanApplications';
+import Schemes from './pages/portals/FundProvider/Schemes';
 // Removed PFI Partners and Insurance Claims from Fund Provider portal
 import ReportsAnalytics from './pages/portals/FundProvider/ReportsAnalytics';
 // Producer sub-pages
@@ -140,7 +140,7 @@ function App() {
         {/* Portal Routes without Navbar and Footer */}
         <Route path="/portal/fund-provider" element={<FundProviderPortal />} />
         <Route path="/portal/fund-provider/funds" element={<FundManagement />} />
-        <Route path="/portal/fund-provider/applications" element={<LoanApplications />} />
+        <Route path="/portal/fund-provider/applications" element={<Schemes />} />
         { /* PFI Partners and Insurance Claims routes removed */ }
         <Route path="/portal/fund-provider/reports" element={<ReportsAnalytics />} />
         <Route path="/portal/fund-provider/settings" element={<FundProviderSettings />} />

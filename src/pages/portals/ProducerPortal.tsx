@@ -122,6 +122,9 @@ const ProducerPortal: React.FC = () => {
             </button>
           </div>
         </div>
+        <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
+          Powered by Mc. George
+        </div>
 
         {/* Weather & Market Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

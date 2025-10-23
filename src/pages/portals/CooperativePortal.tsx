@@ -165,6 +165,9 @@ const CooperativePortal: React.FC = () => {
             </button>
           </div>
         </div>
+        <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
+          Powered by Mc. George
+        </div>
       </div>
     </PortalLayout>
   );
