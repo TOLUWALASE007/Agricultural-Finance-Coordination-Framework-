@@ -58,7 +58,6 @@ const Footer: React.FC = () => {
               <p>KM 18, Ilorin-Ajase-Ipo Road, Kwara State, Nigeria</p>
               <p>Email: info@armti.gov.ng</p>
               <p>Website: armti.gov.ng</p>
-              <p>Phone: +234 XXX XXX XXXX</p>
             </div>
           </div>
         </div>
