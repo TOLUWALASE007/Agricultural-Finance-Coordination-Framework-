@@ -42,11 +42,11 @@ const Footer: React.FC = () => {
                        Contact Us
                      </Link>
                    </li>
-                   <li>
-                     <a href="#" className="text-gray-400 hover:text-accent-400 transition-colors duration-200">
-                       Portal Login
-                     </a>
-                   </li>
+                  <li>
+                    <Link to="/login" className="text-gray-400 hover:text-accent-400 transition-colors duration-200">
+                      Portals
+                    </Link>
+                  </li>
                  </ul>
           </div>
 
@@ -55,8 +55,9 @@ const Footer: React.FC = () => {
             <h4 className="text-lg font-semibold font-sans mb-4">Contact</h4>
             <div className="space-y-2 text-sm text-gray-400 font-serif">
               <p>Agricultural and Rural Management Training Institute</p>
-              <p>Ilorin, Kwara State, Nigeria</p>
-              <p>Email: info@afcf.gov.ng</p>
+              <p>KM 18, Ilorin-Ajase-Ipo Road, Kwara State, Nigeria</p>
+              <p>Email: info@armti.gov.ng</p>
+              <p>Website: armti.gov.ng</p>
               <p>Phone: +234 XXX XXX XXXX</p>
             </div>
           </div>
