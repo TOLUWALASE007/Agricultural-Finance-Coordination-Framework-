@@ -66,7 +66,7 @@ const Register: React.FC = () => {
     {
       id: 'fund-provider',
       name: 'Fund Provider',
-      icon: '₦',
+      icon: '💼',
       description: 'Financial institutions and organizations providing agricultural financing',
       registrationTypes: ['individual', 'company']
     },

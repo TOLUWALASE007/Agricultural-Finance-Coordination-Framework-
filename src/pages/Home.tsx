@@ -7,7 +7,7 @@ const Home: React.FC = () => {
     {
       title: 'Fund Providers',
       description: 'CBN, Ministry of Agriculture, Ministry of Finance, and Donor funds',
-      icon: '₦'
+      icon: '💵'
     },
     {
       title: 'Coordinating Agency',

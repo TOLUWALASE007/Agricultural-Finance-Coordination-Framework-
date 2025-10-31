@@ -5,7 +5,7 @@ import { generateReport, processAction, scheduleAction } from '../../../utils/qu
 const FundManagement: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/fund-provider' },
-    { id: 'funds', name: 'Fund Management', icon: '₦', href: '/portal/fund-provider/funds' },
+    { id: 'funds', name: 'Fund Management', icon: '💼', href: '/portal/fund-provider/funds' },
     { id: 'applications', name: 'Schemes', icon: '📋', href: '/portal/fund-provider/applications' },
     { id: 'reports', name: 'Reports & Analytics', icon: '📈', href: '/portal/fund-provider/reports' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }

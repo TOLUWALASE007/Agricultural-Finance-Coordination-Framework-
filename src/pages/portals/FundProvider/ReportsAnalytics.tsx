@@ -5,7 +5,7 @@ import { generateReport, exportData, processAction, scheduleAction } from '../..
 const ReportsAnalytics: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/fund-provider' },
-    { id: 'funds', name: 'Fund Management', icon: '₦', href: '/portal/fund-provider/funds' },
+    { id: 'funds', name: 'Fund Management', icon: '💼', href: '/portal/fund-provider/funds' },
     { id: 'applications', name: 'Schemes', icon: '📋', href: '/portal/fund-provider/applications' },
     { id: 'reports', name: 'Reports & Analytics', icon: '📈', href: '/portal/fund-provider/reports' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }
@@ -13,7 +13,7 @@ const ReportsAnalytics: React.FC = () => {
 
   const analyticsMetrics = [
     { title: 'Fund Recovery Rate', value: '87.3%', change: '+2.1%', icon: '📈', trend: 'up' },
-    { title: 'Average Loan Size', value: '₦2.8M', change: '+₦150K', icon: '₦', trend: 'up' },
+    { title: 'Average Loan Size', value: '₦2.8M', change: '+₦150K', icon: '💼', trend: 'up' },
     { title: 'Repayment Rate', value: '94.2%', change: '+1.8%', icon: '✅', trend: 'up' }
   ];
 

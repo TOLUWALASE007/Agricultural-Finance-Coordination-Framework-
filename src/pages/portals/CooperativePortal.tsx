@@ -6,7 +6,7 @@ const CooperativePortal: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/cooperative' },
     { id: 'members', name: 'Members', icon: '👥', href: '/portal/cooperative/members' },
-    { id: 'loans', name: 'Group Loans', icon: '₦', href: '/portal/cooperative/loans' },
+    { id: 'loans', name: 'Group Loans', icon: '💼', href: '/portal/cooperative/loans' },
     { id: 'savings', name: 'Savings', icon: '🏦', href: '/portal/cooperative/savings' },
     { id: 'markets', name: 'Market Access', icon: '📈', href: '/portal/cooperative/market' },
     { id: 'training', name: 'Training', icon: '🎓', href: '/portal/cooperative/training' },
@@ -18,7 +18,7 @@ const CooperativePortal: React.FC = () => {
   const stats = [
     { title: 'Active Members', value: '247', change: '+12', icon: '👥' },
     { title: 'Group Savings', value: '₦12.4M', change: '+₦1.2M', icon: '🏦' },
-    { title: 'Active Loans', value: '₦8.7M', change: '+₦2.1M', icon: '₦' },
+    { title: 'Active Loans', value: '₦8.7M', change: '+₦2.1M', icon: '💼' },
     { title: 'Training Sessions', value: '18', change: '+3', icon: '🎓' }
   ];
 

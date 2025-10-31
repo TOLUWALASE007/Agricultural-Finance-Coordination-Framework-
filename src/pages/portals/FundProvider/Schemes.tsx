@@ -18,7 +18,7 @@ const Schemes: React.FC = () => {
   }, []);
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/fund-provider' },
-    { id: 'funds', name: 'Fund Management', icon: '₦', href: '/portal/fund-provider/funds' },
+    { id: 'funds', name: 'Fund Management', icon: '💼', href: '/portal/fund-provider/funds' },
     { id: 'applications', name: 'Schemes', icon: '📋', href: '/portal/fund-provider/applications' },
     { id: 'reports', name: 'Reports & Analytics', icon: '📈', href: '/portal/fund-provider/reports' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }
@@ -28,7 +28,7 @@ const Schemes: React.FC = () => {
     { title: 'Total Applications', value: '1,847', change: '+89', icon: '📋' },
     { title: 'Pending Review', value: '234', change: '-12', icon: '⏳' },
     { title: 'Approved', value: '1,456', change: '+67', icon: '✅' },
-    { title: 'Total Amount', value: '₦12.3B', change: '+₦1.2B', icon: '₦' }
+    { title: 'Total Amount', value: '₦12.3B', change: '+₦1.2B', icon: '💼' }
   ];
 
   const recentApplications = [

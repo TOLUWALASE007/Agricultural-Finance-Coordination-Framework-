@@ -1,42 +1,119 @@
 import React from 'react';
 import PortalLayout from '../../components/PortalLayout';
-import { generateReport, processAction, addNewRecord, viewDetails } from '../../utils/quickActions';
 
 const CoordinatingAgencyPortal: React.FC = () => {
   const sidebarItems = [
-    { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/coordinating-agency' },
-    { id: 'programs', name: 'Programs', icon: '🏛️', href: '/portal/coordinating-agency/programs' },
-    { id: 'stakeholders', name: 'Stakeholders', icon: '🤝', href: '/portal/coordinating-agency/stakeholders' },
-    { id: 'monitoring', name: 'Monitoring', icon: '📈', href: '/portal/coordinating-agency/monitoring' },
-    { id: 'reports', name: 'Reports', icon: '📊', href: '/portal/coordinating-agency/reports' },
-    { id: 'policies', name: 'Policies', icon: '📋', href: '/portal/coordinating-agency/policies' },
-    { id: 'compliance', name: 'Compliance', icon: '✅', href: '/portal/coordinating-agency/compliance' },
+    { 
+      id: 'dashboard', 
+      name: 'Dashboard', 
+      icon: '🏠', 
+      href: '/portal/coordinating-agency',
+      hasDropdown: true,
+      dropdownItems: [
+        { id: 'activities', name: 'Activities', icon: '⚡', href: '/portal/coordinating-agency/activities' },
+        { id: 'fund-schemes', name: 'Fund Schemes', icon: '💼', href: '/portal/coordinating-agency/fund-schemes' },
+        { id: 'reportings', name: 'Reports', icon: '📑', href: '/portal/coordinating-agency/reportings' },
+        { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
+      ]
+    },
+    { 
+      id: 'state-monitoring', 
+      name: 'State Monitoring Team', 
+      icon: '🗺️', 
+      href: '/portal/coordinating-agency/monitoring/state'
+    },
+    { 
+      id: 'representative-body', 
+      name: 'Representative Body', 
+      icon: '🏛️', 
+      href: '/portal/coordinating-agency/representative',
+      hasDropdown: true,
+      dropdownItems: [
+        { id: 'rep-insurance', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/representative/insurance-companies' },
+        { id: 'rep-extension', name: 'Extension Organizations', icon: '🌿', href: '/portal/coordinating-agency/representative/extension-organizations' },
+        { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
+      ]
+    },
+    { 
+      id: 'applicants', 
+      name: 'Applicants', 
+      icon: '📝', 
+      href: '/portal/coordinating-agency/applicants',
+      hasDropdown: true,
+      dropdownItems: [
+        { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
+        { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
+        { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
+        { 
+          id: 'fund-beneficiaries', 
+          name: 'Fund Beneficiaries', 
+          icon: '👥', 
+          href: '/portal/coordinating-agency/fund-beneficiaries',
+          hasDropdown: true,
+          dropdownItems: [
+            { id: 'lead-firms', name: 'Lead Firms', icon: '🏢', href: '/portal/coordinating-agency/fund-beneficiaries/lead-firms' },
+            { id: 'anchors', name: 'Anchors', icon: '⚓', href: '/portal/coordinating-agency/fund-beneficiaries/anchors' },
+            { id: 'cooperative-groups', name: 'Cooperative Groups', icon: '🤝', href: '/portal/coordinating-agency/fund-beneficiaries/cooperative-groups' },
+            { id: 'producers-farmers', name: 'Producers/Farmers', icon: '🌾', href: '/portal/coordinating-agency/fund-beneficiaries/producers-farmers' }
+          ]
+        }
+      ]
+    },
+    { 
+      id: 'stakeholders', 
+      name: 'Department', 
+      icon: '🤝', 
+      href: '/portal/coordinating-agency/stakeholders',
+      hasDropdown: true,
+      dropdownItems: [
+        { id: 'fund-management', name: 'Fund Management Department', icon: '💼', href: '/portal/coordinating-agency/stakeholders/fund-management' },
+        { id: 'credit-risk', name: 'Agricultural Credit Risk Management Department', icon: '📊', href: '/portal/coordinating-agency/stakeholders/credit-risk' },
+        { id: 'insurance', name: 'Agricultural Insurance Management Department', icon: '🛡️', href: '/portal/coordinating-agency/stakeholders/insurance' },
+        { id: 'finance', name: 'Finance and Accounting Department', icon: '💰', href: '/portal/coordinating-agency/stakeholders/finance' },
+        { id: 'legal', name: 'Legal Department', icon: '⚖️', href: '/portal/coordinating-agency/stakeholders/legal' },
+        { id: 'it', name: 'IT Department', icon: '💻', href: '/portal/coordinating-agency/stakeholders/it' },
+        { id: 'training', name: 'Training Department', icon: '📚', href: '/portal/coordinating-agency/stakeholders/training' }
+      ]
+    },
+    { id: 'publications', name: 'Publications', icon: '📚', href: '/portal/coordinating-agency/publications' },
+    { id: 'blog', name: 'Blog', icon: '📰', href: '/portal/coordinating-agency/blog' },
+    { id: 'faqs', name: 'FAQs', icon: '❓', href: '/portal/coordinating-agency/faqs' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/coordinating-agency/settings' }
   ];
 
   const stats = [
     { title: 'Active Programs', value: '12', change: '+2', icon: '🏛️' },
     { title: 'Stakeholders', value: '2,847', change: '+45', icon: '🤝' },
-    { title: 'Funds Managed', value: '₦15.2B', change: '+₦2.1B', icon: '💰' },
+    { title: 'Funds Managed', value: '₦15.2B', change: '+₦2.1B', icon: '💼' },
     { title: 'Compliance Rate', value: '94.5%', change: '+2.1%', icon: '✅' }
   ];
 
-  const recentActivities = [
-    { type: 'Program Launch', description: 'New agricultural finance program launched', time: '2 hours ago', status: 'completed' },
-    { type: 'Stakeholder Meeting', description: 'Quarterly coordination meeting with PFIs', time: '1 day ago', status: 'completed' },
-    { type: 'Compliance Review', description: 'Monthly compliance review completed', time: '2 days ago', status: 'completed' },
-    { type: 'Policy Update', description: 'Agricultural finance policy updated', time: '3 days ago', status: 'pending' }
-  ];
-
   return (
-    <PortalLayout role="Coordinating Agency" roleIcon="🏛️" sidebarItems={sidebarItems}>
+    <PortalLayout role="Coordinating Agency (Super Admin)" roleIcon="🏛️" sidebarItems={sidebarItems}>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-xl p-6 text-white">
-          <h1 className="text-2xl font-bold font-sans mb-2">Welcome to Coordinating Agency Portal</h1>
-          <p className="text-gray-200 font-serif">
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-xl p-8 text-white">
+          <h1 className="text-3xl font-bold font-sans mb-3">Welcome to Coordinating Agency Portal</h1>
+          <p className="text-gray-200 font-serif text-lg mb-6">
             Oversee agricultural finance programs, coordinate stakeholder activities, monitor compliance, and ensure effective implementation of national agricultural policies.
           </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <a href="/portal/coordinating-agency/activities" className="bg-white/10 hover:bg-white/20 p-4 rounded-lg transition-colors">
+              <div className="text-2xl mb-2">⚡</div>
+              <h3 className="font-semibold font-sans mb-1">Activities</h3>
+              <p className="text-sm text-gray-200 font-serif">Monitor platform activities and manage user access</p>
+            </a>
+            <a href="/portal/coordinating-agency/fund-schemes" className="bg-white/10 hover:bg-white/20 p-4 rounded-lg transition-colors">
+              <div className="text-2xl mb-2">💼</div>
+              <h3 className="font-semibold font-sans mb-1">Fund Schemes</h3>
+              <p className="text-sm text-gray-200 font-serif">Oversee fund deployment and scheme performance</p>
+            </a>
+            <a href="/portal/coordinating-agency/reportings" className="bg-white/10 hover:bg-white/20 p-4 rounded-lg transition-colors">
+              <div className="text-2xl mb-2">📑</div>
+              <h3 className="font-semibold font-sans mb-1">Reportings</h3>
+              <p className="text-sm text-gray-200 font-serif">Generate and view comprehensive reports</p>
+            </a>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -55,62 +132,43 @@ const CoordinatingAgencyPortal: React.FC = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Activities */}
+        {/* Quick Access Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="card">
-            <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Recent Activities</h3>
-            <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 bg-primary-700 rounded-lg">
-                  <div className="w-2 h-2 bg-accent-500 rounded-full mt-2"></div>
-                  <div className="flex-1">
-                    <p className="font-medium font-sans text-gray-100">{activity.type}</p>
-                    <p className="text-sm text-gray-300 font-serif">{activity.description}</p>
-                    <p className="text-xs text-gray-400 font-serif">{activity.time}</p>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    activity.status === 'completed' ? 'bg-green-500 text-white' :
-                    activity.status === 'pending' ? 'bg-yellow-500 text-white' :
-                    'bg-blue-500 text-white'
-                  }`}>
-                    {activity.status}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Stakeholder Management</h3>
+            <p className="text-gray-300 font-serif mb-4">
+              Manage stakeholder schemes, review applications, and coordinate activities across all agricultural finance participants.
+            </p>
+            <a href="/portal/coordinating-agency/stakeholders" className="btn-primary inline-block">
+              🤝 View Stakeholder Schemes
+            </a>
           </div>
-
-          {/* Stakeholder Overview */}
+          
           <div className="card">
-            <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Stakeholder Overview</h3>
-            <div className="space-y-3">
-              {[
-                { type: 'Fund Providers', count: '15', status: 'Active', color: 'bg-green-500' },
-                { type: 'PFI Banks', count: '24', status: 'Active', color: 'bg-blue-500' },
-                { type: 'Insurance Companies', count: '8', status: 'Active', color: 'bg-purple-500' },
-                { type: 'Anchor Companies', count: '156', status: 'Active', color: 'bg-yellow-500' },
-                { type: 'Producers', count: '2,647', status: 'Active', color: 'bg-orange-500' }
-              ].map((stakeholder, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-primary-700 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${stakeholder.color}`}></div>
-                    <div>
-                      <p className="font-medium font-sans text-gray-100">{stakeholder.type}</p>
-                      <p className="text-sm text-gray-300 font-serif">{stakeholder.count} registered</p>
-                    </div>
-                  </div>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500 text-white">
-                    {stakeholder.status}
-                  </span>
-                </div>
-              ))}
+            <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Monitoring Teams</h3>
+            <p className="text-gray-300 font-serif mb-4">
+              Access reports from Central, State, Local, and Ward monitoring teams to ensure program effectiveness at all levels.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <a href="/portal/coordinating-agency/monitoring/central" className="btn-secondary text-sm">
+                🏛️ Central
+              </a>
+              <a href="/portal/coordinating-agency/monitoring/state" className="btn-secondary text-sm">
+                🗺️ State
+              </a>
+              <a href="/portal/coordinating-agency/monitoring/local" className="btn-secondary text-sm">
+                🏘️ Local
+              </a>
+              <a href="/portal/coordinating-agency/monitoring/ward" className="btn-secondary text-sm">
+                🏡 Ward
+              </a>
             </div>
           </div>
         </div>
 
-        {/* Program Performance */}
+        {/* Program Performance Overview */}
         <div className="card">
-          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Program Performance</h3>
+          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Program Performance Overview</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center p-4 bg-primary-700 rounded-lg">
               <div className="text-2xl mb-2">🎯</div>
@@ -130,36 +188,7 @@ const CoordinatingAgencyPortal: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="card">
-          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button 
-              className="btn-primary"
-              onClick={() => addNewRecord('Program Launch')}
-            >
-              🏛️ Launch Program
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => generateReport('Program Progress Report', 'PDF')}
-            >
-              📊 Generate Report
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => processAction('Stakeholder Meeting')}
-            >
-              🤝 Stakeholder Meeting
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => processAction('Compliance Check')}
-            >
-              ✅ Compliance Check
-            </button>
-          </div>
-        </div>
+        {/* Powered by */}
         <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
           Powered by Mc. George
         </div>

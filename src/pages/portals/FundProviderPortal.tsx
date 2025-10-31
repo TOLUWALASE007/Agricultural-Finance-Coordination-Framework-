@@ -4,14 +4,14 @@ import PortalLayout from '../../components/PortalLayout';
 const FundProviderPortal: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/fund-provider' },
-    { id: 'funds', name: 'Fund Management', icon: '₦', href: '/portal/fund-provider/funds' },
+    { id: 'funds', name: 'Fund Management', icon: '💼', href: '/portal/fund-provider/funds' },
     { id: 'applications', name: 'Schemes', icon: '📋', href: '/portal/fund-provider/applications' },
     { id: 'reports', name: 'Reports & Analytics', icon: '📈', href: '/portal/fund-provider/reports' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }
   ];
 
   const stats = [
-    { title: 'Total Funds Deployed', value: '₦2.4B', change: '+12.5%', icon: '₦' },
+    { title: 'Total Funds Deployed', value: '₦2.4B', change: '+12.5%', icon: '💼' },
     { title: 'Applicants', value: '1,847', change: '+8.2%', icon: '👥' },
     { title: 'Performing Schemes', value: '1,456', change: '+4.3%', icon: '✅' },
     { title: 'Bad Schemes', value: '157', change: '+0.9%', icon: '❌' }
