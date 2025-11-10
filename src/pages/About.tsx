@@ -13,13 +13,13 @@ const About: React.FC = () => {
       name: 'Portal B - Development Portal',
       description: 'Closed forum for project reports and reviews without external stakeholder influence',
       features: ['Project performance reviews', 'Document uploads', 'Internal reporting', 'Strategic planning'],
-      stakeholders: ['PMT', 'Coordinating Agency', 'Fund Providers']
+      stakeholders: ['Coordinating Agency', 'Fund Providers']
     },
     {
       name: 'Portal C - Band Portal',
       description: 'Comprehensive platform for lead firms, anchors, and financial actors',
       features: ['Loan applications', 'Fund disbursement', 'Registration systems', 'Financial statements'],
-      stakeholders: ['Lead Firms', 'Anchors', 'PFIs', 'Coordinating Agency', 'PMT']
+      stakeholders: ['Lead Firms', 'Anchors', 'PFIs', 'Coordinating Agency']
     },
     {
       name: 'Portal D - Index Portal',
@@ -207,7 +207,7 @@ const About: React.FC = () => {
                 Risk Management
               </h3>
               <p className="text-gray-300 font-serif">
-                Integrated insurance and de-risking mechanisms protect all stakeholders
+                Integrated insurance mechanisms protect all stakeholders
               </p>
             </div>
             <div className="card text-center">
@@ -229,7 +229,7 @@ const About: React.FC = () => {
               </p>
             </div>
             <div className="card text-center">
-              <div className="text-4xl mb-4">₦</div>
+              <div className="text-4xl mb-4">💼</div>
               <h3 className="text-xl font-semibold font-sans text-gray-100 mb-3">
                 Increased Access
               </h3>

@@ -400,174 +400,175 @@ const FundProviderApplicants: React.FC = () => {
         </div>
 
         {/* Approve Access Card */}
-        <div className="bg-primary-800 rounded-lg p-4 sm:p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold text-white">Approve Access</h2>
-              <button onClick={() => setShowApprovalHistory(true)} className="text-xs px-2 py-1 rounded bg-primary-700 text-gray-200 hover:bg-primary-600">📋 View History</button>
+        <div className="card flex flex-col">
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-semibold font-sans text-gray-100">Approve Access</h2>
+                <span className="px-2 py-1 bg-accent-600 text-white text-xs rounded-full font-medium">
+                  {filteredApproveUsers.length} Pending
+                </span>
+              </div>
+              <button onClick={() => setShowApprovalHistory(true)} className="btn-secondary text-xs px-3 py-1">📜 View History</button>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <select
-                value={approveStateFilter}
-                onChange={(e) => { setApproveStateFilter(e.target.value); setApprovePage(1); }}
-                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm sm:text-base"
-              >
-                <option value="All">All States</option>
-                {nigerianStates.map(state => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
+            <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
                 <input
                   value={approveSearch}
                   onChange={(e) => { setApproveSearch(e.target.value); setApprovePage(1); }}
-                  placeholder="Search Fund Provider applicants..."
-                  className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm sm:text-base"
+                  placeholder="Search applications..."
+                  className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
                 />
                 <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
                   🔍
                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* Mass Actions */}
-          {selectedApproveUsers.length > 0 && (
-            <div className="bg-accent-600 rounded-lg p-4 mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p className="text-white font-medium">
-                  {selectedApproveUsers.length} applicant{selectedApproveUsers.length > 1 ? 's' : ''} selected
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <button 
-                    onClick={handleMassApprove}
-                    className="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
-                  >
-                    ✅ Approve Selected
-                  </button>
-                  <button 
-                    onClick={() => setShowApprovalHistory(true)}
-                    className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-                  >
-                    📋 View History
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Users List */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-1">
-              <label className="flex items-center gap-2 text-gray-200 text-sm">
-                <input type="checkbox" checked={approveAllOnPageSelected} onChange={toggleApproveSelectAll} />
-                <span>Select all on this page</span>
-              </label>
-              {selectedApproveUsers.length > 0 && (
-                <button onClick={() => setShowApprovalHistory(true)} className="text-xs px-2 py-1 rounded bg-primary-700 text-gray-200">View History</button>
-              )}
-            </div>
-            {paginatedApproveUsers.map((user) => (
-              <div key={user.id} className="bg-primary-700 rounded-lg p-4 border border-primary-600">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedApproveUsers.includes(user.id)}
-                      onChange={() => handleApproveCheckboxChange(user.id)}
-                      className="rounded border-primary-600 bg-primary-700 text-accent-500 focus:ring-accent-500"
-                    />
-                    <div className="flex-1">
-                      <h3 className="text-white font-medium">{user.name}</h3>
-                      <p className="text-gray-400 text-sm">{user.email}</p>
-                      <div className="flex gap-2 mt-2">
-                        <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
-                          {user.state}
-                        </span>
-                        <span className="px-2 py-1 bg-green-600 text-white text-xs rounded-full">
-                          {user.role}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setShowApproveMoreInfo(user.id)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-                    >
-                      More Info
-                    </button>
-                    <button 
-                      onClick={() => setShowApprovalModal(user.id)}
-                      className="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
-                    >
-                      Approve
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          {totalApprovePages > 1 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-              <p className="text-gray-400 text-xs sm:text-sm">
-                Showing {((approvePage - 1) * pageSize) + 1} to {Math.min(approvePage * pageSize, filteredApproveUsers.length)} of {filteredApproveUsers.length} applicants
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setApprovePage(prev => Math.max(prev - 1, 1))}
-                  disabled={approvePage === 1}
-                  className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  ← Previous
-                </button>
-                <span className="px-3 py-2 bg-accent-600 text-white rounded-md text-sm">
-                  {approvePage} of {totalApprovePages}
-                </span>
-                <button
-                  onClick={() => setApprovePage(prev => Math.min(prev + 1, totalApprovePages))}
-                  disabled={approvePage === totalApprovePages}
-                  className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  Next →
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Edit Access Card */}
-        <div className="bg-primary-800 rounded-lg p-4 sm:p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold text-white">Edit Access</h2>
-              <button onClick={() => setShowEditHistory(true)} className="text-xs px-2 py-1 rounded bg-primary-700 text-gray-200 hover:bg-primary-600">📋 View History</button>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
               <select
-                value={editStateFilter}
-                onChange={(e) => { setEditStateFilter(e.target.value); setEditPage(1); }}
-                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm sm:text-base"
+                value={approveStateFilter}
+                onChange={(e) => { setApproveStateFilter(e.target.value); setApprovePage(1); }}
+                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
               >
                 <option value="All">All States</option>
                 {nigerianStates.map(state => (
                   <option key={state} value={state}>{state}</option>
                 ))}
               </select>
-              <div className="relative flex-1">
-                <input
-                  value={editSearch}
-                  onChange={(e) => { setEditSearch(e.target.value); setEditPage(1); }}
-                  placeholder="Search Fund Provider users..."
-                  className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm sm:text-base"
-                />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
-                  🔍
+            </div>
+
+            {selectedApproveUsers.length > 0 && (
+              <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md">
+                <span className="text-sm text-gray-200 font-sans">{selectedApproveUsers.length} selected</span>
+                <button 
+                  onClick={handleMassApprove}
+                  className="btn-primary text-xs px-3 py-1"
+                >
+                  ✅ Approve All Selected
                 </button>
               </div>
+            )}
+          </div>
+            
+          <div className="flex-1 flex flex-col">
+            <div className="space-y-3 flex-1">
+              {paginatedApproveUsers.length > 0 ? (
+                <>
+                  <div className="flex items-center gap-2 p-2 bg-primary-700 rounded-md">
+                    <input
+                      type="checkbox"
+                      checked={approveAllOnPageSelected}
+                      onChange={toggleApproveSelectAll}
+                      className="w-4 h-4 accent-accent-500"
+                    />
+                    <span className="text-xs text-gray-400 font-sans">Select All</span>
+                  </div>
+                  {paginatedApproveUsers.map((user) => (
+                    <div key={user.id} className="p-3 bg-primary-700 rounded-lg border border-primary-600 hover:border-accent-500 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedApproveUsers.includes(user.id)}
+                          onChange={() => handleApproveCheckboxChange(user.id)}
+                          className="mt-1 w-4 h-4 accent-accent-500"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <p className="text-sm font-medium text-gray-100 font-sans">{user.name}</p>
+                              <p className="text-xs text-gray-400 font-serif">{user.email}</p>
+                            </div>
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-500 text-white">
+                              Pending
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-2">
+                            <span className="flex items-center gap-1">
+                              <span>👤</span> {user.role}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span>📍</span> {user.state}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span>🏢</span> {user.organization}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button 
+                              onClick={() => setShowApproveMoreInfo(user.id)}
+                              className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                            >
+                              📋 More Info
+                            </button>
+                            <button 
+                              onClick={() => setShowApprovalModal(user.id)}
+                              className="text-xs bg-accent-600 hover:bg-accent-700 text-white px-3 py-1 rounded transition-colors font-medium"
+                            >
+                              ✅ Review & Approve
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="text-4xl mb-2">✅</div>
+                  <p className="text-gray-400 font-sans">No pending applications</p>
+                </div>
+              )}
             </div>
+
+            {/* Pagination */}
+            {filteredApproveUsers.length > pageSize && (
+              <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+                <button 
+                  onClick={() => setApprovePage(prev => Math.max(prev - 1, 1))} 
+                  disabled={approvePage === 1}
+                  className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ←
+                </button>
+                <span className="text-xs text-gray-400">{approvePage} of {totalApprovePages}</span>
+                <button 
+                  onClick={() => setApprovePage(prev => Math.min(prev + 1, totalApprovePages))} 
+                  disabled={approvePage === totalApprovePages}
+                  className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  →
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Edit Access Card */}
+        <div className="card flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base sm:text-lg font-semibold font-sans text-gray-100">Edit Access</h2>
+            <button onClick={() => setShowEditHistory(true)} className="text-xs text-accent-400 hover:text-accent-300 font-medium flex items-center gap-1">📜 View History</button>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <input
+                value={editSearch}
+                onChange={(e) => { setEditSearch(e.target.value); setEditPage(1); }}
+                placeholder="Search users..."
+                className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+              />
+              <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                🔍
+              </button>
+            </div>
+            <select
+              value={editStateFilter}
+              onChange={(e) => { setEditStateFilter(e.target.value); setEditPage(1); }}
+              className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+            >
+              <option value="All">Filter by State</option>
+              {nigerianStates.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
           </div>
 
           {/* Mass Actions */}
@@ -595,366 +596,320 @@ const FundProviderApplicants: React.FC = () => {
             </div>
           )}
 
-          {/* Users List */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-1">
-              <label className="flex items-center gap-2 text-gray-200 text-sm">
-                <input type="checkbox" checked={editAllOnPageSelected} onChange={toggleEditSelectAll} />
-                <span>Select all on this page</span>
-              </label>
-              {selectedEditUsers.length > 0 && (
-                <button onClick={() => setShowEditHistory(true)} className="text-xs px-2 py-1 rounded bg-primary-700 text-gray-200">View History</button>
-              )}
-            </div>
-            {paginatedEditUsers.map((user) => (
-              <div key={user.id} className="bg-primary-700 rounded-lg p-4 border border-primary-600">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+          <div className="flex-grow overflow-y-auto custom-scrollbar">
+            {paginatedEditUsers.length > 0 ? (
+              <div className="space-y-4">
+                {paginatedEditUsers.map((user) => (
+                  <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
                     <input
                       type="checkbox"
                       checked={selectedEditUsers.includes(user.id)}
                       onChange={() => handleEditCheckboxChange(user.id)}
-                      className="rounded border-primary-600 bg-primary-700 text-accent-500 focus:ring-accent-500"
+                      className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
                     />
-                    <div className="flex-1">
-                      <h3 className="text-white font-medium">{user.name}</h3>
-                      <p className="text-gray-400 text-sm">{user.email}</p>
-                      <div className="flex gap-2 mt-2">
-                        <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
-                          {user.state}
+                    <div className="flex-grow">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                          <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                        <span className="flex items-center gap-1">
+                          <span>👤</span> {user.role}
                         </span>
-                        <span className="px-2 py-1 bg-green-600 text-white text-xs rounded-full">
-                          {user.accessScope}
+                        <span className="flex items-center gap-1">
+                          <span>📍</span> {user.state}
                         </span>
+                        <span className="flex items-center gap-1">
+                          <span>🏢</span> {user.organization}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button 
+                          onClick={() => setShowEditMoreInfo(user.id)} 
+                          className="btn-secondary text-sm px-3 py-1"
+                        >
+                          📋 More Info
+                        </button>
+                        <button 
+                          onClick={() => setShowEditModal(user.id)} 
+                          className="btn-primary text-sm px-3 py-1"
+                        >
+                          ✅ Apply Changes
+                        </button>
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setShowEditMoreInfo(user.id)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-                    >
-                      More Info
-                    </button>
-                    <button 
-                      onClick={() => setShowEditModal(user.id)}
-                      className="px-3 py-1 bg-yellow-600 text-white rounded-md text-sm hover:bg-yellow-700"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-10">
+                <div className="text-4xl mb-2">🔍</div>
+                <p className="text-gray-400 font-sans">No users found</p>
+              </div>
+            )}
           </div>
 
           {/* Pagination */}
-          {totalEditPages > 1 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-              <p className="text-gray-400 text-xs sm:text-sm">
-                Showing {((editPage - 1) * pageSize) + 1} to {Math.min(editPage * pageSize, filteredEditUsers.length)} of {filteredEditUsers.length} users
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setEditPage(prev => Math.max(prev - 1, 1))}
-                  disabled={editPage === 1}
-                  className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  ← Previous
-                </button>
-                <span className="px-3 py-2 bg-accent-600 text-white rounded-md text-sm">
-                  {editPage} of {totalEditPages}
-                </span>
-                <button
-                  onClick={() => setEditPage(prev => Math.min(prev + 1, totalEditPages))}
-                  disabled={editPage === totalEditPages}
-                  className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  Next →
-                </button>
-              </div>
+          {filteredEditUsers.length > pageSize && (
+            <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+              <button 
+                onClick={() => setEditPage(prev => Math.max(prev - 1, 1))} 
+                disabled={editPage === 1}
+                className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ←
+              </button>
+              <span className="text-xs text-gray-400">{editPage} of {totalEditPages}</span>
+              <button 
+                onClick={() => setEditPage(prev => Math.min(prev + 1, totalEditPages))} 
+                disabled={editPage === totalEditPages}
+                className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                →
+              </button>
             </div>
           )}
         </div>
 
         {/* Restrict Access Card */}
-        <div className="bg-primary-800 rounded-lg p-4 sm:p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold text-white">Restrict Access</h2>
-              <button onClick={() => setShowRestrictHistory(true)} className="text-xs px-2 py-1 rounded bg-primary-700 text-gray-200 hover:bg-primary-600">📋 View History</button>
+        <div className="card flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base sm:text-lg font-semibold font-sans text-gray-100">Restrict Access</h2>
+            <button onClick={() => setShowRestrictHistory(true)} className="text-xs text-accent-400 hover:text-accent-300 font-medium flex items-center gap-1">📜 View History</button>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <input
+                value={restrictSearch}
+                onChange={(e) => { setRestrictSearch(e.target.value); setRestrictPage(1); }}
+                placeholder="Search users..."
+                className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+              />
+              <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                🔍
+              </button>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <select
-                value={restrictStateFilter}
-                onChange={(e) => { setRestrictStateFilter(e.target.value); setRestrictPage(1); }}
-                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm sm:text-base"
-              >
-                <option value="All">All States</option>
-                {nigerianStates.map(state => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
-              <div className="relative flex-1">
-                <input
-                  value={restrictSearch}
-                  onChange={(e) => { setRestrictSearch(e.target.value); setRestrictPage(1); }}
-                  placeholder="Search Fund Provider users..."
-                  className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm sm:text-base"
-                />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
-                  🔍
-                </button>
-              </div>
-            </div>
+            <select
+              value={restrictStateFilter}
+              onChange={(e) => { setRestrictStateFilter(e.target.value); setRestrictPage(1); }}
+              className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+            >
+              <option value="All">Filter by State</option>
+              {nigerianStates.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Mass Actions */}
-          {selectedRestrictUsers.length > 0 && (
-            <div className="bg-accent-600 rounded-lg p-4 mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p className="text-white font-medium">
-                  {selectedRestrictUsers.length} user{selectedRestrictUsers.length > 1 ? 's' : ''} selected
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <button 
-                    onClick={handleMassRestrict}
-                    className="px-3 py-1 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
-                  >
-                    🚫 Restrict Selected
-                  </button>
-                  <button 
-                    onClick={() => setShowRestrictHistory(true)}
-                    className="px-3 py-1 bg-orange-600 text-white rounded-md text-sm hover:bg-orange-700"
-                  >
-                    📋 View History
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Users List */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-1">
-              <label className="flex items-center gap-2 text-gray-200 text-sm">
-                <input type="checkbox" checked={restrictAllOnPageSelected} onChange={toggleRestrictSelectAll} />
-                <span>Select all on this page</span>
-              </label>
-              {selectedRestrictUsers.length > 0 && (
-                <button onClick={() => setShowRestrictHistory(true)} className="text-xs px-2 py-1 rounded bg-primary-700 text-gray-200">View History</button>
-              )}
-            </div>
-            {paginatedEditUsers.map((user) => (
-              <div key={user.id} className="bg-primary-700 rounded-lg p-4 border border-primary-600">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+          <div className="flex-grow overflow-y-auto custom-scrollbar">
+            {paginatedEditUsers.length > 0 ? (
+              <div className="space-y-4">
+                {paginatedEditUsers.map((user) => (
+                  <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
                     <input
                       type="checkbox"
                       checked={selectedRestrictUsers.includes(user.id)}
                       onChange={() => handleRestrictCheckboxChange(user.id)}
-                      className="rounded border-primary-600 bg-primary-700 text-accent-500 focus:ring-accent-500"
+                      className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
                     />
-                    <div className="flex-1">
-                      <h3 className="text-white font-medium">{user.name}</h3>
-                      <p className="text-gray-400 text-sm">{user.email}</p>
-                      <div className="flex gap-2 mt-2">
-                        <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
-                          {user.state}
-                        </span>
-                        <span className={`px-2 py-1 text-white text-xs rounded-full ${
-                          user.restricted ? 'bg-red-600' : 'bg-green-600'
+                    <div className="flex-grow">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                          <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          user.restricted ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
                         }`}>
                           {user.restricted ? 'Restricted' : 'Active'}
                         </span>
                       </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                        <span className="flex items-center gap-1">
+                          <span>👤</span> {user.role}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>📍</span> {user.state}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>🏢</span> {user.organization}
+                        </span>
+                      </div>
+                      <div className="bg-primary-700 p-2 rounded-md mb-2">
+                        <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!user.restricted}
+                            onChange={() => {/* toggleRestrict(user.id) */}}
+                            className="accent-accent-500 w-4 h-4"
+                          />
+                          <span>Grant Active Access (Unrestrict User)</span>
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button 
+                          onClick={() => setShowRestrictMoreInfo(user.id)} 
+                          className="btn-secondary text-sm px-3 py-1"
+                        >
+                          📋 More Info
+                        </button>
+                        <button 
+                          onClick={() => setShowRestrictModal(user.id)} 
+                          className="btn-primary text-sm px-3 py-1"
+                        >
+                          ✅ Apply Changes
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setShowRestrictMoreInfo(user.id)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-                    >
-                      More Info
-                    </button>
-                    <button 
-                      onClick={() => setShowRestrictModal(user.id)}
-                      className="px-3 py-1 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
-                    >
-                      Restrict
-                    </button>
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-10">
+                <div className="text-4xl mb-2">🔍</div>
+                <p className="text-gray-400 font-sans">No users found</p>
+              </div>
+            )}
           </div>
-
+          
           {/* Pagination */}
-          {totalEditPages > 1 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-              <p className="text-gray-400 text-xs sm:text-sm">
-                Showing {((restrictPage - 1) * pageSize) + 1} to {Math.min(restrictPage * pageSize, filteredEditUsers.length)} of {filteredEditUsers.length} users
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setRestrictPage(prev => Math.max(prev - 1, 1))}
-                  disabled={restrictPage === 1}
-                  className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  ← Previous
-                </button>
-                <span className="px-3 py-2 bg-accent-600 text-white rounded-md text-sm">
-                  {restrictPage} of {totalEditPages}
-                </span>
-                <button
-                  onClick={() => setRestrictPage(prev => Math.min(prev + 1, totalEditPages))}
-                  disabled={restrictPage === totalEditPages}
-                  className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  Next →
-                </button>
-              </div>
+          {filteredEditUsers.length > pageSize && (
+            <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+              <button 
+                onClick={() => setRestrictPage(prev => Math.max(prev - 1, 1))} 
+                disabled={restrictPage === 1}
+                className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ←
+              </button>
+              <span className="text-xs text-gray-400">{restrictPage} of {totalEditPages}</span>
+              <button 
+                onClick={() => setRestrictPage(prev => Math.min(prev + 1, totalEditPages))} 
+                disabled={restrictPage === totalEditPages}
+                className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                →
+              </button>
             </div>
           )}
         </div>
 
         {/* Approval Rights Card */}
-        <div className="bg-primary-800 rounded-lg p-4 sm:p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold text-white">Approval Rights</h2>
-              <button onClick={() => setShowApprovalRightsHistory(true)} className="text-xs px-2 py-1 rounded bg-primary-700 text-gray-200 hover:bg-primary-600">📋 View History</button>
+        <div className="card flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base sm:text-lg font-semibold font-sans text-gray-100">Approval Rights</h2>
+            <button onClick={() => setShowApprovalRightsHistory(true)} className="text-xs text-accent-400 hover:text-accent-300 font-medium flex items-center gap-1">📜 View History</button>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <input
+                value={approvalRightsSearch}
+                onChange={(e) => { setApprovalRightsSearch(e.target.value); setApprovalRightsPage(1); }}
+                placeholder="Search users..."
+                className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+              />
+              <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                🔍
+              </button>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <select
-                value={approvalRightsStateFilter}
-                onChange={(e) => { setApprovalRightsStateFilter(e.target.value); setApprovalRightsPage(1); }}
-                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm sm:text-base"
-              >
-                <option value="All">All States</option>
-                {nigerianStates.map(state => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
-              <div className="relative flex-1">
-                <input
-                  value={approvalRightsSearch}
-                  onChange={(e) => { setApprovalRightsSearch(e.target.value); setApprovalRightsPage(1); }}
-                  placeholder="Search Fund Provider users..."
-                  className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm sm:text-base"
-                />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
-                  🔍
-                </button>
-              </div>
-            </div>
+            <select
+              value={approvalRightsStateFilter}
+              onChange={(e) => { setApprovalRightsStateFilter(e.target.value); setApprovalRightsPage(1); }}
+              className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+            >
+              <option value="All">Filter by State</option>
+              {nigerianStates.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Mass Actions */}
-          {selectedApprovalRightsUsers.length > 0 && (
-            <div className="bg-accent-600 rounded-lg p-4 mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p className="text-white font-medium">
-                  {selectedApprovalRightsUsers.length} user{selectedApprovalRightsUsers.length > 1 ? 's' : ''} selected
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <button 
-                    onClick={handleMassApprovalRights}
-                    className="px-3 py-1 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700"
-                  >
-                    ✅ Update Rights
-                  </button>
-                  <button 
-                    onClick={() => setShowApprovalRightsHistory(true)}
-                    className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700"
-                  >
-                    📋 View History
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Users List */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-1">
-              <label className="flex items-center gap-2 text-gray-200 text-sm">
-                <input type="checkbox" checked={rightsAllOnPageSelected} onChange={toggleRightsSelectAll} />
-                <span>Select all on this page</span>
-              </label>
-              {selectedApprovalRightsUsers.length > 0 && (
-                <button onClick={() => setShowApprovalRightsHistory(true)} className="text-xs px-2 py-1 rounded bg-primary-700 text-gray-200">View History</button>
-              )}
-            </div>
-            {paginatedEditUsers.map((user) => (
-              <div key={user.id} className="bg-primary-700 rounded-lg p-4 border border-primary-600">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+          <div className="flex-grow overflow-y-auto custom-scrollbar">
+            {paginatedEditUsers.length > 0 ? (
+              <div className="space-y-4">
+                {paginatedEditUsers.map((user) => (
+                  <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
                     <input
                       type="checkbox"
                       checked={selectedApprovalRightsUsers.includes(user.id)}
                       onChange={() => handleApprovalRightsCheckboxChange(user.id)}
-                      className="rounded border-primary-600 bg-primary-700 text-accent-500 focus:ring-accent-500"
+                      className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
                     />
-                    <div className="flex-1">
-                      <h3 className="text-white font-medium">{user.name}</h3>
-                      <p className="text-gray-400 text-sm">{user.email}</p>
-                      <div className="flex gap-2 mt-2">
-                        <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
-                          {user.state}
+                    <div className="flex-grow">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                          <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                        <span className="flex items-center gap-1">
+                          <span>👤</span> {user.role}
                         </span>
-                        <span className={`px-2 py-1 text-white text-xs rounded-full ${
-                          user.canApprove ? 'bg-green-600' : 'bg-gray-600'
-                        }`}>
-                          {user.canApprove ? 'Can Approve' : 'No Approval Rights'}
+                        <span className="flex items-center gap-1">
+                          <span>📍</span> {user.state}
                         </span>
+                        <span className="flex items-center gap-1">
+                          <span>🏢</span> {user.organization}
+                        </span>
+                      </div>
+                      <div className="bg-primary-700 p-2 rounded-md mb-2">
+                        <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={user.canApprove}
+                            onChange={() => {/* toggleApprovalRights(user.id) */}}
+                            className="accent-accent-500 w-4 h-4"
+                          />
+                          <span>Grant Approval Rights</span>
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button 
+                          onClick={() => setShowApprovalRightsMoreInfo(user.id)} 
+                          className="btn-secondary text-sm px-3 py-1"
+                        >
+                          📋 More Info
+                        </button>
+                        <button 
+                          onClick={() => setShowRightsModal(user.id)} 
+                          className="btn-primary text-sm px-3 py-1"
+                        >
+                          ✅ Apply Changes
+                        </button>
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setShowApprovalRightsMoreInfo(user.id)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-                    >
-                      More Info
-                    </button>
-                    <button 
-                      onClick={() => setShowRightsModal(user.id)}
-                      className="px-3 py-1 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700"
-                    >
-                      Update Rights
-                    </button>
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-10">
+                <div className="text-4xl mb-2">🔍</div>
+                <p className="text-gray-400 font-sans">No users found</p>
+              </div>
+            )}
           </div>
-
+          
           {/* Pagination */}
-          {totalEditPages > 1 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-              <p className="text-gray-400 text-xs sm:text-sm">
-                Showing {((approvalRightsPage - 1) * pageSize) + 1} to {Math.min(approvalRightsPage * pageSize, filteredEditUsers.length)} of {filteredEditUsers.length} users
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setApprovalRightsPage(prev => Math.max(prev - 1, 1))}
-                  disabled={approvalRightsPage === 1}
-                  className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  ← Previous
-                </button>
-                <span className="px-3 py-2 bg-accent-600 text-white rounded-md text-sm">
-                  {approvalRightsPage} of {totalEditPages}
-                </span>
-                <button
-                  onClick={() => setApprovalRightsPage(prev => Math.min(prev + 1, totalEditPages))}
-                  disabled={approvalRightsPage === totalEditPages}
-                  className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  Next →
-                </button>
-              </div>
+          {filteredEditUsers.length > pageSize && (
+            <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+              <button 
+                onClick={() => setApprovalRightsPage(prev => Math.max(prev - 1, 1))} 
+                disabled={approvalRightsPage === 1}
+                className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ←
+              </button>
+              <span className="text-xs text-gray-400">{approvalRightsPage} of {totalEditPages}</span>
+              <button 
+                onClick={() => setApprovalRightsPage(prev => Math.min(prev + 1, totalEditPages))} 
+                disabled={approvalRightsPage === totalEditPages}
+                className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                →
+              </button>
             </div>
           )}
         </div>

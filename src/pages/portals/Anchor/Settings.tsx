@@ -1,304 +1,844 @@
 import React, { useState } from 'react';
 import PortalLayout from '../../../components/PortalLayout';
-import { showNotification, generateReport, exportData } from '../../../utils/quickActions';
+import { showNotification } from '../../../utils/quickActions';
 
-const AnchorSettings: React.FC = () => {
+const Settings: React.FC = () => {
+  const [activeSection, setActiveSection] = useState<'contact' | 'organization'>('contact');
+
+  const [formData, setFormData] = useState({
+    // Contact Info - Personal Details
+    fullName: 'Alhaji Ibrahim Musa',
+    position: 'Operations Manager',
+    gender: 'Male',
+    birthDate: '1975-08-10',
+
+    // Contact Info - Contact Information
+    email: 'ibrahim@nigerianagri.com',
+    phone: '+234-803-456-7890',
+    whatsapp: '+234-803-456-7890',
+    address: '456 Agribusiness Street',
+    city: 'Kano',
+    state: 'Kano State',
+    country: 'Nigeria',
+
+    // Contact Info - Verification & Emergency
+    idType: 'National ID',
+    idNumber: 'NG555666777',
+    idDocument: '',
+    emergencyContactName: 'Zainab Musa',
+    emergencyContactPhone: '+234-807-654-3210',
+    emergencyRelationship: 'Spouse',
+
+    // Organization Info - Basic Information
+    organizationName: 'Nigerian Agribusiness Ltd',
+    registrationNumber: 'RC-456789',
+    organizationType: 'Company',
+    yearEstablished: '2005',
+    industry: 'Agricultural Processing',
+    missionStatement: 'To empower agricultural value chains with reliable anchor services.',
+
+    // Organization Info - Address & Contact Info
+    headquartersAddress: '456 Agribusiness Street, Kano',
+    hqCity: 'Kano',
+    hqState: 'Kano State',
+    hqCountry: 'Nigeria',
+    officePhone: '+234-803-456-7890',
+    officialEmail: 'info@nigerianagri.com',
+    website: 'https://nigerianagri.com',
+    facebook: 'NigerianAgribusiness',
+    linkedin: 'nigerian-agribusiness',
+    twitter: '@NigerianAgri',
+    instagram: 'nigerianagri',
+
+    // Organization Info - Operations & Documentation
+    numEmployees: '450',
+    areasOfOperation: 'Kano, Kaduna, Sokoto, Katsina',
+    organizationLogo: '',
+    certificateOfIncorporation: '',
+    hasPartnership: 'Yes',
+    partnershipDetails: 'Partnerships with regional producer cooperatives and agro-processors.',
+
+    // Organization Info - Security & Terms
+    password: '',
+    confirmPassword: '',
+    agreeToTerms: true
+  });
+
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/anchor' },
-    { id: 'producers', name: 'Producer Network', icon: '🌾', href: '/portal/anchor/producers' },
-    { id: 'contracts', name: 'Supply Contracts', icon: '📄', href: '/portal/anchor/contracts' },
-    { id: 'loans', name: 'Loan Performance', icon: '💰', href: '/portal/anchor/loans' },
-    { id: 'reports', name: 'Reports & Analytics', icon: '📈', href: '/portal/anchor/reports' },
+    { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/anchor/scheme-application' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/anchor/settings' }
   ];
 
-  const [settings, setSettings] = useState({
-    companyName: 'Nigerian Agribusiness Ltd',
-    businessType: 'Agricultural Processing',
-    registrationNumber: 'RC123456789',
-    taxId: 'TAX123456789',
-    establishedYear: 2015,
-    employeeCount: 150,
-    annualRevenue: 5000000000,
-    primaryCrops: ['Rice', 'Wheat', 'Maize'],
-    processingCapacity: '1000 tons/day',
-    qualityStandards: 'ISO 22000',
-    certificationStatus: 'Certified',
-    emailNotifications: true,
-    smsNotifications: false,
-    contractAutoRenewal: true,
-    paymentReminders: true,
-    qualityMonitoring: true,
-    producerTraining: true,
-    primaryContact: 'Alhaji Ibrahim Musa',
-    contactEmail: 'ibrahim@nigerianagri.com',
-    contactPhone: '+234-803-456-7890',
-    officeAddress: '456 Agribusiness Street, Kano, Nigeria',
-    sessionTimeout: 30,
-    twoFactorAuth: true,
-    passwordExpiry: 90,
-    loginAttempts: 5,
-    producerApiStatus: 'Active',
-    contractApiStatus: 'Active',
-    loanApiStatus: 'Active',
-    backupFrequency: 'Daily'
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    setSettings(prev => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
 
-  const handleSave = () => {
-    showNotification('Settings saved successfully!', 'success');
-    console.log('Saved Settings:', settings);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const field = (e.target as HTMLInputElement).name;
+      setFormData(prev => ({ ...prev, [field]: file.name }));
+    }
   };
 
-  const handleReset = () => {
-    setSettings({
-      companyName: 'Nigerian Agribusiness Ltd',
-      businessType: 'Agricultural Processing',
-      registrationNumber: 'RC123456789',
-      taxId: 'TAX123456789',
-      establishedYear: 2015,
-      employeeCount: 150,
-      annualRevenue: 5000000000,
-      primaryCrops: ['Rice', 'Wheat', 'Maize'],
-      processingCapacity: '1000 tons/day',
-      qualityStandards: 'ISO 22000',
-      certificationStatus: 'Certified',
-      emailNotifications: true,
-      smsNotifications: false,
-      contractAutoRenewal: true,
-      paymentReminders: true,
-      qualityMonitoring: true,
-      producerTraining: true,
-      primaryContact: 'Alhaji Ibrahim Musa',
-      contactEmail: 'ibrahim@nigerianagri.com',
-      contactPhone: '+234-803-456-7890',
-      officeAddress: '456 Agribusiness Street, Kano, Nigeria',
-      sessionTimeout: 30,
-      twoFactorAuth: true,
-      passwordExpiry: 90,
-      loginAttempts: 5,
-      producerApiStatus: 'Active',
-      contractApiStatus: 'Active',
-      loanApiStatus: 'Active',
-      backupFrequency: 'Daily'
-    });
-    showNotification('Settings reset to default!', 'info');
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    showNotification('Settings saved successfully!', 'success');
   };
 
   return (
-    <PortalLayout 
-      role="Anchor" 
-      roleIcon="🏢" 
-      sidebarItems={sidebarItems}
-    >
-      <div className="space-y-6 p-6">
-        <h1 className="text-3xl font-bold font-sans text-gray-100 mb-6">Anchor Settings</h1>
-
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Company Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="companyName" className="block text-gray-300 text-sm font-serif mb-1">Company Name</label>
-              <input type="text" id="companyName" name="companyName" value={settings.companyName} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="businessType" className="block text-gray-300 text-sm font-serif mb-1">Business Type</label>
-              <input type="text" id="businessType" name="businessType" value={settings.businessType} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="registrationNumber" className="block text-gray-300 text-sm font-serif mb-1">Registration Number</label>
-              <input type="text" id="registrationNumber" name="registrationNumber" value={settings.registrationNumber} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="taxId" className="block text-gray-300 text-sm font-serif mb-1">Tax ID</label>
-              <input type="text" id="taxId" name="taxId" value={settings.taxId} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="establishedYear" className="block text-gray-300 text-sm font-serif mb-1">Established Year</label>
-              <input type="number" id="establishedYear" name="establishedYear" value={settings.establishedYear} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="employeeCount" className="block text-gray-300 text-sm font-serif mb-1">Employee Count</label>
-              <input type="number" id="employeeCount" name="employeeCount" value={settings.employeeCount} onChange={handleChange} className="input-field" />
-            </div>
+    <PortalLayout role="Anchor" roleIcon="⚓" sidebarItems={sidebarItems}>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold font-sans text-gray-100">Settings</h1>
+            <p className="text-sm md:text-base text-gray-400 font-serif mt-2">
+              Manage your account information and preferences
+            </p>
           </div>
-        </div>
-
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Business Operations</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="annualRevenue" className="block text-gray-300 text-sm font-serif mb-1">Annual Revenue</label>
-              <input type="number" id="annualRevenue" name="annualRevenue" value={settings.annualRevenue} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="processingCapacity" className="block text-gray-300 text-sm font-serif mb-1">Processing Capacity</label>
-              <input type="text" id="processingCapacity" name="processingCapacity" value={settings.processingCapacity} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="qualityStandards" className="block text-gray-300 text-sm font-serif mb-1">Quality Standards</label>
-              <input type="text" id="qualityStandards" name="qualityStandards" value={settings.qualityStandards} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="certificationStatus" className="block text-gray-300 text-sm font-serif mb-1">Certification Status</label>
-              <select id="certificationStatus" name="certificationStatus" value={settings.certificationStatus} onChange={handleChange} className="input-field">
-                <option>Certified</option>
-                <option>Pending</option>
-                <option>Not Certified</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Notification Preferences</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center">
-              <input type="checkbox" id="emailNotifications" name="emailNotifications" checked={settings.emailNotifications} onChange={handleChange} className="mr-2" />
-              <label htmlFor="emailNotifications" className="text-gray-300 font-serif">Email Notifications</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="smsNotifications" name="smsNotifications" checked={settings.smsNotifications} onChange={handleChange} className="mr-2" />
-              <label htmlFor="smsNotifications" className="text-gray-300 font-serif">SMS Notifications</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="contractAutoRenewal" name="contractAutoRenewal" checked={settings.contractAutoRenewal} onChange={handleChange} className="mr-2" />
-              <label htmlFor="contractAutoRenewal" className="text-gray-300 font-serif">Contract Auto Renewal</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="paymentReminders" name="paymentReminders" checked={settings.paymentReminders} onChange={handleChange} className="mr-2" />
-              <label htmlFor="paymentReminders" className="text-gray-300 font-serif">Payment Reminders</label>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Feature Toggles</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center">
-              <input type="checkbox" id="qualityMonitoring" name="qualityMonitoring" checked={settings.qualityMonitoring} onChange={handleChange} className="mr-2" />
-              <label htmlFor="qualityMonitoring" className="text-gray-300 font-serif">Quality Monitoring</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="producerTraining" name="producerTraining" checked={settings.producerTraining} onChange={handleChange} className="mr-2" />
-              <label htmlFor="producerTraining" className="text-gray-300 font-serif">Producer Training</label>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Contact Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="primaryContact" className="block text-gray-300 text-sm font-serif mb-1">Primary Contact</label>
-              <input type="text" id="primaryContact" name="primaryContact" value={settings.primaryContact} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="contactEmail" className="block text-gray-300 text-sm font-serif mb-1">Contact Email</label>
-              <input type="email" id="contactEmail" name="contactEmail" value={settings.contactEmail} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="contactPhone" className="block text-gray-300 text-sm font-serif mb-1">Contact Phone</label>
-              <input type="tel" id="contactPhone" name="contactPhone" value={settings.contactPhone} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="officeAddress" className="block text-gray-300 text-sm font-serif mb-1">Office Address</label>
-              <input type="text" id="officeAddress" name="officeAddress" value={settings.officeAddress} onChange={handleChange} className="input-field" />
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Security Settings</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="sessionTimeout" className="block text-gray-300 text-sm font-serif mb-1">Session Timeout (minutes)</label>
-              <input type="number" id="sessionTimeout" name="sessionTimeout" value={settings.sessionTimeout} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="passwordExpiry" className="block text-gray-300 text-sm font-serif mb-1">Password Expiry (days)</label>
-              <input type="number" id="passwordExpiry" name="passwordExpiry" value={settings.passwordExpiry} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="loginAttempts" className="block text-gray-300 text-sm font-serif mb-1">Max Login Attempts</label>
-              <input type="number" id="loginAttempts" name="loginAttempts" value={settings.loginAttempts} onChange={handleChange} className="input-field" />
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="twoFactorAuth" name="twoFactorAuth" checked={settings.twoFactorAuth} onChange={handleChange} className="mr-2" />
-              <label htmlFor="twoFactorAuth" className="text-gray-300 font-serif">Two-Factor Authentication</label>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">System Status</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="producerApiStatus" className="block text-gray-300 text-sm font-serif mb-1">Producer API Status</label>
-              <select id="producerApiStatus" name="producerApiStatus" value={settings.producerApiStatus} onChange={handleChange} className="input-field">
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Maintenance</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="contractApiStatus" className="block text-gray-300 text-sm font-serif mb-1">Contract API Status</label>
-              <select id="contractApiStatus" name="contractApiStatus" value={settings.contractApiStatus} onChange={handleChange} className="input-field">
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Maintenance</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="loanApiStatus" className="block text-gray-300 text-sm font-serif mb-1">Loan API Status</label>
-              <select id="loanApiStatus" name="loanApiStatus" value={settings.loanApiStatus} onChange={handleChange} className="input-field">
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Maintenance</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="backupFrequency" className="block text-gray-300 text-sm font-serif mb-1">Backup Frequency</label>
-              <select id="backupFrequency" name="backupFrequency" value={settings.backupFrequency} onChange={handleChange} className="input-field">
-                <option>Daily</option>
-                <option>Weekly</option>
-                <option>Monthly</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-4">
-          <button 
-            className="btn-secondary"
-            onClick={() => generateReport('Settings Report', 'PDF')}
-          >
-            📊 Export Settings
+          <button type="submit" form="settings-form" className="btn-primary w-full sm:w-auto justify-center">
+            💾 Save Changes
           </button>
-          <button 
-            className="btn-secondary"
-            onClick={handleReset}
-          >
-            🔄 Reset
-          </button>
-          <button 
-            className="btn-primary"
-            onClick={handleSave}
-          >
-            💾 Save Settings
-          </button>
+        </div>
+
+        {/* Section Tabs */}
+        <div className="bg-primary-800 rounded-lg p-2">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveSection('contact')}
+              className={`p-3 rounded-lg text-center transition-all duration-200 ${
+                activeSection === 'contact'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
+              }`}
+            >
+              <div className="font-medium font-sans">Contact Info</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSection('organization')}
+              className={`p-3 rounded-lg text-center transition-all duration-200 ${
+                activeSection === 'organization'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
+              }`}
+            >
+              <div className="font-medium font-sans">Organization Info</div>
+            </button>
+          </div>
+        </div>
+
+        <form id="settings-form" onSubmit={handleSave} className="space-y-6">
+          {activeSection === 'contact' && (
+            <>
+              {/* Personal Details */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Personal Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Position / Role in Organization <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="position"
+                      value={formData.position}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter your position/role"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Gender <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Date of Birth <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="birthDate"
+                      value={formData.birthDate}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Contact Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter your email address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      WhatsApp (Optional)
+                    </label>
+                    <input
+                      type="tel"
+                      name="whatsapp"
+                      value={formData.whatsapp}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter WhatsApp number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Residential / Office Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter your address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter city"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      State <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter state"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Country <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="country"
+                      value={formData.country}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter country"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Verification & Emergency */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Verification & Emergency</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      ID Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="idType"
+                      value={formData.idType}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select ID Type</option>
+                      <option value="National ID">National ID</option>
+                      <option value="Passport">Passport</option>
+                      <option value="Driver's License">Driver's License</option>
+                      <option value="Voter's Card">Voter's Card</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      ID Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="idNumber"
+                      value={formData.idNumber}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter ID number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Upload ID Document <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      name="idDocument"
+                      onChange={handleFileChange}
+                      required
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Emergency Contact Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="emergencyContactName"
+                      value={formData.emergencyContactName}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter emergency contact name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Emergency Contact Phone <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      name="emergencyContactPhone"
+                      value={formData.emergencyContactPhone}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter emergency contact phone"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Emergency Contact Relationship <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="emergencyRelationship"
+                      value={formData.emergencyRelationship}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select Relationship</option>
+                      <option value="Spouse">Spouse</option>
+                      <option value="Parent">Parent</option>
+                      <option value="Child">Child</option>
+                      <option value="Sibling">Sibling</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeSection === 'organization' && (
+            <>
+              {/* Basic Information */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Organization Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="organizationName"
+                      value={formData.organizationName}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter organization name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Registration Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="registrationNumber"
+                      value={formData.registrationNumber}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter registration number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Organization Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="organizationType"
+                      value={formData.organizationType}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select Organization Type</option>
+                      <option value="Company">Company</option>
+                      <option value="Sole Proprietorship">Sole Proprietorship</option>
+                      <option value="Partnership">Partnership</option>
+                      <option value="Cooperative">Cooperative</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Year Established <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="yearEstablished"
+                      value={formData.yearEstablished}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter year established"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Industry <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="industry"
+                      value={formData.industry}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select Industry</option>
+                      <option value="Agricultural Processing">Agricultural Processing</option>
+                      <option value="Trading">Trading</option>
+                      <option value="Export">Export</option>
+                      <option value="Value Addition">Value Addition</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Mission Statement
+                    </label>
+                    <textarea
+                      name="missionStatement"
+                      value={formData.missionStatement}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Write your mission statement"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Address & Contact Info */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Address & Contact Info</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Headquarters Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="headquartersAddress"
+                      value={formData.headquartersAddress}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter headquarters address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="hqCity"
+                      value={formData.hqCity}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter city"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      State <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="hqState"
+                      value={formData.hqState}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter state"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Country <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="hqCountry"
+                      value={formData.hqCountry}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter country"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Office Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      name="officePhone"
+                      value={formData.officePhone}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter office phone number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Official Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="officialEmail"
+                      value={formData.officialEmail}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter official email address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Website URL
+                    </label>
+                    <input
+                      type="url"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter website URL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Facebook Page
+                    </label>
+                    <input
+                      type="url"
+                      name="facebook"
+                      value={formData.facebook}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter Facebook page URL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      LinkedIn Profile
+                    </label>
+                    <input
+                      type="url"
+                      name="linkedin"
+                      value={formData.linkedin}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter LinkedIn profile URL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Twitter Handle
+                    </label>
+                    <input
+                      type="url"
+                      name="twitter"
+                      value={formData.twitter}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter Twitter handle"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Instagram Profile
+                    </label>
+                    <input
+                      type="url"
+                      name="instagram"
+                      value={formData.instagram}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter Instagram profile URL"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Operations & Documentation */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Operations & Documentation</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Number of Employees <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="numEmployees"
+                      value={formData.numEmployees}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter number of employees"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Areas of Operation <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="areasOfOperation"
+                      value={formData.areasOfOperation}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter areas of operation (comma-separated)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Upload Certificate of Incorporation <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      name="certificateOfIncorporation"
+                      onChange={handleFileChange}
+                      required
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Has Partnership <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="hasPartnership"
+                      value={formData.hasPartnership}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select Yes/No</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Partnership Details
+                    </label>
+                    <textarea
+                      name="partnershipDetails"
+                      value={formData.partnershipDetails}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Describe your partnership details"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Security & Terms */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Security & Terms</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter new password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Confirm Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      name="agreeToTerms"
+                      checked={formData.agreeToTerms}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-primary-500 bg-primary-700 border-primary-600 rounded focus:ring-primary-500"
+                    />
+                    <label className="text-sm font-medium font-sans text-gray-300">
+                      I agree to the <a href="#" className="text-primary-400 hover:underline">Terms of Service</a> and <a href="#" className="text-primary-400 hover:underline">Privacy Policy</a>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </form>
+
+        {/* System Information */}
+        <div className="card">
+          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">ℹ️ System Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Account ID:</span>
+                <span className="text-gray-100 font-sans">ANCHOR-2024-001</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Registration Date:</span>
+                <span className="text-gray-100 font-sans">January 20, 2024</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Last Login:</span>
+                <span className="text-gray-100 font-sans">Today, 3:15 PM</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Account Status:</span>
+                <span className="text-green-400 font-sans">Active</span>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">API Version:</span>
+                <span className="text-gray-100 font-sans">v2.1.0</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Database Version:</span>
+                <span className="text-gray-100 font-sans">PostgreSQL 14.2</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">System Uptime:</span>
+                <span className="text-gray-100 font-sans">99.8%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Support Level:</span>
+                <span className="text-blue-400 font-sans">Premium</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
+          Powered by Mc. George
         </div>
       </div>
     </PortalLayout>
   );
 };
 
-export default AnchorSettings;
+export default Settings;

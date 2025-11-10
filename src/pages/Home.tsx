@@ -25,11 +25,6 @@ const Home: React.FC = () => {
       icon: '🛡️'
     },
     {
-      title: 'Project Management Team',
-      description: 'State-level monitoring and supervision teams',
-      icon: '👥'
-    },
-    {
       title: 'Anchors',
       description: 'Large-scale agribusiness firms coordinating with farmers',
       icon: '⚓'
@@ -64,7 +59,7 @@ const Home: React.FC = () => {
     },
     {
       title: 'Risk Management',
-      description: 'Integrated insurance and de-risking mechanisms',
+      description: 'Integrated insurance mechanisms',
       icon: '🛡️'
     }
   ];

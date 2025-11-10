@@ -1,0 +1,16 @@
+{
+  "short_name": "AFCF",
+  "name": "Agricultural Finance Coordination Framework",
+  "icons": [
+    {
+      "src": "images/logo/LOGO.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#036572",
+  "background_color": "#1a1a1a"
+}
+

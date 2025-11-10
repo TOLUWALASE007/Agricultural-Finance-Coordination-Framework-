@@ -227,19 +227,7 @@ const Activities: React.FC = () => {
       workAddress: 'Institute for Agricultural Research, Ahmadu Bello University, Zaria, Kaduna State, Nigeria',
       documentUrl: '#',
     },
-    {
-      id: 'n10',
-      role: '🛡️ De-risking Institution',
-      message: 'NIRSAL provided a ₦100 million credit guarantee to cover 60% of high-risk loans for young farmers.',
-      status: 'pending',
-      receivedAt: new Date().toISOString(),
-      applicantName: 'NIRSAL Risk Management',
-      applicantType: 'Company',
-      companyName: 'Nigeria Incentive-Based Risk Sharing System for Agricultural Lending (NIRSAL)',
-      accountProfile: 'De-risking Institution • ₦100M Guarantee • 60% Risk Coverage',
-      workAddress: 'NIRSAL House, Central Business District, Abuja, FCT, Nigeria',
-      documentUrl: '#',
-    },
+    
   ]), []);
 
 
@@ -442,11 +430,11 @@ const Activities: React.FC = () => {
       id: 'u8', 
       name: 'NIRSAL Risk Manager', 
       email: 'risk@nirsal.com', 
-      roleRequested: 'De-risking', 
+      roleRequested: 'PFI', 
       state: 'FCT', 
       phone: '+234 809 012 3456', 
       organization: 'NIRSAL Plc', 
-      organizationProfile: 'De-risking institution providing credit guarantees with ₦100M+ coverage portfolio',
+      organizationProfile: 'Commercial bank risk unit supporting agricultural guarantees',
       organizationType: 'Company',
       fullAddress: 'NIRSAL House, Plot 1347, Cadastral Zone B06, Central Business District, Abuja, FCT, Nigeria',
       companyRegNumber: 'RC 789012',
@@ -585,7 +573,7 @@ const Activities: React.FC = () => {
   const [accessUsers, setAccessUsers] = useState<AccessUser[]>([
     { id: 'a1', name: 'Dangote Rice Operations', email: 'ops@dangoterice.com', role: 'Anchor', state: 'Kano', organization: 'Dangote Rice Limited', accessScope: 'Standard', restricted: false, canApprove: true, phone: '+234 805 678 9012', registrationDate: '2024-09-15', contactPersonName: 'Alhaji Musa Ibrahim', contactPersonEmail: 'musa.ibrahim@dangoterice.com', companyEmail: 'info@dangoterice.com', companyId: 'DRL-2024-001', fullAddress: 'Plot 45, Industrial Layout, Kano-Zaria Road, Kano State, Nigeria', organizationProfile: 'Leading rice producer and processor in Northern Nigeria with over 10,000 hectares under cultivation' },
     { id: 'a2', name: 'Access Bank Agricultural Finance', email: 'agric@accessbank.com', role: 'PFI', state: 'Lagos', organization: 'Access Bank PLC', accessScope: 'Full', restricted: false, canApprove: true, phone: '+234 803 456 7890', registrationDate: '2024-09-10', contactPersonName: 'Mrs. Chioma Nwosu', contactPersonEmail: 'chioma.nwosu@accessbankplc.com', companyEmail: 'info@accessbankplc.com', companyId: 'AB-PFI-2024-002', fullAddress: '999C Danmole Street, Victoria Island, Lagos State, Nigeria', organizationProfile: 'Tier-1 commercial bank providing agricultural financing solutions across Nigeria' },
-    { id: 'a3', name: 'NIRSAL Risk Management', email: 'risk@nirsal.com', role: 'De-risking', state: 'FCT Abuja', organization: 'NIRSAL Plc', accessScope: 'Standard', restricted: false, canApprove: false, phone: '+234 809 012 3456', registrationDate: '2024-09-08', contactPersonName: 'Dr. Adebayo Oluwaseun', contactPersonEmail: 'adebayo.oluwaseun@nirsal.com', companyEmail: 'contact@nirsal.com', companyId: 'NIRSAL-2024-003', fullAddress: '5 Nairobi Street, Off Aminu Kano Crescent, Wuse II, Abuja, FCT, Nigeria', organizationProfile: 'De-risking institution providing credit guarantees and risk mitigation for agricultural lending' },
+    
     { id: 'a4', name: 'Notore Fertilizer Ltd', email: 'sales@notore.com', role: 'Lead Firm', state: 'Rivers', organization: 'Notore Fertilizer Limited', accessScope: 'Basic', restricted: true, canApprove: false, phone: '+234 806 789 0123', registrationDate: '2024-09-05', contactPersonName: 'Engr. Tunde Akinola', contactPersonEmail: 'tunde.akinola@notore.com', companyEmail: 'info@notore.com', companyId: 'NFL-2024-004', fullAddress: 'Onne Industrial Park, Port Harcourt, Rivers State, Nigeria', organizationProfile: 'Major fertilizer manufacturer and distributor supporting Nigerian agriculture' },
     { id: 'a5', name: 'AIICO Insurance', email: 'agric@aiico.com', role: 'Insurance', state: 'Lagos', organization: 'AIICO Insurance PLC', accessScope: 'Full', restricted: false, canApprove: true, phone: '+234 801 234 5678', registrationDate: '2024-09-01', contactPersonName: 'Mr. Emeka Okafor', contactPersonEmail: 'emeka.okafor@aiico.com', companyEmail: 'info@aiico.com', companyId: 'AIICO-2024-005', fullAddress: 'AIICO Plaza, Plot 479A, Constitution Avenue, Central Business District, Abuja, FCT, Nigeria', organizationProfile: 'Leading insurance company providing agricultural and crop insurance solutions' },
     { id: 'a6', name: 'IITA Research Institute', email: 'research@iita.org', role: 'Researcher', state: 'Oyo', organization: 'International Institute of Tropical Agriculture', accessScope: 'Standard', restricted: false, canApprove: false, phone: '+234 807 890 1234', registrationDate: '2024-08-28', contactPersonName: 'Prof. Ngozi Okonjo', contactPersonEmail: 'n.okonjo@iita.org', companyEmail: 'iita@cgiar.org', companyId: 'IITA-2024-006', fullAddress: 'PMB 5320, Oyo Road, Ibadan, Oyo State, Nigeria', organizationProfile: 'International agricultural research institute focused on tropical agriculture and food security' },
@@ -1547,7 +1535,7 @@ const Activities: React.FC = () => {
                             <option value="Insurance">Insurance</option>
                             <option value="Lead Firm">Lead Firm</option>
                             <option value="Cooperative">Cooperative</option>
-                            <option value="De-risking">De-risking</option>
+                            
                             <option value="Extension">Extension</option>
                             <option value="Researcher">Researcher</option>
                             <option value="Coordinating">Coordinating</option>

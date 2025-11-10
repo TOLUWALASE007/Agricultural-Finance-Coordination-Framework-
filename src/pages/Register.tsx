@@ -9,52 +9,59 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    // Personal Details
-    title: '',
-    firstName: '',
-    lastName: '',
+    // Contact Info - Personal Details
+    fullName: '',
+    position: '',
+    gender: '',
     birthDate: '',
     birthMonth: '',
     birthYear: '',
-    gender: '',
-    maritalStatus: '',
+    
+    // Contact Info - Contact Information
     email: '',
     phone: '',
-    
-    // Address
-    addressLine1: '',
-    addressLine2: '',
+    whatsapp: '',
+    address: '',
     city: '',
     state: '',
     country: '',
-    postalCode: '',
     
-    // Employment Information
-    jobTitle: '',
-    organization: '',
-    occupation: '',
-    yearsExperience: '',
+    // Contact Info - Verification & Emergency
+    idType: '',
+    idNumber: '',
+    idDocument: null as File | null,
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    emergencyRelationship: '',
     
-    // Company Details
-    companyName: '',
-    companyId: '',
-    taxId: '',
-    legalStatus: '',
-    fieldOfBusiness: '',
-    registeredOffice: '',
-    companyState: '',
-    companyPostalCode: '',
-    companyStreet: '',
-    companyEmail: '',
-    companyPhone: '',
-    websiteUrl: '',
+    // Organization Info - Basic Information
+    organizationName: '',
+    registrationNumber: '',
+    organizationType: '',
+    yearEstablished: '',
+    industry: '',
+    missionStatement: '',
     
-    // Contact Information
-    contactPersonName: '',
-    contactPersonTitle: '',
-    contactPersonEmail: '',
-    contactPersonDesignation: '',
-    contactPersonPassport: '',
+    // Organization Info - Address & Contact Info
+    headquartersAddress: '',
+    hqCity: '',
+    hqState: '',
+    hqCountry: '',
+    officePhone: '',
+    officialEmail: '',
+    website: '',
+    facebook: '',
+    linkedin: '',
+    twitter: '',
+    instagram: '',
+    
+    // Organization Info - Operations & Documentation
+    numEmployees: '',
+    areasOfOperation: '',
+    organizationLogo: null as File | null,
+    certificateOfIncorporation: null as File | null,
+    hasPartnership: '',
+    partnershipDetails: '',
     
     // Security
     password: '',
@@ -75,28 +82,21 @@ const Register: React.FC = () => {
       name: 'Coordinating Agency',
       icon: '🏛️',
       description: 'Government agencies coordinating agricultural finance programs',
-      registrationTypes: ['company']
+      registrationTypes: ['individual', 'company']
     },
     {
       id: 'pfi',
       name: 'Participating Bank (PFI)',
       icon: '🏦',
       description: 'Participating Financial Institutions processing loan applications',
-      registrationTypes: ['company']
+      registrationTypes: ['individual', 'company']
     },
     {
       id: 'insurance',
       name: 'Insurance Company',
       icon: '🛡️',
       description: 'Insurance providers offering agricultural risk protection',
-      registrationTypes: ['company']
-    },
-    {
-      id: 'pmt',
-      name: 'Project Management Team (PMT)',
-      icon: '👥',
-      description: 'Teams managing agricultural finance coordination projects',
-      registrationTypes: ['company']
+      registrationTypes: ['individual', 'company']
     },
     {
       id: 'anchor',
@@ -110,7 +110,7 @@ const Register: React.FC = () => {
       name: 'Lead Firm',
       icon: '🏭',
       description: 'Input manufacturers and dealers leading agricultural supply chains',
-      registrationTypes: ['company']
+      registrationTypes: ['individual', 'company']
     },
     {
       id: 'producer',
@@ -124,21 +124,14 @@ const Register: React.FC = () => {
       name: 'Cooperative Group',
       icon: '🤝',
       description: 'Agricultural cooperative organizations and groups',
-      registrationTypes: ['company']
-    },
-    {
-      id: 'de-risking',
-      name: 'De-risking Institution',
-      icon: '📊',
-      description: 'Institutions providing risk mitigation services',
-      registrationTypes: ['company']
+      registrationTypes: ['individual', 'company']
     },
     {
       id: 'extension',
       name: 'Extension Organization',
       icon: '🌱',
       description: 'Agricultural extension and advisory service providers',
-      registrationTypes: ['company']
+      registrationTypes: ['individual', 'company']
     },
     {
       id: 'researcher',
@@ -149,12 +142,21 @@ const Register: React.FC = () => {
     }
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    const file = e.target.files?.[0] || null;
+    setFormData(prev => ({
+      ...prev,
+      [name]: file
     }));
   };
 
@@ -175,11 +177,9 @@ const Register: React.FC = () => {
   };
 
   const getTotalSteps = () => {
-    if (activeTypeTab === 'individual') {
-      return 4; // Personal Details, Address, Employment, Security
-    } else {
-      return 4; // Company Details, Registered Office, Contact Info, Security
-    }
+    // Contact Info tab has 3 steps (no Security & Terms)
+    // Organization Info tab has 4 steps (includes Security & Terms)
+    return activeTypeTab === 'individual' ? 3 : 4;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -190,15 +190,13 @@ const Register: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     setIsSubmitting(false);
-    // Navigate to login or dashboard after successful registration
     navigate('/login');
   };
 
   // Render form step content
   const renderStepContent = () => {
-    const currentRole = getCurrentRole();
-    
     if (activeTypeTab === 'individual') {
+      // Contact Info tab
       switch (currentStep) {
         case 1: // Personal Details
           return (
@@ -206,113 +204,35 @@ const Register: React.FC = () => {
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Personal Details</h3>
               
               <div>
-                <label htmlFor="title" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Title
+                <label htmlFor="fullName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Full Name *
                 </label>
-                <select
-                  id="title"
-                  name="title"
-                  value={formData.title}
+                <input
+                  type="text"
+                  id="fullName"
+                  name="fullName"
+                  required
+                  value={formData.fullName}
                   onChange={handleInputChange}
                   className="input-field"
-                >
-                  <option value="">Select Title</option>
-                  <option value="Mr">Mr</option>
-                  <option value="Mrs">Mrs</option>
-                  <option value="Miss">Miss</option>
-                  <option value="Dr">Dr</option>
-                  <option value="Prof">Prof</option>
-                </select>
+                  placeholder="Enter your full name"
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    required
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    placeholder="Enter first name"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Last Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    required
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    placeholder="Enter last name"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="birthMonth" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Birth Month *
-                  </label>
-                  <select
-                    id="birthMonth"
-                    name="birthMonth"
-                    required
-                    value={formData.birthMonth}
-                    onChange={handleInputChange}
-                    className="input-field"
-                  >
-                    <option value="">Month</option>
-                    {Array.from({length: 12}, (_, i) => (
-                      <option key={i+1} value={i+1}>{new Date(0, i).toLocaleString('default', {month: 'long'})}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="birthDate" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Day *
-                  </label>
-                  <select
-                    id="birthDate"
-                    name="birthDate"
-                    required
-                    value={formData.birthDate}
-                    onChange={handleInputChange}
-                    className="input-field"
-                  >
-                    <option value="">Day</option>
-                    {Array.from({length: 31}, (_, i) => (
-                      <option key={i+1} value={i+1}>{i+1}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="birthYear" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Year *
-                  </label>
-                  <select
-                    id="birthYear"
-                    name="birthYear"
-                    required
-                    value={formData.birthYear}
-                    onChange={handleInputChange}
-                    className="input-field"
-                  >
-                    <option value="">Year</option>
-                    {Array.from({length: 80}, (_, i) => (
-                      <option key={2024-i} value={2024-i}>{2024-i}</option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label htmlFor="position" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Position / Role in Organization *
+                </label>
+                <input
+                  type="text"
+                  id="position"
+                  name="position"
+                  required
+                  value={formData.position}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter your position/role"
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -331,47 +251,52 @@ const Register: React.FC = () => {
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="maritalStatus" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Marital Status *
+                  <label htmlFor="birthDate" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Date of Birth *
                   </label>
-                  <select
-                    id="maritalStatus"
-                    name="maritalStatus"
+                  <input
+                    type="date"
+                    id="birthDate"
+                    name="birthDate"
                     required
-                    value={formData.maritalStatus}
+                    value={formData.birthDate}
                     onChange={handleInputChange}
                     className="input-field"
-                  >
-                    <option value="">Select Status</option>
-                    <option value="Single">Single</option>
-                    <option value="Married">Married</option>
-                    <option value="Divorced">Divorced</option>
-                  </select>
+                  />
                 </div>
+              </div>
+            </div>
+          );
+
+        case 2: // Contact Information
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Contact Information</h3>
+              
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter your email address"
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    placeholder="Enter your email address"
-                  />
-                </div>
-                <div>
                   <label htmlFor="phone" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Phone *
+                    Phone Number *
                   </label>
                   <input
                     type="tel"
@@ -384,47 +309,39 @@ const Register: React.FC = () => {
                     placeholder="Enter your phone number"
                   />
                 </div>
+                <div>
+                  <label htmlFor="whatsapp" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    WhatsApp (Optional)
+                  </label>
+                  <input
+                    type="tel"
+                    id="whatsapp"
+                    name="whatsapp"
+                    value={formData.whatsapp}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter WhatsApp number"
+                  />
+                </div>
               </div>
-            </div>
-          );
 
-        case 2: // Address
-          return (
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Address</h3>
-              
               <div>
-                <label htmlFor="addressLine1" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Address Line 1 *
+                <label htmlFor="address" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Residential / Office Address *
                 </label>
                 <input
                   type="text"
-                  id="addressLine1"
-                  name="addressLine1"
+                  id="address"
+                  name="address"
                   required
-                  value={formData.addressLine1}
+                  value={formData.address}
                   onChange={handleInputChange}
                   className="input-field"
-                  placeholder="Enter address line 1"
+                  placeholder="Enter your address"
                 />
               </div>
 
-              <div>
-                <label htmlFor="addressLine2" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Address Line 2
-                </label>
-                <input
-                  type="text"
-                  id="addressLine2"
-                  name="addressLine2"
-                  value={formData.addressLine2}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  placeholder="Enter address line 2"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label htmlFor="city" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                     City *
@@ -455,9 +372,6 @@ const Register: React.FC = () => {
                     placeholder="Enter state"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="country" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                     Country *
@@ -473,153 +387,114 @@ const Register: React.FC = () => {
                     placeholder="Enter country"
                   />
                 </div>
-                <div>
-                  <label htmlFor="postalCode" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Postal/Zip Code *
-                  </label>
-                  <input
-                    type="text"
-                    id="postalCode"
-                    name="postalCode"
-                    required
-                    value={formData.postalCode}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    placeholder="Enter postal code"
-                  />
-                </div>
               </div>
             </div>
           );
 
-        case 3: // Employment Information
+        case 3: // Verification & Emergency
           return (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Employment Information</h3>
-              
-              <div>
-                <label htmlFor="jobTitle" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Job Title *
-                </label>
-                <input
-                  type="text"
-                  id="jobTitle"
-                  name="jobTitle"
-                  required
-                  value={formData.jobTitle}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  placeholder="Enter job title"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="organization" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Organization *
-                </label>
-                <input
-                  type="text"
-                  id="organization"
-                  name="organization"
-                  required
-                  value={formData.organization}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  placeholder="Enter organization name"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="occupation" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Occupation *
-                </label>
-                <input
-                  type="text"
-                  id="occupation"
-                  name="occupation"
-                  required
-                  value={formData.occupation}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  placeholder="Enter occupation"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="yearsExperience" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Years of Experience *
-                </label>
-                <select
-                  id="yearsExperience"
-                  name="yearsExperience"
-                  required
-                  value={formData.yearsExperience}
-                  onChange={handleInputChange}
-                  className="input-field"
-                >
-                  <option value="">Select Years</option>
-                  <option value="0-1">0-1 years</option>
-                  <option value="2-5">2-5 years</option>
-                  <option value="6-10">6-10 years</option>
-                  <option value="11-15">11-15 years</option>
-                  <option value="16-20">16-20 years</option>
-                  <option value="20+">20+ years</option>
-                </select>
-              </div>
-            </div>
-          );
-
-        case 4: // Security & Terms
-          return (
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Security & Terms</h3>
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Verification & Emergency</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Password *
+                  <label htmlFor="idType" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    ID Type *
                   </label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
+                  <select
+                    id="idType"
+                    name="idType"
                     required
-                    value={formData.password}
+                    value={formData.idType}
                     onChange={handleInputChange}
                     className="input-field"
-                    placeholder="Create password"
-                  />
+                  >
+                    <option value="">Select ID Type</option>
+                    <option value="National ID">National ID</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Driver's License">Driver's License</option>
+                    <option value="Voter's Card">Voter's Card</option>
+                  </select>
                 </div>
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Confirm Password *
+                  <label htmlFor="idNumber" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    ID Number *
                   </label>
                   <input
-                    type="password"
-                    id="confirmPassword"
-                    name="confirmPassword"
+                    type="text"
+                    id="idNumber"
+                    name="idNumber"
                     required
-                    value={formData.confirmPassword}
+                    value={formData.idNumber}
                     onChange={handleInputChange}
                     className="input-field"
-                    placeholder="Confirm password"
+                    placeholder="Enter ID number"
                   />
                 </div>
               </div>
 
-              <div className="flex items-start">
-                <input
-                  id="agreeToTerms"
-                  name="agreeToTerms"
-                  type="checkbox"
-                  required
-                  checked={formData.agreeToTerms}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-primary-600 bg-primary-700 rounded mt-1"
-                />
-                <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-gray-300 font-serif">
-                  I hereby agree that the information given is true, accurate and complete as of the date of this application submission. *
+              <div>
+                <label htmlFor="idDocument" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Upload ID Document *
                 </label>
+                <input
+                  type="file"
+                  id="idDocument"
+                  name="idDocument"
+                  required
+                  onChange={handleFileChange}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="emergencyContactName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Emergency Contact Name *
+                </label>
+                <input
+                  type="text"
+                  id="emergencyContactName"
+                  name="emergencyContactName"
+                  required
+                  value={formData.emergencyContactName}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter emergency contact name"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="emergencyContactPhone" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Emergency Contact Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    id="emergencyContactPhone"
+                    name="emergencyContactPhone"
+                    required
+                    value={formData.emergencyContactPhone}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter emergency contact phone"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="emergencyRelationship" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Relationship with Emergency Contact *
+                  </label>
+                  <input
+                    type="text"
+                    id="emergencyRelationship"
+                    name="emergencyRelationship"
+                    required
+                    value={formData.emergencyRelationship}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="e.g., Spouse, Parent, Sibling"
+                  />
+                </div>
               </div>
             </div>
           );
@@ -628,308 +503,406 @@ const Register: React.FC = () => {
           return null;
       }
     } else {
-      // Company registration steps
+      // Organization Info tab
       switch (currentStep) {
-        case 1: // Company Details
+        case 1: // Basic Information
           return (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Company Details</h3>
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Basic Information</h3>
               
               <div>
-                <label htmlFor="companyName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Company Name *
+                <label htmlFor="organizationName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Organization Name *
                 </label>
                 <input
                   type="text"
-                  id="companyName"
-                  name="companyName"
+                  id="organizationName"
+                  name="organizationName"
                   required
-                  value={formData.companyName}
+                  value={formData.organizationName}
                   onChange={handleInputChange}
                   className="input-field"
-                  placeholder="Enter company name"
+                  placeholder="Enter organization name"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="companyId" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Company ID *
+                  <label htmlFor="registrationNumber" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Registration Number / CAC Number *
                   </label>
                   <input
                     type="text"
-                    id="companyId"
-                    name="companyId"
+                    id="registrationNumber"
+                    name="registrationNumber"
                     required
-                    value={formData.companyId}
+                    value={formData.registrationNumber}
                     onChange={handleInputChange}
                     className="input-field"
-                    placeholder="Enter company ID"
+                    placeholder="Enter registration/CAC number"
                   />
                 </div>
                 <div>
-                  <label htmlFor="taxId" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Tax ID *
+                  <label htmlFor="organizationType" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Type of Organization *
                   </label>
-                  <input
-                    type="text"
-                    id="taxId"
-                    name="taxId"
+                  <select
+                    id="organizationType"
+                    name="organizationType"
                     required
-                    value={formData.taxId}
+                    value={formData.organizationType}
                     onChange={handleInputChange}
                     className="input-field"
-                    placeholder="Enter tax ID"
-                  />
+                  >
+                    <option value="">Select Type</option>
+                    <option value="NGO">NGO</option>
+                    <option value="Company">Company</option>
+                    <option value="Institution">Institution</option>
+                    <option value="Government Agency">Government Agency</option>
+                    <option value="Cooperative">Cooperative</option>
+                    <option value="Foundation">Foundation</option>
+                  </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="legalStatus" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Legal Status *
+                  <label htmlFor="yearEstablished" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Year Established *
                   </label>
-                  <select
-                    id="legalStatus"
-                    name="legalStatus"
+                  <input
+                    type="number"
+                    id="yearEstablished"
+                    name="yearEstablished"
                     required
-                    value={formData.legalStatus}
+                    value={formData.yearEstablished}
                     onChange={handleInputChange}
                     className="input-field"
-                  >
-                    <option value="">Select Legal Status</option>
-                    <option value="Corporation">Corporation</option>
-                    <option value="LLC">LLC</option>
-                    <option value="Partnership">Partnership</option>
-                    <option value="Sole Proprietorship">Sole Proprietorship</option>
-                    <option value="Non-Profit">Non-Profit</option>
-                    <option value="Government">Government</option>
-                  </select>
+                    placeholder="Enter year"
+                    min="1900"
+                    max={new Date().getFullYear()}
+                  />
                 </div>
                 <div>
-                  <label htmlFor="fieldOfBusiness" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Field of Business *
+                  <label htmlFor="industry" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Industry / Sector *
                   </label>
                   <input
                     type="text"
-                    id="fieldOfBusiness"
-                    name="fieldOfBusiness"
+                    id="industry"
+                    name="industry"
                     required
-                    value={formData.fieldOfBusiness}
+                    value={formData.industry}
                     onChange={handleInputChange}
                     className="input-field"
-                    placeholder="Enter field of business"
+                    placeholder="Enter industry/sector"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label htmlFor="missionStatement" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Short Description / Mission Statement *
+                </label>
+                <textarea
+                  id="missionStatement"
+                  name="missionStatement"
+                  required
+                  value={formData.missionStatement}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="input-field"
+                  placeholder="Enter mission statement or description"
+                />
               </div>
             </div>
           );
 
-        case 2: // Registered Office
+        case 2: // Address & Contact Info
           return (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Registered Office</h3>
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Address & Contact Info</h3>
               
               <div>
-                <label htmlFor="registeredOffice" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Registered Office *
+                <label htmlFor="headquartersAddress" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Headquarters Address *
                 </label>
                 <input
                   type="text"
-                  id="registeredOffice"
-                  name="registeredOffice"
+                  id="headquartersAddress"
+                  name="headquartersAddress"
                   required
-                  value={formData.registeredOffice}
+                  value={formData.headquartersAddress}
                   onChange={handleInputChange}
                   className="input-field"
-                  placeholder="Enter registered office address"
+                  placeholder="Enter headquarters address"
                 />
               </div>
 
-              <div>
-                <label htmlFor="companyStreet" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Street *
-                </label>
-                <input
-                  type="text"
-                  id="companyStreet"
-                  name="companyStreet"
-                  required
-                  value={formData.companyStreet}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  placeholder="Enter street address"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label htmlFor="companyState" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  <label htmlFor="hqCity" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    id="hqCity"
+                    name="hqCity"
+                    required
+                    value={formData.hqCity}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter city"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="hqState" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                     State *
                   </label>
                   <input
                     type="text"
-                    id="companyState"
-                    name="companyState"
+                    id="hqState"
+                    name="hqState"
                     required
-                    value={formData.companyState}
+                    value={formData.hqState}
                     onChange={handleInputChange}
                     className="input-field"
                     placeholder="Enter state"
                   />
                 </div>
                 <div>
-                  <label htmlFor="companyPostalCode" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Postal Code *
+                  <label htmlFor="hqCountry" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Country *
                   </label>
                   <input
                     type="text"
-                    id="companyPostalCode"
-                    name="companyPostalCode"
+                    id="hqCountry"
+                    name="hqCountry"
                     required
-                    value={formData.companyPostalCode}
+                    value={formData.hqCountry}
                     onChange={handleInputChange}
                     className="input-field"
-                    placeholder="Enter postal code"
+                    placeholder="Enter country"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="companyEmail" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Company Email *
-                  </label>
-                  <input
-                    type="email"
-                    id="companyEmail"
-                    name="companyEmail"
-                    required
-                    value={formData.companyEmail}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    placeholder="Enter company email"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="companyPhone" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Company Phone Number *
+                  <label htmlFor="officePhone" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Office Phone Number *
                   </label>
                   <input
                     type="tel"
-                    id="companyPhone"
-                    name="companyPhone"
+                    id="officePhone"
+                    name="officePhone"
                     required
-                    value={formData.companyPhone}
+                    value={formData.officePhone}
                     onChange={handleInputChange}
                     className="input-field"
-                    placeholder="Enter company phone"
+                    placeholder="Enter office phone"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="officialEmail" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Official Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    id="officialEmail"
+                    name="officialEmail"
+                    required
+                    value={formData.officialEmail}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter official email"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="websiteUrl" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Website URL
+                <label htmlFor="website" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Website URL (if any)
                 </label>
                 <input
                   type="url"
-                  id="websiteUrl"
-                  name="websiteUrl"
-                  value={formData.websiteUrl}
+                  id="website"
+                  name="website"
+                  value={formData.website}
                   onChange={handleInputChange}
                   className="input-field"
                   placeholder="Enter website URL"
                 />
               </div>
-            </div>
-          );
 
-        case 3: // Contact Information
-          return (
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Contact Information</h3>
-              
-              <div>
-                <label htmlFor="contactPersonName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Contact Person Name *
-                </label>
-                <input
-                  type="text"
-                  id="contactPersonName"
-                  name="contactPersonName"
-                  required
-                  value={formData.contactPersonName}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  placeholder="Enter contact person name"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="facebook" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Facebook
+                  </label>
+                  <input
+                    type="text"
+                    id="facebook"
+                    name="facebook"
+                    value={formData.facebook}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter Facebook handle"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="linkedin" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    LinkedIn
+                  </label>
+                  <input
+                    type="text"
+                    id="linkedin"
+                    name="linkedin"
+                    value={formData.linkedin}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter LinkedIn handle"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="contactPersonTitle" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Contact Person Title *
+                  <label htmlFor="twitter" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    X (Twitter)
                   </label>
                   <input
                     type="text"
-                    id="contactPersonTitle"
-                    name="contactPersonTitle"
-                    required
-                    value={formData.contactPersonTitle}
+                    id="twitter"
+                    name="twitter"
+                    value={formData.twitter}
                     onChange={handleInputChange}
                     className="input-field"
-                    placeholder="Enter contact person title"
+                    placeholder="Enter X handle"
                   />
                 </div>
                 <div>
-                  <label htmlFor="contactPersonDesignation" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Contact Person Designation *
+                  <label htmlFor="instagram" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Instagram
                   </label>
                   <input
                     type="text"
-                    id="contactPersonDesignation"
-                    name="contactPersonDesignation"
-                    required
-                    value={formData.contactPersonDesignation}
+                    id="instagram"
+                    name="instagram"
+                    value={formData.instagram}
                     onChange={handleInputChange}
                     className="input-field"
-                    placeholder="Enter designation"
+                    placeholder="Enter Instagram handle"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+
+        case 3: // Operations & Documentation
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Operations & Documentation</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="numEmployees" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Number of Employees / Volunteers *
+                  </label>
+                  <input
+                    type="number"
+                    id="numEmployees"
+                    name="numEmployees"
+                    required
+                    value={formData.numEmployees}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter number"
+                    min="1"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="areasOfOperation" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Areas of Operation / Coverage *
+                  </label>
+                  <input
+                    type="text"
+                    id="areasOfOperation"
+                    name="areasOfOperation"
+                    required
+                    value={formData.areasOfOperation}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="e.g., Lagos, Ogun, Oyo"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="organizationLogo" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Upload Organization Logo
+                  </label>
+                  <input
+                    type="file"
+                    id="organizationLogo"
+                    name="organizationLogo"
+                    onChange={handleFileChange}
+                    accept=".jpg,.jpeg,.png"
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="certificateOfIncorporation" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Upload Certificate of Incorporation or Registration *
+                  </label>
+                  <input
+                    type="file"
+                    id="certificateOfIncorporation"
+                    name="certificateOfIncorporation"
+                    required
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="input-field"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="contactPersonEmail" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Contact Person Email Address *
+                <label htmlFor="hasPartnership" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Any Partnership or Affiliation *
                 </label>
-                <input
-                  type="email"
-                  id="contactPersonEmail"
-                  name="contactPersonEmail"
+                <select
+                  id="hasPartnership"
+                  name="hasPartnership"
                   required
-                  value={formData.contactPersonEmail}
+                  value={formData.hasPartnership}
                   onChange={handleInputChange}
                   className="input-field"
-                  placeholder="Enter contact person email"
-                />
+                >
+                  <option value="">Select Option</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
               </div>
 
-              <div>
-                <label htmlFor="contactPersonPassport" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                  Contact Person Passport *
-                </label>
-                <input
-                  type="text"
-                  id="contactPersonPassport"
-                  name="contactPersonPassport"
-                  required
-                  value={formData.contactPersonPassport}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  placeholder="Enter passport number"
-                />
-              </div>
+              {formData.hasPartnership === 'Yes' && (
+                <div>
+                  <label htmlFor="partnershipDetails" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Partnership Details *
+                  </label>
+                  <textarea
+                    id="partnershipDetails"
+                    name="partnershipDetails"
+                    required={formData.hasPartnership === 'Yes'}
+                    value={formData.partnershipDetails}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="input-field"
+                    placeholder="Specify partnership or affiliation details"
+                  />
+                </div>
+              )}
             </div>
           );
 
@@ -1017,14 +990,13 @@ const Register: React.FC = () => {
         {/* Role Tabs */}
         <div className="mb-8">
           <div className="bg-primary-800 rounded-lg p-2">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {roles.map((role, index) => (
                 <button
                   key={role.id}
                   onClick={() => {
                     setActiveTab(index);
                     setCurrentStep(1);
-                    // Set default registration type based on role
                     if (role.registrationTypes.length === 1) {
                       setActiveTypeTab(role.registrationTypes[0] as 'individual' | 'company');
                     }
@@ -1043,7 +1015,7 @@ const Register: React.FC = () => {
           </div>
         </div>
 
-        {/* Registration Type Tabs (only show if role supports multiple types) */}
+        {/* Registration Type Tabs */}
         {hasMultipleRegistrationTypes() && (
           <div className="mb-8">
             <div className="bg-primary-800 rounded-lg p-2 max-w-md mx-auto">
@@ -1061,7 +1033,9 @@ const Register: React.FC = () => {
                         : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
                     }`}
                   >
-                    <div className="font-medium font-sans capitalize">{type}</div>
+                    <div className="font-medium font-sans">
+                      {type === 'individual' ? 'Contact Info' : 'Organization Info'}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -1109,13 +1083,23 @@ const Register: React.FC = () => {
                 </button>
                 
                 <div className="flex space-x-4">
-                  {currentStep < getTotalSteps() ? (
+                  {(currentStep < getTotalSteps() || (activeTypeTab === 'individual' && currentStep === 3)) ? (
                     <button
                       type="button"
-                      onClick={nextStep}
+                      onClick={() => {
+                        // If on step 3 of Contact Info tab, switch to Organization Info tab
+                        if (activeTypeTab === 'individual' && currentStep === 3) {
+                          setActiveTypeTab('company');
+                          setCurrentStep(1);
+                        } else {
+                          nextStep();
+                        }
+                      }}
                       className="btn-primary"
                     >
-                      Next
+                      {activeTypeTab === 'individual' && currentStep === 3 
+                        ? 'Proceed to Organization Info' 
+                        : 'Next'}
                     </button>
                   ) : (
                     <button

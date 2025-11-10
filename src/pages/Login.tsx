@@ -15,12 +15,10 @@ const Login: React.FC = () => {
     'Coordinating Agency',
     'Participating Bank (PFI)',
     'Insurance Company',
-    'Project Management Team (PMT)',
     'Anchor',
     'Lead Firm',
     'Producer/Farmer',
     'Cooperative Group',
-    'De-risking Institution',
     'Extension Organization',
     'Researcher/Student'
   ];
@@ -37,28 +35,238 @@ const Login: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate login process
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setIsSubmitting(false);
-    // Navigate to role-specific portal
-    const roleMap: { [key: string]: string } = {
-      'Fund Provider': '/portal/fund-provider',
-      'Coordinating Agency': '/portal/coordinating-agency',
-      'Participating Bank (PFI)': '/portal/pfi',
-      'Insurance Company': '/portal/insurance',
-      'Project Management Team (PMT)': '/portal/pmt',
-      'Anchor': '/portal/anchor',
-      'Lead Firm': '/portal/lead-firm',
-      'Producer/Farmer': '/portal/producer',
-      'Cooperative Group': '/portal/cooperative',
-      'De-risking Institution': '/portal/de-risking',
-      'Extension Organization': '/portal/extension',
-      'Researcher/Student': '/portal/researcher'
-    };
-    
-    const portalPath = roleMap[formData.role] || '/portal/fund-provider';
-    navigate(portalPath);
+    try {
+      // Call the backend login API
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.token) {
+        // Store token in localStorage
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Navigate to role-specific portal
+        const roleMap: { [key: string]: string } = {
+          'Fund Provider': '/portal/fund-provider',
+          'Coordinating Agency': '/portal/coordinating-agency',
+          'Participating Bank (PFI)': '/portal/pfi',
+          'Insurance Company': '/portal/insurance',
+          'Anchor': '/portal/anchor',
+          'Lead Firm': '/portal/lead-firm',
+          'Producer/Farmer': '/portal/producer',
+          'Cooperative Group': '/portal/cooperative',
+          'Extension Organization': '/portal/extension',
+          'Researcher/Student': '/portal/researcher'
+        };
+        
+        const portalPath = roleMap[formData.role] || '/portal/fund-provider';
+        navigate(portalPath);
+      } else {
+        // Auto-register if user doesn't exist for specific roles
+        if (data.error?.includes('Invalid credentials')) {
+          let shouldAutoRegister = false;
+          let registerData: any = null;
+
+          // Coordinating Agency auto-register
+          if (formData.email === 'ca@email.com' && 
+              formData.password === '123456' &&
+              formData.role === 'Coordinating Agency') {
+            shouldAutoRegister = true;
+            registerData = {
+              email: 'ca@email.com',
+              password: '123456',
+              firstName: 'Coordinating',
+              lastName: 'Agency',
+              userType: 'coordinating_agency',
+              organizationName: 'AFCF Coordinating Agency'
+            };
+          }
+          // Fund Provider auto-register
+          else if (formData.email === 'fp@email.com' && 
+                   formData.password === '123456' &&
+                   formData.role === 'Fund Provider') {
+            shouldAutoRegister = true;
+            registerData = {
+              email: 'fp@email.com',
+              password: '123456',
+              firstName: 'Fund',
+              lastName: 'Provider',
+              userType: 'fund_provider',
+              organizationName: 'AFCF Fund Provider'
+            };
+          }
+          // PFI auto-register
+          else if (formData.email === 'pfi@email.com' && 
+                   formData.password === '123456' &&
+                   formData.role === 'Participating Bank (PFI)') {
+            shouldAutoRegister = true;
+            registerData = {
+              email: 'pfi@email.com',
+              password: '123456',
+              firstName: 'PFI',
+              lastName: 'Bank',
+              userType: 'pfi',
+              organizationName: 'AFCF Participating Bank'
+            };
+          }
+          // Anchor auto-register
+          else if (formData.email === 'anchor@email.com' && 
+                   formData.password === '123456' &&
+                   formData.role === 'Anchor') {
+            shouldAutoRegister = true;
+            registerData = {
+              email: 'anchor@email.com',
+              password: '123456',
+              firstName: 'Anchor',
+              lastName: 'Company',
+              userType: 'anchor',
+              organizationName: 'AFCF Anchor Company'
+            };
+          }
+          // Lead Firm auto-register
+          else if (formData.email === 'leadfirm@email.com' && 
+                   formData.password === '123456' &&
+                   formData.role === 'Lead Firm') {
+            shouldAutoRegister = true;
+            registerData = {
+              email: 'leadfirm@email.com',
+              password: '123456',
+              firstName: 'Lead',
+              lastName: 'Firm',
+              userType: 'lead_firm',
+              organizationName: 'AFCF Lead Firm'
+            };
+          }
+          // Producer/Farmer auto-register
+          else if (formData.email === 'farmer@email.com' && 
+                   formData.password === '123456' &&
+                   formData.role === 'Producer/Farmer') {
+            shouldAutoRegister = true;
+            registerData = {
+              email: 'farmer@email.com',
+              password: '123456',
+              firstName: 'Producer',
+              lastName: 'Farmer',
+              userType: 'farmer',
+              organizationName: undefined
+            };
+          }
+          // Insurance Company auto-register
+          else if (formData.email === 'insurance@email.com' &&
+                   formData.password === '123456' &&
+                   formData.role === 'Insurance Company') {
+            shouldAutoRegister = true;
+            registerData = {
+              email: 'insurance@email.com',
+              password: '123456',
+              firstName: 'Insurance',
+              lastName: 'Company',
+              userType: 'insurance',
+              organizationName: 'AFCF Insurance Company'
+            };
+          }
+          // Cooperative Group auto-register
+          else if (formData.email === 'cooperative@email.com' &&
+                   formData.password === '123456' &&
+                   formData.role === 'Cooperative Group') {
+            shouldAutoRegister = true;
+            registerData = {
+              email: 'cooperative@email.com',
+              password: '123456',
+              firstName: 'Cooperative',
+              lastName: 'Group',
+              userType: 'cooperative_group',
+              organizationName: 'AFCF Cooperative Group'
+            };
+          }
+          // Extension Organization auto-register
+          else if (formData.email === 'extension@email.com' &&
+                   formData.password === '123456' &&
+                   formData.role === 'Extension Organization') {
+            shouldAutoRegister = true;
+            registerData = {
+              email: 'extension@email.com',
+              password: '123456',
+              firstName: 'Extension',
+              lastName: 'Org',
+              userType: 'extension_organization',
+              organizationName: 'AFCF Extension Organization'
+            };
+          }
+          // Researcher/Student auto-register
+          else if (formData.email === 'researcher@email.com' &&
+                   formData.password === '123456' &&
+                   formData.role === 'Researcher/Student') {
+            shouldAutoRegister = true;
+            registerData = {
+              email: 'researcher@email.com',
+              password: '123456',
+              firstName: 'Researcher',
+              lastName: 'Student',
+              userType: 'researcher_student',
+              organizationName: undefined
+            };
+          }
+
+          if (shouldAutoRegister && registerData) {
+            try {
+              const registerResponse = await fetch('http://localhost:5000/api/auth/register', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(registerData)
+              });
+
+              const registerResult = await registerResponse.json();
+              
+              if (registerResponse.ok && registerResult.success && registerResult.token) {
+                localStorage.setItem('authToken', registerResult.token);
+                localStorage.setItem('user', JSON.stringify(registerResult.user));
+                alert('User created successfully! Logging in...');
+                
+                const roleMap: { [key: string]: string } = {
+                  'Fund Provider': '/portal/fund-provider',
+                  'Coordinating Agency': '/portal/coordinating-agency',
+                  'Participating Bank (PFI)': '/portal/pfi',
+                  'Insurance Company': '/portal/insurance',
+                  'Anchor': '/portal/anchor',
+                  'Lead Firm': '/portal/lead-firm',
+                  'Producer/Farmer': '/portal/producer',
+                  'Cooperative Group': '/portal/cooperative',
+                  'Extension Organization': '/portal/extension',
+                  'Researcher/Student': '/portal/researcher'
+                };
+                
+                const portalPath = roleMap[formData.role] || '/portal/fund-provider';
+                navigate(portalPath);
+                return;
+              }
+            } catch (regError) {
+              console.error('Auto-register failed:', regError);
+            }
+          }
+        }
+        
+        // Show error message
+        alert(data.error || 'Login failed. Please check your credentials.');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      alert('Login failed. Please check your credentials and ensure the backend server is running.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

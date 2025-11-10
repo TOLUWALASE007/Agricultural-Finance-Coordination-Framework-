@@ -254,82 +254,83 @@ const Insurance: React.FC = () => {
           </div>
 
           {/* Bulk Action Buttons */}
-          <div className="flex items-center gap-2 mb-4">
-            <button
-              onClick={openForwardModal}
-              disabled={selectedReports.length === 0}
-              className="px-3 py-2 bg-primary-700 text-gray-200 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
-              ➡️ Forward Selected ({selectedReports.length})
-            </button>
-            <button
-              onClick={handleDownloadSelected}
-              disabled={selectedReports.length === 0}
-              className="px-3 py-2 bg-primary-700 text-gray-200 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
-              ⬇️ Download Selected ({selectedReports.length})
-            </button>
-          </div>
-
-          {/* Reports Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-primary-700">
-              <thead>
-                <tr className="text-left text-gray-300">
-                  <th className="px-4 py-2 w-10">
-                    <input type="checkbox" checked={isAllOnPageSelected} onChange={toggleSelectAllOnPage} />
-                  </th>
-                  <th className="px-4 py-2">ID</th>
-                  <th className="px-4 py-2">Title</th>
-                  <th className="px-4 py-2">Team Name</th>
-                  <th className="px-4 py-2">Date</th>
-                  <th className="px-4 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-primary-700">
-                {paginatedReports.map(report => (
-                  <tr key={report.id} className="text-gray-100">
-                    <td className="px-4 py-2">
-                      <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={() => toggleSelect(report.id)} />
-                    </td>
-                    <td className="px-4 py-2 font-mono text-sm">{report.id}</td>
-                    <td className="px-4 py-2">{report.title}</td>
-                    <td className="px-4 py-2">{report.teamName}</td>
-                    <td className="px-4 py-2">{report.date}</td>
-                    <td className="px-4 py-2">
-                      <div className="flex gap-2">
-                        <button onClick={() => handleDownloadOne(report)} className="px-3 py-1 bg-primary-700 hover:bg-primary-600 text-gray-100 rounded-md text-sm">⬇️ Download</button>
-                        <button onClick={() => { setSelectedReports(prev => prev.includes(report.id) ? prev : [...prev, report.id]); openForwardModal(); }} className="px-3 py-1 bg-primary-700 hover:bg-primary-600 text-gray-100 rounded-md text-sm">➡️ Forward</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-            <p className="text-gray-400 text-xs sm:text-sm">
-              {filteredReports.length === 0 ? 'No items' : `Showing ${((currentPage - 1) * itemsPerPage) + 1} to ${Math.min(currentPage * itemsPerPage, filteredReports.length)} of ${filteredReports.length} reports`}
-            </p>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))} 
-                disabled={currentPage === 1}
-                className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                ← Previous
-              </button>
-              <span className="px-3 py-2 bg-accent-600 text-white rounded-md text-sm">{currentPage} of {totalPages}</span>
-              <button 
-                onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))} 
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                Next →
-              </button>
+          {selectedReports.length > 0 && (
+            <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md mb-4">
+              <span className="text-sm text-gray-200 font-sans">{selectedReports.length} selected</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDownloadSelected}
+                  className="btn-primary text-xs px-3 py-1"
+                >
+                  ⬇️ Download Selected
+                </button>
+                <button
+                  onClick={openForwardModal}
+                  className="btn-primary text-xs px-3 py-1"
+                >
+                  ➡️ Forward Selected
+                </button>
+              </div>
             </div>
+          )}
+
+          {/* Reports List - Mobile Friendly */}
+          <div className="flex-1 flex flex-col">
+            <div className="space-y-3 flex-1">
+              {paginatedReports.map((report) => (
+                <div key={report.id} className="p-3 bg-primary-700 rounded-lg border border-primary-600">
+                  <div className="flex items-start gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedReports.includes(report.id)}
+                      onChange={() => toggleSelect(report.id)}
+                      className="mt-1 w-4 h-4 accent-accent-500"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-sm font-medium text-gray-100 font-sans">{report.title}</p>
+                          <p className="text-xs text-gray-400 font-serif">{report.id}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-2">
+                        <span className="flex items-center gap-1">
+                          <span>👥</span> {report.teamName}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>📅</span> {new Date(report.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => handleDownloadOne(report)} className="text-xs text-accent-400 hover:text-accent-300 font-medium">⬇️ Download</button>
+                        <button onClick={() => { setSelectedReports(prev => prev.includes(report.id) ? prev : [...prev, report.id]); openForwardModal(); }} className="text-xs text-accent-400 hover:text-accent-300 font-medium">➡️ Forward</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {filteredReports.length > itemsPerPage && (
+              <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+                <button 
+                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))} 
+                  disabled={currentPage === 1}
+                  className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ←
+                </button>
+                <span className="text-xs text-gray-400">{currentPage} of {totalPages}</span>
+                <button 
+                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))} 
+                  disabled={currentPage === totalPages}
+                  className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  →
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

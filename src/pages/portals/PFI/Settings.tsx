@@ -1,377 +1,853 @@
 import React, { useState } from 'react';
 import PortalLayout from '../../../components/PortalLayout';
-import { showNotification, generateReport, exportData } from '../../../utils/quickActions';
+import { showNotification } from '../../../utils/quickActions';
 
-const PFISettings: React.FC = () => {
+const Settings: React.FC = () => {
+  const [activeSection, setActiveSection] = useState<'contact' | 'organization'>('contact');
+
+  const [formData, setFormData] = useState({
+    // Contact Info - Personal Details
+    fullName: 'Mr. John Adebayo',
+    position: 'Loan Disbursement Manager',
+    gender: 'Male',
+    birthDate: '1980-03-20',
+
+    // Contact Info - Contact Information
+    email: 'john.adebayo@firstbank.com',
+    phone: '+234-801-234-5678',
+    whatsapp: '+234-801-234-5678',
+    address: '123 Banking Street',
+    city: 'Lagos',
+    state: 'Lagos State',
+    country: 'Nigeria',
+
+    // Contact Info - Verification & Emergency
+    idType: 'National ID',
+    idNumber: 'NG987654321',
+    idDocument: '',
+    emergencyContactName: 'Mary Adebayo',
+    emergencyContactPhone: '+234-802-345-6789',
+    emergencyRelationship: 'Spouse',
+
+    // Organization Info - Basic Information
+    organizationName: 'First Bank of Nigeria',
+    registrationNumber: 'RC-123456',
+    organizationType: 'Company',
+    yearEstablished: '1894',
+    industry: 'Banking & Financial Services',
+    missionStatement: 'To provide excellent banking and financial services.',
+
+    // Organization Info - Address & Contact Info
+    headquartersAddress: '123 Banking Street, Lagos',
+    hqCity: 'Lagos',
+    hqState: 'Lagos State',
+    hqCountry: 'Nigeria',
+    officePhone: '+234-801-234-5678',
+    officialEmail: 'info@firstbank.com',
+    website: 'https://firstbank.com',
+    facebook: 'FirstBankNG',
+    linkedin: 'first-bank-nigeria',
+    twitter: '@FirstBankNG',
+    instagram: 'firstbankng',
+
+    // Organization Info - Operations & Documentation
+    numEmployees: '10000',
+    areasOfOperation: 'All States in Nigeria',
+    organizationLogo: '',
+    certificateOfIncorporation: '',
+    hasPartnership: 'Yes',
+    partnershipDetails: 'Partnership with the Central Bank of Nigeria.',
+
+    // Organization Info - Security & Terms
+    password: '',
+    confirmPassword: '',
+    agreeToTerms: true
+  });
+
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/pfi' },
-    { id: 'loans', name: 'Loan Processing', icon: '💰', href: '/portal/pfi/loans' },
-    { id: 'applications', name: 'Applications', icon: '📋', href: '/portal/pfi/applications' },
-    { id: 'producers', name: 'Producer Network', icon: '🌾', href: '/portal/pfi/producers' },
-    { id: 'anchors', name: 'Anchor Partners', icon: '⚓', href: '/portal/pfi/anchors' },
-    { id: 'insurance', name: 'Insurance Claims', icon: '🛡️', href: '/portal/pfi/insurance' },
-    { id: 'risk', name: 'Risk Assessment', icon: '📈', href: '/portal/pfi/risk' },
-    { id: 'reports', name: 'Reports', icon: '📊', href: '/portal/pfi/reports' },
+    { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/pfi/scheme-application' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/pfi/settings' }
   ];
 
-  const [settings, setSettings] = useState({
-    bankName: 'First Bank of Nigeria',
-    bankCode: 'FBN-001',
-    bankType: 'Commercial Bank',
-    licenseNumber: 'CBN-LIC-2023-001',
-    maxLoanAmount: 10000000,
-    interestRate: 0.12,
-    processingFee: 0.02,
-    riskTolerance: 'Medium',
-    emailNotifications: true,
-    smsNotifications: true,
-    whatsappNotifications: false,
-    reportFrequency: 'Monthly',
-    primaryContact: 'Dr. Sarah Johnson',
-    contactEmail: 'sarah.johnson@firstbank.com',
-    contactPhone: '+234-801-234-5678',
-    officeAddress: '123 Banking Street, Lagos, Nigeria',
-    sessionTimeout: 30, // minutes
-    twoFactorAuth: true,
-    passwordExpiry: 90, // days
-    loginAttempts: 5,
-    fundProviderApiStatus: 'Active',
-    insuranceApiStatus: 'Active',
-    reportingApiStatus: 'Active',
-    backupFrequency: 'Daily',
-    complianceMode: 'Strict',
-    auditTrail: true,
-    dataRetention: 7, // years
-    autoApprovalLimit: 500000,
-    manualReviewThreshold: 2000000,
-    riskAssessmentFrequency: 'Monthly',
-    producerVerification: 'Required',
-    anchorPartnershipApproval: 'Manual'
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    setSettings(prev => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
 
-  const handleSave = () => {
-    showNotification('Settings saved successfully!', 'success');
-    console.log('Saved Settings:', settings);
-    // In a real application, this would be an API call to save settings
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const field = (e.target as HTMLInputElement).name;
+      setFormData(prev => ({ ...prev, [field]: file.name }));
+    }
   };
 
-  const handleReset = () => {
-    // Reset to initial dummy values or fetch from a default API endpoint
-    setSettings({
-      bankName: 'First Bank of Nigeria',
-      bankCode: 'FBN-001',
-      bankType: 'Commercial Bank',
-      licenseNumber: 'CBN-LIC-2023-001',
-      maxLoanAmount: 10000000,
-      interestRate: 0.12,
-      processingFee: 0.02,
-      riskTolerance: 'Medium',
-      emailNotifications: true,
-      smsNotifications: true,
-      whatsappNotifications: false,
-      reportFrequency: 'Monthly',
-      primaryContact: 'Dr. Sarah Johnson',
-      contactEmail: 'sarah.johnson@firstbank.com',
-      contactPhone: '+234-801-234-5678',
-      officeAddress: '123 Banking Street, Lagos, Nigeria',
-      sessionTimeout: 30,
-      twoFactorAuth: true,
-      passwordExpiry: 90,
-      loginAttempts: 5,
-      fundProviderApiStatus: 'Active',
-      insuranceApiStatus: 'Active',
-      reportingApiStatus: 'Active',
-      backupFrequency: 'Daily',
-      complianceMode: 'Strict',
-      auditTrail: true,
-      dataRetention: 7,
-      autoApprovalLimit: 500000,
-      manualReviewThreshold: 2000000,
-      riskAssessmentFrequency: 'Monthly',
-      producerVerification: 'Required',
-      anchorPartnershipApproval: 'Manual'
-    });
-    showNotification('Settings reset to default!', 'info');
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    showNotification('Settings saved successfully!', 'success');
   };
 
   return (
-    <PortalLayout role="Participating Bank (PFI)" roleIcon="🏦" sidebarItems={sidebarItems}>
-      <div className="space-y-6 p-6">
-        <h1 className="text-3xl font-bold font-sans text-gray-100 mb-6">PFI Settings</h1>
+    <PortalLayout role="PFI" roleIcon="🏦" sidebarItems={sidebarItems}>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold font-sans text-gray-100">Settings</h1>
+            <p className="text-sm md:text-base text-gray-400 font-serif mt-2">
+              Manage your account information and preferences
+            </p>
+          </div>
+          <button type="submit" form="settings-form" className="btn-primary w-full sm:w-auto justify-center">
+            💾 Save Changes
+          </button>
+        </div>
 
-        {/* Bank Configuration */}
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Bank Configuration</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="bankName" className="block text-gray-300 text-sm font-serif mb-1">Bank Name</label>
-              <input type="text" id="bankName" name="bankName" value={settings.bankName} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="bankCode" className="block text-gray-300 text-sm font-serif mb-1">Bank Code</label>
-              <input type="text" id="bankCode" name="bankCode" value={settings.bankCode} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="bankType" className="block text-gray-300 text-sm font-serif mb-1">Bank Type</label>
-              <select id="bankType" name="bankType" value={settings.bankType} onChange={handleChange} className="input-field">
-                <option>Commercial Bank</option>
-                <option>Microfinance Bank</option>
-                <option>Development Bank</option>
-                <option>Merchant Bank</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="licenseNumber" className="block text-gray-300 text-sm font-serif mb-1">CBN License Number</label>
-              <input type="text" id="licenseNumber" name="licenseNumber" value={settings.licenseNumber} onChange={handleChange} className="input-field" />
-            </div>
+        {/* Section Tabs */}
+        <div className="bg-primary-800 rounded-lg p-2">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveSection('contact')}
+              className={`p-3 rounded-lg text-center transition-all duration-200 ${
+                activeSection === 'contact'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
+              }`}
+            >
+              <div className="font-medium font-sans">Contact Info</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSection('organization')}
+              className={`p-3 rounded-lg text-center transition-all duration-200 ${
+                activeSection === 'organization'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
+              }`}
+            >
+              <div className="font-medium font-sans">Organization Info</div>
+            </button>
           </div>
         </div>
 
-        {/* Loan Configuration */}
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Loan Configuration</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="maxLoanAmount" className="block text-gray-300 text-sm font-serif mb-1">Max Loan Amount (₦)</label>
-              <input type="number" id="maxLoanAmount" name="maxLoanAmount" value={settings.maxLoanAmount} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="interestRate" className="block text-gray-300 text-sm font-serif mb-1">Interest Rate (%)</label>
-              <input type="number" id="interestRate" name="interestRate" value={settings.interestRate} onChange={handleChange} step="0.01" className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="processingFee" className="block text-gray-300 text-sm font-serif mb-1">Processing Fee (%)</label>
-              <input type="number" id="processingFee" name="processingFee" value={settings.processingFee} onChange={handleChange} step="0.01" className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="riskTolerance" className="block text-gray-300 text-sm font-serif mb-1">Risk Tolerance</label>
-              <select id="riskTolerance" name="riskTolerance" value={settings.riskTolerance} onChange={handleChange} className="input-field">
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="autoApprovalLimit" className="block text-gray-300 text-sm font-serif mb-1">Auto Approval Limit (₦)</label>
-              <input type="number" id="autoApprovalLimit" name="autoApprovalLimit" value={settings.autoApprovalLimit} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="manualReviewThreshold" className="block text-gray-300 text-sm font-serif mb-1">Manual Review Threshold (₦)</label>
-              <input type="number" id="manualReviewThreshold" name="manualReviewThreshold" value={settings.manualReviewThreshold} onChange={handleChange} className="input-field" />
-            </div>
-          </div>
-        </div>
+        <form id="settings-form" onSubmit={handleSave} className="space-y-6">
+          {activeSection === 'contact' && (
+            <>
+              {/* Personal Details */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Personal Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Position / Role in Organization <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="position"
+                      value={formData.position}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter your position/role"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Gender <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Date of Birth <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="birthDate"
+                      value={formData.birthDate}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+              </div>
 
-        {/* Notification Preferences */}
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Notification Preferences</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center">
-              <input type="checkbox" id="emailNotifications" name="emailNotifications" checked={settings.emailNotifications} onChange={handleChange} className="mr-2" />
-              <label htmlFor="emailNotifications" className="text-gray-300 font-serif">Email Notifications</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="smsNotifications" name="smsNotifications" checked={settings.smsNotifications} onChange={handleChange} className="mr-2" />
-              <label htmlFor="smsNotifications" className="text-gray-300 font-serif">SMS Notifications</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="whatsappNotifications" name="whatsappNotifications" checked={settings.whatsappNotifications} onChange={handleChange} className="mr-2" />
-              <label htmlFor="whatsappNotifications" className="text-gray-300 font-serif">WhatsApp Notifications</label>
-            </div>
-            <div>
-              <label htmlFor="reportFrequency" className="block text-gray-300 text-sm font-serif mb-1">Report Frequency</label>
-              <select id="reportFrequency" name="reportFrequency" value={settings.reportFrequency} onChange={handleChange} className="input-field">
-                <option>Daily</option>
-                <option>Weekly</option>
-                <option>Monthly</option>
-                <option>Quarterly</option>
-              </select>
-            </div>
-          </div>
-        </div>
+              {/* Contact Information */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Contact Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter your email address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      WhatsApp (Optional)
+                    </label>
+                    <input
+                      type="tel"
+                      name="whatsapp"
+                      value={formData.whatsapp}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter WhatsApp number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Residential / Office Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter your address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter city"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      State <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter state"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Country <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="country"
+                      value={formData.country}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter country"
+                    />
+                  </div>
+                </div>
+              </div>
 
-        {/* Contact Information */}
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Contact Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="primaryContact" className="block text-gray-300 text-sm font-serif mb-1">Primary Contact</label>
-              <input type="text" id="primaryContact" name="primaryContact" value={settings.primaryContact} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="contactEmail" className="block text-gray-300 text-sm font-serif mb-1">Contact Email</label>
-              <input type="email" id="contactEmail" name="contactEmail" value={settings.contactEmail} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="contactPhone" className="block text-gray-300 text-sm font-serif mb-1">Contact Phone</label>
-              <input type="tel" id="contactPhone" name="contactPhone" value={settings.contactPhone} onChange={handleChange} className="input-field" />
-            </div>
-            <div className="md:col-span-2">
-              <label htmlFor="officeAddress" className="block text-gray-300 text-sm font-serif mb-1">Office Address</label>
-              <input type="text" id="officeAddress" name="officeAddress" value={settings.officeAddress} onChange={handleChange} className="input-field" />
-            </div>
-          </div>
-        </div>
+              {/* Verification & Emergency */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Verification & Emergency</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      ID Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="idType"
+                      value={formData.idType}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select ID Type</option>
+                      <option value="National ID">National ID</option>
+                      <option value="Passport">Passport</option>
+                      <option value="Driver's License">Driver's License</option>
+                      <option value="Voter's Card">Voter's Card</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      ID Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="idNumber"
+                      value={formData.idNumber}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter ID number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Upload ID Document <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      name="idDocument"
+                      onChange={handleFileChange}
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="input-field"
+                    />
+                    {formData.idDocument && (
+                      <p className="text-sm text-gray-400 font-serif mt-2">Current: {formData.idDocument}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Emergency Contact Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="emergencyContactName"
+                      value={formData.emergencyContactName}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter emergency contact name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Emergency Contact Phone <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      name="emergencyContactPhone"
+                      value={formData.emergencyContactPhone}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter emergency contact phone"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Emergency Relationship <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="emergencyRelationship"
+                      value={formData.emergencyRelationship}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select Relationship</option>
+                      <option value="Spouse">Spouse</option>
+                      <option value="Parent">Parent</option>
+                      <option value="Child">Child</option>
+                      <option value="Sibling">Sibling</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
-        {/* Security Settings */}
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Security Settings</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="sessionTimeout" className="block text-gray-300 text-sm font-serif mb-1">Session Timeout (minutes)</label>
-              <input type="number" id="sessionTimeout" name="sessionTimeout" value={settings.sessionTimeout} onChange={handleChange} className="input-field" />
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="twoFactorAuth" name="twoFactorAuth" checked={settings.twoFactorAuth} onChange={handleChange} className="mr-2" />
-              <label htmlFor="twoFactorAuth" className="text-gray-300 font-serif">Two-Factor Authentication (2FA)</label>
-            </div>
-            <div>
-              <label htmlFor="passwordExpiry" className="block text-gray-300 text-sm font-serif mb-1">Password Expiry (days)</label>
-              <input type="number" id="passwordExpiry" name="passwordExpiry" value={settings.passwordExpiry} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="loginAttempts" className="block text-gray-300 text-sm font-serif mb-1">Max Login Attempts</label>
-              <input type="number" id="loginAttempts" name="loginAttempts" value={settings.loginAttempts} onChange={handleChange} className="input-field" />
-            </div>
-          </div>
-        </div>
+          {activeSection === 'organization' && (
+            <>
+              {/* Organization Info */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Organization Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Organization Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="organizationName"
+                      value={formData.organizationName}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter organization name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Registration Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="registrationNumber"
+                      value={formData.registrationNumber}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter registration number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Organization Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="organizationType"
+                      value={formData.organizationType}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select Organization Type</option>
+                      <option value="Company">Company</option>
+                      <option value="Sole Proprietorship">Sole Proprietorship</option>
+                      <option value="Partnership">Partnership</option>
+                      <option value="Cooperative">Cooperative</option>
+                      <option value="Government">Government</option>
+                      <option value="Non-Profit">Non-Profit</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Year Established <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="yearEstablished"
+                      value={formData.yearEstablished}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter year established"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Industry <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="industry"
+                      value={formData.industry}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter industry"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Mission Statement <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      name="missionStatement"
+                      value={formData.missionStatement}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter mission statement"
+                    />
+                  </div>
+                </div>
+              </div>
 
-        {/* Integration Settings */}
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Integration Settings</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="fundProviderApiStatus" className="block text-gray-300 text-sm font-serif mb-1">Fund Provider API Status</label>
-              <select id="fundProviderApiStatus" name="fundProviderApiStatus" value={settings.fundProviderApiStatus} onChange={handleChange} className="input-field">
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Maintenance</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="insuranceApiStatus" className="block text-gray-300 text-sm font-serif mb-1">Insurance API Status</label>
-              <select id="insuranceApiStatus" name="insuranceApiStatus" value={settings.insuranceApiStatus} onChange={handleChange} className="input-field">
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Maintenance</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="reportingApiStatus" className="block text-gray-300 text-sm font-serif mb-1">Reporting API Status</label>
-              <select id="reportingApiStatus" name="reportingApiStatus" value={settings.reportingApiStatus} onChange={handleChange} className="input-field">
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Maintenance</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="backupFrequency" className="block text-gray-300 text-sm font-serif mb-1">Data Backup Frequency</label>
-              <select id="backupFrequency" name="backupFrequency" value={settings.backupFrequency} onChange={handleChange} className="input-field">
-                <option>Daily</option>
-                <option>Weekly</option>
-                <option>Monthly</option>
-              </select>
-            </div>
-          </div>
-        </div>
+              {/* Address & Contact Info */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Address & Contact Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Headquarters Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="headquartersAddress"
+                      value={formData.headquartersAddress}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter headquarters address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="hqCity"
+                      value={formData.hqCity}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter city"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      State <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="hqState"
+                      value={formData.hqState}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter state"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Country <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="hqCountry"
+                      value={formData.hqCountry}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter country"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Office Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      name="officePhone"
+                      value={formData.officePhone}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter office phone number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Official Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="officialEmail"
+                      value={formData.officialEmail}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter official email address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Website URL <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter website URL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Facebook Page <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      name="facebook"
+                      value={formData.facebook}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter Facebook page URL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      LinkedIn Profile <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      name="linkedin"
+                      value={formData.linkedin}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter LinkedIn profile URL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Twitter Handle <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      name="twitter"
+                      value={formData.twitter}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter Twitter handle"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Instagram Handle <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      name="instagram"
+                      value={formData.instagram}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter Instagram handle"
+                    />
+                  </div>
+                </div>
+              </div>
 
-        {/* Compliance Settings */}
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Compliance Settings</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="complianceMode" className="block text-gray-300 text-sm font-serif mb-1">Compliance Mode</label>
-              <select id="complianceMode" name="complianceMode" value={settings.complianceMode} onChange={handleChange} className="input-field">
-                <option>Strict</option>
-                <option>Moderate</option>
-                <option>Relaxed</option>
-              </select>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="auditTrail" name="auditTrail" checked={settings.auditTrail} onChange={handleChange} className="mr-2" />
-              <label htmlFor="auditTrail" className="text-gray-300 font-serif">Enable Audit Trail</label>
-            </div>
-            <div>
-              <label htmlFor="dataRetention" className="block text-gray-300 text-sm font-serif mb-1">Data Retention (years)</label>
-              <input type="number" id="dataRetention" name="dataRetention" value={settings.dataRetention} onChange={handleChange} className="input-field" />
-            </div>
-            <div>
-              <label htmlFor="riskAssessmentFrequency" className="block text-gray-300 text-sm font-serif mb-1">Risk Assessment Frequency</label>
-              <select id="riskAssessmentFrequency" name="riskAssessmentFrequency" value={settings.riskAssessmentFrequency} onChange={handleChange} className="input-field">
-                <option>Weekly</option>
-                <option>Monthly</option>
-                <option>Quarterly</option>
-                <option>Annually</option>
-              </select>
-            </div>
-          </div>
-        </div>
+              {/* Operations & Documentation */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Operations & Documentation</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Number of Employees <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="numEmployees"
+                      value={formData.numEmployees}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter number of employees"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Areas of Operation <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="areasOfOperation"
+                      value={formData.areasOfOperation}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter areas of operation"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Upload Certificate of Incorporation <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      name="certificateOfIncorporation"
+                      onChange={handleFileChange}
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="input-field"
+                    />
+                    {formData.certificateOfIncorporation && (
+                      <p className="text-sm text-gray-400 font-serif mt-2">Current: {formData.certificateOfIncorporation}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Has Partnership <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="hasPartnership"
+                      value={formData.hasPartnership}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select Yes/No</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Partnership Details <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      name="partnershipDetails"
+                      value={formData.partnershipDetails}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter partnership details"
+                    />
+                  </div>
+                </div>
+              </div>
 
-        {/* Business Rules */}
-        <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Business Rules</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="producerVerification" className="block text-gray-300 text-sm font-serif mb-1">Producer Verification</label>
-              <select id="producerVerification" name="producerVerification" value={settings.producerVerification} onChange={handleChange} className="input-field">
-                <option>Required</option>
-                <option>Optional</option>
-                <option>Automatic</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="anchorPartnershipApproval" className="block text-gray-300 text-sm font-serif mb-1">Anchor Partnership Approval</label>
-              <select id="anchorPartnershipApproval" name="anchorPartnershipApproval" value={settings.anchorPartnershipApproval} onChange={handleChange} className="input-field">
-                <option>Manual</option>
-                <option>Automatic</option>
-                <option>Hybrid</option>
-              </select>
-            </div>
-          </div>
-        </div>
+              {/* Security & Terms */}
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Security & Terms</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Confirm Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Confirm password"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      name="agreeToTerms"
+                      checked={formData.agreeToTerms}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-primary-500 bg-primary-700 border-primary-600 rounded focus:ring-primary-500"
+                    />
+                    <label className="text-sm font-medium font-sans text-gray-300">
+                      I agree to the terms and conditions
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </form>
 
         {/* System Information */}
         <div className="card">
-          <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">System Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-gray-300 text-sm font-serif mb-1">Bank ID:</p>
-              <p className="text-gray-100 font-sans font-medium">PFI-001-FBN</p>
+          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">ℹ️ System Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Account ID:</span>
+                <span className="text-gray-100 font-sans">PFI-2024-001</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Registration Date:</span>
+                <span className="text-gray-100 font-sans">March 15, 2024</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Last Login:</span>
+                <span className="text-gray-100 font-sans">Today, 2:30 PM</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Account Status:</span>
+                <span className="text-green-400 font-sans">Active</span>
+              </div>
             </div>
-            <div>
-              <p className="text-gray-300 text-sm font-serif mb-1">Registration Date:</p>
-              <p className="text-gray-100 font-sans font-medium">2023-03-15</p>
-            </div>
-            <div>
-              <p className="text-gray-300 text-sm font-serif mb-1">API Version:</p>
-              <p className="text-gray-100 font-sans font-medium">v2.1.0</p>
-            </div>
-            <div>
-              <p className="text-gray-300 text-sm font-serif mb-1">System Uptime:</p>
-              <p className="text-gray-100 font-sans font-medium">99.8%</p>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">API Version:</span>
+                <span className="text-gray-100 font-sans">v2.1.0</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Database Version:</span>
+                <span className="text-gray-100 font-sans">PostgreSQL 14.2</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">System Uptime:</span>
+                <span className="text-gray-100 font-sans">99.8%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400 font-serif">Support Level:</span>
+                <span className="text-blue-400 font-sans">Premium</span>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-4 mt-6">
-          <button onClick={handleReset} className="btn-secondary">Reset to Default</button>
-          <button onClick={handleSave} className="btn-primary">Save Changes</button>
-          <button onClick={() => exportData('PFI Settings', 'JSON')} className="btn-secondary">Export Settings</button>
+        <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
+          Powered by Mc. George
         </div>
       </div>
     </PortalLayout>
   );
 };
 
-export default PFISettings;
+export default Settings;

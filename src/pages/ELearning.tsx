@@ -9,7 +9,6 @@ const ELearning: React.FC = () => {
     { id: 'pfis', name: 'PFIs', icon: '🏦' },
     { id: 'anchors', name: 'Anchors', icon: '⚓' },
     { id: 'farmers', name: 'Farmers', icon: '🌾' },
-    { id: 'pmt', name: 'PMT', icon: '👥' },
     { id: 'insurance', name: 'Insurance', icon: '🛡️' }
   ];
 
@@ -31,7 +30,7 @@ const ELearning: React.FC = () => {
       duration: '1.5 hours',
       level: 'Intermediate',
       category: 'fund-providers',
-      thumbnail: '₦',
+      thumbnail: '💼',
       modules: 3
     },
     {
@@ -63,16 +62,6 @@ const ELearning: React.FC = () => {
       category: 'farmers',
       thumbnail: '🌾',
       modules: 6
-    },
-    {
-      id: 6,
-      title: 'PMT Monitoring & Evaluation',
-      description: 'Tools and techniques for effective project monitoring and evaluation',
-      duration: '2.5 hours',
-      level: 'Advanced',
-      category: 'pmt',
-      thumbnail: '👥',
-      modules: 5
     },
     {
       id: 7,

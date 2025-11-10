@@ -294,9 +294,9 @@ const Reportings: React.FC = () => {
     <PortalLayout role="Coordinating Agency (Super Admin)" roleIcon="🏛️" sidebarItems={sidebarItems}>
       <div className="space-y-6">
         {/* Header Section */}
-        <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-xl p-6 text-white">
-          <h1 className="text-2xl font-bold font-sans mb-2">Reports & Documentation</h1>
-          <p className="text-gray-200 font-serif">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-xl p-4 sm:p-6 text-white">
+          <h1 className="text-base sm:text-xl font-bold font-sans mb-2">Reports & Documentation</h1>
+          <p className="text-xs sm:text-sm text-gray-200 font-serif">
             Access comprehensive reports, analytics, and documentation for all agricultural finance programs and stakeholder activities.
           </p>
         </div>
@@ -318,45 +318,45 @@ const Reportings: React.FC = () => {
         </div>
 
         {/* Report Categories */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div className="card hover:border-accent-500 transition-colors cursor-pointer">
             <div className="text-center">
-              <div className="text-3xl mb-2">📅</div>
-              <p className="text-sm font-semibold text-gray-100">Monthly Reports</p>
+              <div className="text-2xl sm:text-3xl mb-2">📅</div>
+              <p className="text-xs sm:text-sm font-semibold text-gray-100">Monthly Reports</p>
               <p className="text-xs text-gray-400 mt-1">35 reports</p>
             </div>
           </div>
           <div className="card hover:border-accent-500 transition-colors cursor-pointer">
             <div className="text-center">
-              <div className="text-3xl mb-2">📊</div>
-              <p className="text-sm font-semibold text-gray-100">Quarterly Reports</p>
+              <div className="text-2xl sm:text-3xl mb-2">📊</div>
+              <p className="text-xs sm:text-sm font-semibold text-gray-100">Quarterly Reports</p>
               <p className="text-xs text-gray-400 mt-1">12 reports</p>
             </div>
           </div>
           <div className="card hover:border-accent-500 transition-colors cursor-pointer">
             <div className="text-center">
-              <div className="text-3xl mb-2">🎯</div>
-              <p className="text-sm font-semibold text-gray-100">Special Reports</p>
+              <div className="text-2xl sm:text-3xl mb-2">🎯</div>
+              <p className="text-xs sm:text-sm font-semibold text-gray-100">Special Reports</p>
               <p className="text-xs text-gray-400 mt-1">28 reports</p>
             </div>
           </div>
           <div className="card hover:border-accent-500 transition-colors cursor-pointer">
             <div className="text-center">
-              <div className="text-3xl mb-2">🗺️</div>
-              <p className="text-sm font-semibold text-gray-100">Regional Reports</p>
+              <div className="text-2xl sm:text-3xl mb-2">🗺️</div>
+              <p className="text-xs sm:text-sm font-semibold text-gray-100">Regional Reports</p>
               <p className="text-xs text-gray-400 mt-1">18 reports</p>
             </div>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="card">
-          <div className="flex flex-col gap-4 mb-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+        <div className="card flex flex-col">
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row gap-2">
               <select 
                 value={typeFilter} 
                 onChange={(e) => { setTypeFilter(e.target.value); setReportPage(1); }}
-                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
               >
                 <option value="All">All Types</option>
                 <option value="Monthly">Monthly</option>
@@ -367,7 +367,7 @@ const Reportings: React.FC = () => {
               <select 
                 value={categoryFilter} 
                 onChange={(e) => { setCategoryFilter(e.target.value); setReportPage(1); }}
-                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
               >
                 <option value="All">All Categories</option>
                 <option value="Performance">Performance</option>
@@ -379,7 +379,7 @@ const Reportings: React.FC = () => {
               <select 
                 value={statusFilter} 
                 onChange={(e) => { setStatusFilter(e.target.value); setReportPage(1); }}
-                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
               >
                 <option value="All">All Status</option>
                 <option value="Published">Published</option>
@@ -392,7 +392,7 @@ const Reportings: React.FC = () => {
                 value={reportSearch}
                 onChange={(e) => { setReportPage(1); setReportSearch(e.target.value); }}
                 placeholder="Search reports..."
-                className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                className="w-full sm:w-64 px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
               />
               <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
                 🔍
@@ -401,113 +401,116 @@ const Reportings: React.FC = () => {
           </div>
 
           {/* Bulk Action Buttons */}
-          <div className="flex items-center gap-2 mb-4">
-            <button
-              onClick={openForwardModal}
-              disabled={selectedReports.length === 0}
-              className="px-3 py-2 bg-primary-700 text-gray-200 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
-              ➡️ Forward Selected ({selectedReports.length})
-            </button>
-            <button
-              onClick={handleDownloadSelected}
-              disabled={selectedReports.length === 0}
-              className="px-3 py-2 bg-primary-700 text-gray-200 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
-              ⬇️ Download Selected ({selectedReports.length})
-            </button>
-          </div>
-
-          {/* Reports Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-primary-700">
-              <thead>
-                <tr className="text-left text-gray-300">
-                  <th className="px-4 py-2 w-10">
-                    <input type="checkbox" checked={isAllOnPageSelected} onChange={toggleSelectAllOnPage} />
-                  </th>
-                  <th className="px-4 py-2">ID</th>
-                  <th className="px-4 py-2">Title</th>
-                  <th className="px-4 py-2">Type</th>
-                  <th className="px-4 py-2">Category</th>
-                  <th className="px-4 py-2">Generated By</th>
-                  <th className="px-4 py-2">Date</th>
-                  <th className="px-4 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-primary-700">
-                {paginatedReports.map((report) => (
-                  <tr key={report.id} className="text-gray-100">
-                    <td className="px-4 py-2">
-                      <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={() => toggleSelect(report.id)} />
-                    </td>
-                    <td className="px-4 py-2 font-mono text-sm">{report.id}</td>
-                    <td className="px-4 py-2">{report.title}</td>
-                    <td className="px-4 py-2">{report.type}</td>
-                    <td className="px-4 py-2">{report.category}</td>
-                    <td className="px-4 py-2">{report.generatedBy}</td>
-                    <td className="px-4 py-2">{new Date(report.date).toLocaleDateString()}</td>
-                    <td className="px-4 py-2">
-                      <div className="flex gap-2">
-                        <button onClick={() => handleDownloadOne(report)} className="px-3 py-1 bg-primary-700 hover:bg-primary-600 text-gray-100 rounded-md text-sm">⬇️ Download</button>
-                        <button onClick={() => { setSelectedReports(prev => prev.includes(report.id) ? prev : [...prev, report.id]); openForwardModal(); }} className="px-3 py-1 bg-primary-700 hover:bg-primary-600 text-gray-100 rounded-md text-sm">➡️ Forward</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-            <p className="text-gray-400 text-xs sm:text-sm">
-              {filteredReports.length === 0 ? 'No items' : `Showing ${((reportPage - 1) * reportPageSize) + 1} to ${Math.min(reportPage * reportPageSize, filteredReports.length)} of ${filteredReports.length} reports`}
-            </p>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setReportPage(Math.max(reportPage - 1, 1))} 
-                disabled={reportPage === 1}
-                className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                ← Previous
-              </button>
-              <span className="px-3 py-2 bg-accent-600 text-white rounded-md text-sm">{reportPage} of {totalPages}</span>
-              <button 
-                onClick={() => setReportPage(Math.min(reportPage + 1, totalPages))} 
-                disabled={reportPage === totalPages}
-                className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                Next →
-              </button>
+          {selectedReports.length > 0 && (
+            <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md mb-4">
+              <span className="text-sm text-gray-200 font-sans">{selectedReports.length} selected</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDownloadSelected}
+                  className="btn-primary text-xs px-3 py-1"
+                >
+                  ⬇️ Download Selected
+                </button>
+                <button
+                  onClick={openForwardModal}
+                  className="btn-primary text-xs px-3 py-1"
+                >
+                  ➡️ Forward Selected
+                </button>
+              </div>
             </div>
+          )}
+
+          {/* Reports List - Mobile Friendly */}
+          <div className="flex-1 flex flex-col">
+            <div className="space-y-3 flex-1">
+              {paginatedReports.map((report) => (
+                <div key={report.id} className="p-3 bg-primary-700 rounded-lg border border-primary-600">
+                  <div className="flex items-start gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedReports.includes(report.id)}
+                      onChange={() => toggleSelect(report.id)}
+                      className="mt-1 w-4 h-4 accent-accent-500"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-sm font-medium text-gray-100 font-sans">{report.title}</p>
+                          <p className="text-xs text-gray-400 font-serif">{report.id}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-2">
+                        <span className="flex items-center gap-1">
+                          <span>📄</span> {report.type}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>📁</span> {report.category}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>👤</span> {report.generatedBy}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>📅</span> {new Date(report.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => handleDownloadOne(report)} className="text-xs text-accent-400 hover:text-accent-300 font-medium">⬇️ Download</button>
+                        <button onClick={() => { setSelectedReports(prev => prev.includes(report.id) ? prev : [...prev, report.id]); openForwardModal(); }} className="text-xs text-accent-400 hover:text-accent-300 font-medium">➡️ Forward</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {filteredReports.length > reportPageSize && (
+              <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+                <button 
+                  onClick={() => setReportPage(Math.max(reportPage - 1, 1))} 
+                  disabled={reportPage === 1}
+                  className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ←
+                </button>
+                <span className="text-xs text-gray-400">{reportPage} of {totalPages}</span>
+                <button 
+                  onClick={() => setReportPage(Math.min(reportPage + 1, totalPages))} 
+                  disabled={reportPage === totalPages}
+                  className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  →
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="card">
-          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Generate New Report</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <h3 className="text-base sm:text-lg font-semibold font-sans text-gray-100 mb-4">Generate New Report</h3>
+          <div className="flex flex-wrap gap-2">
             <button 
-              className="btn-primary"
+              className="btn-primary text-xs sm:text-sm px-3 py-2"
               onClick={() => generateReport('Monthly Performance Report', 'PDF')}
             >
               📅 Monthly Report
             </button>
             <button 
-              className="btn-primary"
+              className="btn-primary text-xs sm:text-sm px-3 py-2"
               onClick={() => generateReport('Quarterly Analysis Report', 'PDF')}
             >
               📊 Quarterly Report
             </button>
             <button 
-              className="btn-secondary"
+              className="btn-secondary text-xs sm:text-sm px-3 py-2"
               onClick={() => generateReport('Custom Report', 'PDF')}
             >
               🎯 Custom Report
             </button>
             <button 
-              className="btn-secondary"
+              className="btn-secondary text-xs sm:text-sm px-3 py-2"
               onClick={() => generateReport('Compliance Audit', 'PDF')}
             >
               ✅ Compliance Audit
@@ -516,19 +519,19 @@ const Reportings: React.FC = () => {
         </div>
 
         {/* Most Downloaded Reports */}
-        <div className="card">
-          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Most Downloaded Reports</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="card flex flex-col">
+          <h3 className="text-base sm:text-lg font-semibold font-sans text-gray-100 mb-4">Most Downloaded Reports</h3>
+          <div className="space-y-3 flex-1">
             {reports
               .sort((a, b) => b.downloads - a.downloads)
               .slice(0, 3)
               .map((report, index) => (
-                <div key={index} className="p-4 bg-primary-700 rounded-lg">
+                <div key={index} className="p-3 bg-primary-700 rounded-lg">
                   <div className="flex items-start gap-2 mb-2">
-                    <div className="text-2xl">🏆</div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-100 line-clamp-2">{report.title}</p>
-                      <p className="text-xs text-gray-400 mt-1">{report.category}</p>
+                    <div className="text-xl">🏆</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-100 font-sans">{report.title}</p>
+                      <p className="text-xs text-gray-400 font-serif">{report.category}</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary-600">
@@ -553,29 +556,29 @@ const Reportings: React.FC = () => {
       {/* Forward Modal */}
       {forwardOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg bg-primary-800 border border-primary-700 rounded-lg shadow-xl">
-            <div className="px-4 py-3 border-b border-primary-700 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white font-sans">Forward Reports</h3>
-              <button onClick={closeForwardModal} className="text-gray-400 hover:text-gray-200">✖</button>
+          <div className="w-full max-w-lg bg-primary-800 border border-primary-700 rounded-lg shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="px-4 py-3 border-b border-primary-700 flex items-center justify-between sticky top-0 bg-primary-800">
+              <h3 className="text-base sm:text-lg font-semibold text-white font-sans">Forward Reports</h3>
+              <button onClick={closeForwardModal} className="text-gray-400 hover:text-gray-200 text-xl">✖</button>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm text-gray-300 mb-1">Recipients (Email addresses, comma-separated)</label>
+                <label className="block text-xs sm:text-sm text-gray-300 mb-1">Recipients (Email addresses, comma-separated)</label>
                 <textarea
                   value={forwardTargets}
                   onChange={(e) => setForwardTargets(e.target.value)}
                   rows={4}
                   placeholder="Enter email addresses separated by commas..."
-                  className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                  className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
                 />
               </div>
-              <div className="text-sm text-gray-400">
+              <div className="text-xs sm:text-sm text-gray-400">
                 Forwarding <span className="font-semibold text-gray-300">{selectedReports.length}</span> report(s)
               </div>
             </div>
-            <div className="px-4 py-3 border-t border-primary-700 flex flex-col sm:flex-row gap-3 justify-end">
-              <button onClick={closeForwardModal} className="btn-secondary">Cancel</button>
-              <button onClick={handleForwardSend} className="px-4 py-2 rounded-md bg-accent-600 hover:bg-accent-500 text-white font-sans">Send</button>
+            <div className="px-4 py-3 border-t border-primary-700 flex flex-col sm:flex-row gap-3 justify-end sticky bottom-0 bg-primary-800">
+              <button onClick={closeForwardModal} className="btn-secondary text-sm">Cancel</button>
+              <button onClick={handleForwardSend} className="px-4 py-2 rounded-md bg-accent-600 hover:bg-accent-500 text-white font-sans text-sm">Send</button>
             </div>
           </div>
         </div>

@@ -125,53 +125,54 @@ const FAQs: React.FC = () => {
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-primary-700">
-              <thead>
-                <tr className="text-left text-gray-300">
-                  <th className="px-4 py-2">ID</th>
-                  <th className="px-4 py-2">Question</th>
-                  <th className="px-4 py-2">Category</th>
-                  <th className="px-4 py-2">Answer</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-primary-700">
-                {paginated.map(item => (
-                  <tr key={item.id} className="text-gray-100">
-                    <td className="px-4 py-2 font-mono text-sm">{item.id}</td>
-                    <td className="px-4 py-2">{item.question}</td>
-                    <td className="px-4 py-2">{item.category}</td>
-                    <td className="px-4 py-2 max-w-xl">
-                      <div className="text-gray-200 whitespace-pre-line">{item.answer}</div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-            <p className="text-gray-400 text-xs sm:text-sm">
-              {filtered.length === 0 ? 'No items' : `Showing ${((page - 1) * pageSize) + 1} to ${Math.min(page * pageSize, filtered.length)} of ${filtered.length} items`}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage(prev => Math.max(prev - 1, 1))}
-                disabled={page === 1}
-                className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                ← Previous
-              </button>
-              <span className="px-3 py-2 bg-accent-600 text-white rounded-md text-sm">
-                {page} of {totalPages}
-              </span>
-              <button
-                onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={page === totalPages}
-                className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                Next →
-              </button>
+          {/* FAQs List - Mobile Friendly */}
+          <div className="flex-1 flex flex-col">
+            <div className="space-y-3 flex-1">
+              {paginated.map((item) => (
+                <div key={item.id} className="p-3 bg-primary-700 rounded-lg border border-primary-600">
+                  <div className="flex items-start gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-sm font-medium text-gray-100 font-sans">{item.question}</p>
+                          <p className="text-xs text-gray-400 font-serif">{item.id}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-2">
+                        <span className="flex items-center gap-1">
+                          <span>📁</span> {item.category}
+                        </span>
+                      </div>
+                      <div className="bg-primary-800 p-3 rounded-md mt-2">
+                        <p className="text-xs text-gray-400 font-serif mb-1">Answer:</p>
+                        <p className="text-sm text-gray-200 whitespace-pre-line">{item.answer}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
+
+            {/* Pagination */}
+            {filtered.length > pageSize && (
+              <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+                <button 
+                  onClick={() => setPage(prev => Math.max(prev - 1, 1))} 
+                  disabled={page === 1}
+                  className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ←
+                </button>
+                <span className="text-xs text-gray-400">{page} of {totalPages}</span>
+                <button 
+                  onClick={() => setPage(prev => Math.min(prev + 1, totalPages))} 
+                  disabled={page === totalPages}
+                  className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  →
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

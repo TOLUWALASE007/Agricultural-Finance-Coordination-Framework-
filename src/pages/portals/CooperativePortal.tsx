@@ -113,7 +113,7 @@ const CooperativePortal: React.FC = () => {
           <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Financial Overview</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center p-4 bg-primary-700 rounded-lg">
-              <div className="text-2xl mb-2">₦</div>
+              <div className="text-2xl mb-2">💼</div>
               <p className="text-2xl font-bold font-sans text-gray-100">₦8.7M</p>
               <p className="text-sm text-gray-400 font-serif">Active Loans</p>
             </div>
@@ -149,7 +149,7 @@ const CooperativePortal: React.FC = () => {
               className="btn-secondary"
               onClick={() => processAction('Loan Processing')}
             >
-              ₦ Process Loan
+              💼 Process Loan
             </button>
             <button 
               className="btn-secondary"

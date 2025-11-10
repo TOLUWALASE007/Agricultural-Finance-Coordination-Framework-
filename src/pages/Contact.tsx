@@ -42,12 +42,10 @@ const Contact: React.FC = () => {
     'Coordinating Agency',
     'Participating Bank (PFI)',
     'Insurance Company',
-    'Project Management Team (PMT)',
     'Anchor',
     'Lead Firm',
     'Producer/Farmer',
     'Cooperative Group',
-    'De-risking Institution',
     'Extension Organization',
     'Researcher/Student',
     'General Inquiry'

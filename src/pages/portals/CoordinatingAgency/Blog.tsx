@@ -88,7 +88,7 @@ const Blog: React.FC = () => {
 
   const posts = useMemo(() => ([
     { id: 'BLG-101', title: 'Program Launch Highlights', author: 'Admin', date: '2024-10-02', content: 'Today we launched a new program aimed at empowering smallholders with access to credit, inputs, and extension support. This blog details the objectives, partners, and expected outcomes.' },
-    { id: 'BLG-102', title: 'How AFCF Supports Smallholders', author: 'Comms', date: '2024-09-15', content: 'AFCF connects farmers to PFIs, de-risking institutions, and input suppliers while ensuring transparency and efficient fund disbursement. Learn how the framework works end-to-end.' },
+    { id: 'BLG-102', title: 'How AFCF Supports Smallholders', author: 'Comms', date: '2024-09-15', content: 'AFCF connects farmers to PFIs and input suppliers while ensuring transparency and efficient fund disbursement. Learn how the framework works end-to-end.' },
     { id: 'BLG-103', title: 'Q3 Activities Roundup', author: 'Team', date: '2024-09-01', content: 'From monitoring missions in Kano and Kaduna to training sessions for PFIs, here is a summary of Q3 highlights and what to expect in Q4.' }
   ]), []);
 
@@ -127,60 +127,63 @@ const Blog: React.FC = () => {
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-primary-700">
-              <thead>
-                <tr className="text-left text-gray-300">
-                  <th className="px-4 py-2">ID</th>
-                  <th className="px-4 py-2">Title</th>
-                  <th className="px-4 py-2">Author</th>
-                  <th className="px-4 py-2">Date</th>
-                  <th className="px-4 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-primary-700">
-                {paginated.map(item => (
-                  <tr key={item.id} className="text-gray-100">
-                    <td className="px-4 py-2 font-mono text-sm">{item.id}</td>
-                    <td className="px-4 py-2">{item.title}</td>
-                    <td className="px-4 py-2">{item.author}</td>
-                    <td className="px-4 py-2">{item.date}</td>
-                    <td className="px-4 py-2">
-                      <button
-                        onClick={() => setReading(item as any)}
-                        className="px-3 py-1 bg-primary-700 hover:bg-primary-600 text-gray-100 rounded-md text-sm"
-                      >
-                        📖 Read
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-            <p className="text-gray-400 text-xs sm:text-sm">
-              {filtered.length === 0 ? 'No items' : `Showing ${((page - 1) * pageSize) + 1} to ${Math.min(page * pageSize, filtered.length)} of ${filtered.length} items`}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage(prev => Math.max(prev - 1, 1))}
-                disabled={page === 1}
-                className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                ← Previous
-              </button>
-              <span className="px-3 py-2 bg-accent-600 text-white rounded-md text-sm">
-                {page} of {totalPages}
-              </span>
-              <button
-                onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={page === totalPages}
-                className="px-3 py-2 bg-primary-700 text-gray-300 rounded-md hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                Next →
-              </button>
+          {/* Blog Posts List - Mobile Friendly */}
+          <div className="flex-1 flex flex-col">
+            <div className="space-y-3 flex-1">
+              {paginated.map((item) => (
+                <div key={item.id} className="p-3 bg-primary-700 rounded-lg border border-primary-600">
+                  <div className="flex items-start gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-sm font-medium text-gray-100 font-sans">{item.title}</p>
+                          <p className="text-xs text-gray-400 font-serif">{item.id}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-2">
+                        <span className="flex items-center gap-1">
+                          <span>👤</span> {item.author}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>📅</span> {new Date(item.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setReading(item as any)}
+                          className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                        >
+                          📖 Read
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
+
+            {/* Pagination */}
+            {filtered.length > pageSize && (
+              <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+                <button 
+                  onClick={() => setPage(prev => Math.max(prev - 1, 1))} 
+                  disabled={page === 1}
+                  className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ←
+                </button>
+                <span className="text-xs text-gray-400">{page} of {totalPages}</span>
+                <button 
+                  onClick={() => setPage(prev => Math.min(prev + 1, totalPages))} 
+                  disabled={page === totalPages}
+                  className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  →
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         {reading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -198,8 +201,6 @@ const Blog: React.FC = () => {
             </div>
           </div>
         )}
-          </div>
-        </div>
 
         {showCreate && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

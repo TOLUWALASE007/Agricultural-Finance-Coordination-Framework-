@@ -49,7 +49,7 @@ const CreditRisk: React.FC = () => {
 
   const stats = [
     { title: 'Risk Assessments', value: '156', change: '+12', icon: '📊' },
-    { title: 'De-risking Coverage', value: '₦28.5B', change: '+₦2.1B', icon: '🛡️' },
+    { title: 'Risk Coverage', value: '₦28.5B', change: '+₦2.1B', icon: '🛡️' },
     { title: 'Default Rate', value: '4.2%', change: '-0.8%', icon: '📉' },
     { title: 'Risk Mitigation', value: '94.3%', change: '+1.5%', icon: '✅' }
   ];
@@ -171,7 +171,7 @@ const CreditRisk: React.FC = () => {
                   <th className="text-left py-3 px-2 text-xs sm:text-sm font-semibold text-gray-300 font-sans">Scheme</th>
                   <th className="text-left py-3 px-2 text-xs sm:text-sm font-semibold text-gray-300 font-sans">Risk Level</th>
                   <th className="text-left py-3 px-2 text-xs sm:text-sm font-semibold text-gray-300 font-sans">Score</th>
-                  <th className="text-left py-3 px-2 text-xs sm:text-sm font-semibold text-gray-300 font-sans">De-risking</th>
+                  <th className="text-left py-3 px-2 text-xs sm:text-sm font-semibold text-gray-300 font-sans">Risk Coverage</th>
                   <th className="text-left py-3 px-2 text-xs sm:text-sm font-semibold text-gray-300 font-sans">Status</th>
                 </tr>
               </thead>
