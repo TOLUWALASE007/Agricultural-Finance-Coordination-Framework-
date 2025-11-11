@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
@@ -9,6 +9,145 @@ const Login: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  const isStaticHosted = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname;
+    return hostname !== 'localhost' && hostname !== '127.0.0.1';
+  }, []);
+
+  const demoUsers = useMemo(() => ([
+    {
+      email: 'ca@email.com',
+      password: '123456',
+      role: 'Coordinating Agency',
+      portal: '/portal/coordinating-agency',
+      user: {
+        id: 'demo-ca',
+        firstName: 'Coordinating',
+        lastName: 'Agency',
+        userType: 'coordinating_agency',
+        organizationName: 'AFCF Coordinating Agency'
+      }
+    },
+    {
+      email: 'fp@email.com',
+      password: '123456',
+      role: 'Fund Provider',
+      portal: '/portal/fund-provider',
+      user: {
+        id: 'demo-fp',
+        firstName: 'Fund',
+        lastName: 'Provider',
+        userType: 'fund_provider',
+        organizationName: 'AFCF Fund Provider'
+      }
+    },
+    {
+      email: 'pfi@email.com',
+      password: '123456',
+      role: 'Participating Bank (PFI)',
+      portal: '/portal/pfi',
+      user: {
+        id: 'demo-pfi',
+        firstName: 'PFI',
+        lastName: 'Bank',
+        userType: 'pfi',
+        organizationName: 'AFCF Participating Bank'
+      }
+    },
+    {
+      email: 'anchor@email.com',
+      password: '123456',
+      role: 'Anchor',
+      portal: '/portal/anchor',
+      user: {
+        id: 'demo-anchor',
+        firstName: 'Anchor',
+        lastName: 'Company',
+        userType: 'anchor',
+        organizationName: 'AFCF Anchor Company'
+      }
+    },
+    {
+      email: 'leadfirm@email.com',
+      password: '123456',
+      role: 'Lead Firm',
+      portal: '/portal/lead-firm',
+      user: {
+        id: 'demo-leadfirm',
+        firstName: 'Lead',
+        lastName: 'Firm',
+        userType: 'lead_firm',
+        organizationName: 'AFCF Lead Firm'
+      }
+    },
+    {
+      email: 'farmer@email.com',
+      password: '123456',
+      role: 'Producer/Farmer',
+      portal: '/portal/producer',
+      user: {
+        id: 'demo-farmer',
+        firstName: 'Producer',
+        lastName: 'Farmer',
+        userType: 'farmer',
+        organizationName: 'AFCF Producer Network'
+      }
+    },
+    {
+      email: 'insurance@email.com',
+      password: '123456',
+      role: 'Insurance Company',
+      portal: '/portal/insurance',
+      user: {
+        id: 'demo-insurance',
+        firstName: 'Insurance',
+        lastName: 'Company',
+        userType: 'insurance',
+        organizationName: 'AFCF Insurance Company'
+      }
+    },
+    {
+      email: 'cooperative@email.com',
+      password: '123456',
+      role: 'Cooperative Group',
+      portal: '/portal/cooperative',
+      user: {
+        id: 'demo-cooperative',
+        firstName: 'Cooperative',
+        lastName: 'Group',
+        userType: 'cooperative_group',
+        organizationName: 'AFCF Cooperative Group'
+      }
+    },
+    {
+      email: 'extension@email.com',
+      password: '123456',
+      role: 'Extension Organization',
+      portal: '/portal/extension',
+      user: {
+        id: 'demo-extension',
+        firstName: 'Extension',
+        lastName: 'Organization',
+        userType: 'extension_organization',
+        organizationName: 'AFCF Extension Organization'
+      }
+    },
+    {
+      email: 'researcher@email.com',
+      password: '123456',
+      role: 'Researcher/Student',
+      portal: '/portal/researcher',
+      user: {
+        id: 'demo-researcher',
+        firstName: 'Researcher',
+        lastName: 'Student',
+        userType: 'researcher_student',
+        organizationName: 'AFCF Research Network'
+      }
+    }
+  ]), []);
 
   const roles = [
     'Fund Provider',
@@ -31,10 +170,66 @@ const Login: React.FC = () => {
     }));
   };
 
+  const roleMap: { [key: string]: string } = {
+    'Fund Provider': '/portal/fund-provider',
+    'Coordinating Agency': '/portal/coordinating-agency',
+    'Participating Bank (PFI)': '/portal/pfi',
+    'Insurance Company': '/portal/insurance',
+    'Anchor': '/portal/anchor',
+    'Lead Firm': '/portal/lead-firm',
+    'Producer/Farmer': '/portal/producer',
+    'Cooperative Group': '/portal/cooperative',
+    'Extension Organization': '/portal/extension',
+    'Researcher/Student': '/portal/researcher'
+  };
+
+  const handleSuccessfulLogin = (user: any, role: string) => {
+    const portalPath = roleMap[role] || '/portal/fund-provider';
+    localStorage.setItem('authToken', 'demo-token');
+    localStorage.setItem('user', JSON.stringify(user));
+    navigate(portalPath);
+  };
+
+  const tryDemoLogin = () => {
+    const matched = demoUsers.find(
+      (demo) =>
+        demo.email.toLowerCase() === formData.email.toLowerCase() &&
+        demo.password === formData.password &&
+        demo.role === formData.role
+    );
+
+    if (matched) {
+      handleSuccessfulLogin(
+        {
+          ...matched.user,
+          email: matched.email,
+          role: matched.role,
+          lastLogin: new Date().toISOString(),
+        },
+        matched.role
+      );
+      return true;
+    }
+
+    return false;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     
+    const shouldUseDemo = isStaticHosted && (!process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL.includes('localhost'));
+
+    if (shouldUseDemo) {
+      const loggedIn = tryDemoLogin();
+      if (!loggedIn) {
+        alert('Login failed. Please verify your email, password, and selected role.');
+      }
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       // Call the backend login API
       const response = await fetch('http://localhost:5000/api/auth/login', {
@@ -56,19 +251,6 @@ const Login: React.FC = () => {
         localStorage.setItem('user', JSON.stringify(data.user));
         
         // Navigate to role-specific portal
-        const roleMap: { [key: string]: string } = {
-          'Fund Provider': '/portal/fund-provider',
-          'Coordinating Agency': '/portal/coordinating-agency',
-          'Participating Bank (PFI)': '/portal/pfi',
-          'Insurance Company': '/portal/insurance',
-          'Anchor': '/portal/anchor',
-          'Lead Firm': '/portal/lead-firm',
-          'Producer/Farmer': '/portal/producer',
-          'Cooperative Group': '/portal/cooperative',
-          'Extension Organization': '/portal/extension',
-          'Researcher/Student': '/portal/researcher'
-        };
-        
         const portalPath = roleMap[formData.role] || '/portal/fund-provider';
         navigate(portalPath);
       } else {
@@ -235,19 +417,6 @@ const Login: React.FC = () => {
                 localStorage.setItem('user', JSON.stringify(registerResult.user));
                 alert('User created successfully! Logging in...');
                 
-                const roleMap: { [key: string]: string } = {
-                  'Fund Provider': '/portal/fund-provider',
-                  'Coordinating Agency': '/portal/coordinating-agency',
-                  'Participating Bank (PFI)': '/portal/pfi',
-                  'Insurance Company': '/portal/insurance',
-                  'Anchor': '/portal/anchor',
-                  'Lead Firm': '/portal/lead-firm',
-                  'Producer/Farmer': '/portal/producer',
-                  'Cooperative Group': '/portal/cooperative',
-                  'Extension Organization': '/portal/extension',
-                  'Researcher/Student': '/portal/researcher'
-                };
-                
                 const portalPath = roleMap[formData.role] || '/portal/fund-provider';
                 navigate(portalPath);
                 return;
@@ -263,7 +432,10 @@ const Login: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      alert('Login failed. Please check your credentials and ensure the backend server is running.');
+      const demoHandled = tryDemoLogin();
+      if (!demoHandled) {
+        alert('Login failed. Please verify your credentials. If you are using the hosted demo, use the provided demo accounts.');
+      }
     } finally {
       setIsSubmitting(false);
     }

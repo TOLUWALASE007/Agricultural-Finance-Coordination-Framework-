@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/Agricultural-Finance-Coordination-Framework-/static/css/main.c15abb61.css",
-    "main.js": "/Agricultural-Finance-Coordination-Framework-/static/js/main.cb266060.js",
+    "main.css": "/Agricultural-Finance-Coordination-Framework-/static/css/main.26750d4b.css",
+    "main.js": "/Agricultural-Finance-Coordination-Framework-/static/js/main.07a9f671.js",
     "index.html": "/Agricultural-Finance-Coordination-Framework-/index.html",
-    "main.c15abb61.css.map": "/Agricultural-Finance-Coordination-Framework-/static/css/main.c15abb61.css.map",
-    "main.cb266060.js.map": "/Agricultural-Finance-Coordination-Framework-/static/js/main.cb266060.js.map"
+    "main.26750d4b.css.map": "/Agricultural-Finance-Coordination-Framework-/static/css/main.26750d4b.css.map",
+    "main.07a9f671.js.map": "/Agricultural-Finance-Coordination-Framework-/static/js/main.07a9f671.js.map"
   },
   "entrypoints": [
-    "static/css/main.c15abb61.css",
-    "static/js/main.cb266060.js"
+    "static/css/main.26750d4b.css",
+    "static/js/main.07a9f671.js"
   ]
 }
