@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { authenticateFundProvider, buildFundProviderSession } from '../utils/localDatabase';
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -183,9 +184,9 @@ const Login: React.FC = () => {
     'Researcher/Student': '/portal/researcher'
   };
 
-  const handleSuccessfulLogin = (user: any, role: string) => {
+  const handleSuccessfulLogin = (user: any, role: string, token?: string) => {
     const portalPath = roleMap[role] || '/portal/fund-provider';
-    localStorage.setItem('authToken', 'demo-token');
+    localStorage.setItem('authToken', token || `demo-token-${Date.now()}`);
     localStorage.setItem('user', JSON.stringify(user));
     navigate(portalPath);
   };
@@ -206,7 +207,8 @@ const Login: React.FC = () => {
           role: matched.role,
           lastLogin: new Date().toISOString(),
         },
-        matched.role
+        matched.role,
+        'demo-token'
       );
       return true;
     }
@@ -214,10 +216,26 @@ const Login: React.FC = () => {
     return false;
   };
 
+  const attemptFundProviderLocalLogin = (): boolean => {
+    if (formData.role !== 'Fund Provider') return false;
+    const email = formData.email.trim();
+    const record = authenticateFundProvider(email, formData.password);
+    if (!record) return false;
+    const session = buildFundProviderSession(record);
+    handleSuccessfulLogin(session, 'Fund Provider', `fp-token-${Date.now()}`);
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
+
+    const localLoginHandled = attemptFundProviderLocalLogin();
+    if (localLoginHandled) {
+      setIsSubmitting(false);
+      return;
+    }
     
     const shouldUseDemo = isStaticHosted && (!process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL.includes('localhost'));
 
@@ -545,19 +563,16 @@ const Login: React.FC = () => {
               {isSubmitting ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
+        </div>
 
-          {/* Register Link */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-300 font-serif">
-              Don't have an account?{' '}
-              <Link 
-                to="/register" 
-                className="font-medium text-accent-400 hover:text-accent-300 transition-colors duration-200"
-              >
-                Register
-              </Link>
-            </p>
-          </div>
+        {/* Register Link */}
+        <div className="text-center">
+          <p className="text-gray-300 font-serif">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-medium text-accent-400 hover:text-accent-300 transition-colors duration-200">
+              Register
+            </Link>
+          </p>
         </div>
       </div>
     </div>

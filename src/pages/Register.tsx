@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { NIGERIAN_STATES } from '../constants/nigeriaStates';
+import { useNotifications } from '../context/NotificationContext';
+import {
+  registerFundProvider,
+  updateFundProviderRecord,
+  FundProviderFormData,
+  buildFundProviderApplicationData,
+} from '../utils/localDatabase';
 
 const Register: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -7,6 +15,7 @@ const Register: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { addNotification } = useNotifications();
 
   const [formData, setFormData] = useState({
     // Contact Info - Personal Details
@@ -57,7 +66,7 @@ const Register: React.FC = () => {
     
     // Organization Info - Operations & Documentation
     numEmployees: '',
-    areasOfOperation: '',
+    areasOfOperation: [] as string[],
     organizationLogo: null as File | null,
     certificateOfIncorporation: null as File | null,
     hasPartnership: '',
@@ -151,6 +160,27 @@ const Register: React.FC = () => {
     }));
   };
 
+  const handleAreaToggle = (stateName: string) => {
+    setFormData(prev => {
+      const exists = prev.areasOfOperation.includes(stateName);
+      const updatedAreas = exists
+        ? prev.areasOfOperation.filter(area => area !== stateName)
+        : [...prev.areasOfOperation, stateName];
+      return {
+        ...prev,
+        areasOfOperation: updatedAreas,
+      };
+    });
+  };
+
+  const handleSelectAllAreas = () => {
+    setFormData(prev => ({
+      ...prev,
+      areasOfOperation:
+        prev.areasOfOperation.length === NIGERIAN_STATES.length ? [] : [...NIGERIAN_STATES],
+    }));
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
     const file = e.target.files?.[0] || null;
@@ -184,11 +214,125 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    const currentRole = getCurrentRole();
     setIsSubmitting(true);
-    
-    // Simulate registration process
+
+    if (currentRole.id === 'fund-provider') {
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        const registrationType: 'individual' | 'company' = activeTypeTab;
+        if (formData.areasOfOperation.length === 0) {
+          alert('Select at least one area of operation / coverage.');
+          setIsSubmitting(false);
+          return;
+        }
+        const contactEmail = formData.email.trim();
+        const officialEmail = formData.officialEmail.trim();
+
+        if (!officialEmail) {
+          alert('Official company email is required for portal access.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const storedFormData: FundProviderFormData = {
+          fullName: formData.fullName.trim(),
+          position: formData.position.trim(),
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          email: contactEmail,
+          phone: formData.phone.trim(),
+          whatsapp: formData.whatsapp?.trim() || undefined,
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          country: formData.country.trim(),
+          idType: formData.idType,
+          idNumber: formData.idNumber.trim(),
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
+          emergencyContactName: formData.emergencyContactName.trim(),
+          emergencyContactPhone: formData.emergencyContactPhone.trim(),
+          emergencyRelationship: formData.emergencyRelationship.trim(),
+          organizationName: formData.organizationName.trim(),
+          registrationNumber: formData.registrationNumber.trim(),
+          organizationType: formData.organizationType,
+          yearEstablished: formData.yearEstablished.trim(),
+          industry: formData.industry.trim(),
+          missionStatement: formData.missionStatement.trim(),
+          headquartersAddress: formData.headquartersAddress.trim(),
+          hqCity: formData.hqCity.trim(),
+          hqState: formData.hqState.trim(),
+          hqCountry: formData.hqCountry.trim(),
+          officePhone: formData.officePhone.trim(),
+          officialEmail,
+          website: formData.website.trim(),
+          facebook: formData.facebook?.trim() || undefined,
+          linkedin: formData.linkedin?.trim() || undefined,
+          twitter: formData.twitter?.trim() || undefined,
+          instagram: formData.instagram?.trim() || undefined,
+          numEmployees: formData.numEmployees.trim(),
+          areasOfOperation: [...formData.areasOfOperation],
+          organizationLogoName: formData.organizationLogo ? formData.organizationLogo.name : undefined,
+          certificateOfIncorporationName: formData.certificateOfIncorporation ? formData.certificateOfIncorporation.name : undefined,
+          hasPartnership: formData.hasPartnership,
+          partnershipDetails: formData.partnershipDetails.trim(),
+          password: '',
+        };
+
+        const applicationData = buildFundProviderApplicationData(storedFormData);
+
+        const record = registerFundProvider({
+          email: officialEmail,
+          password: formData.password,
+          registrationType,
+          formData: storedFormData,
+        });
+
+        const notificationId = addNotification({
+          role: '💼 Fund Provider',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.organizationName || storedFormData.fullName} submitted a new Fund Provider registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Company',
+          companyName: storedFormData.organizationName,
+          companyId: storedFormData.registrationNumber,
+          organization: storedFormData.organizationName,
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'fundProviderRegistration',
+            fundProviderId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateFundProviderRecord(record.id, { pendingNotificationId: notificationId });
+
+        alert('Registration submitted successfully! Please sign in to track your verification status.');
+        navigate('/login');
+      } catch (error) {
+        console.error('Fund Provider registration failed:', error);
+        const message = error instanceof Error ? error.message : 'Unable to complete registration. Please try again.';
+        alert(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // Default behaviour for other roles (placeholder)
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
     setIsSubmitting(false);
     navigate('/login');
   };
@@ -822,19 +966,49 @@ const Register: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="areasOfOperation" className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                    Areas of Operation / Coverage *
-                  </label>
-                  <input
-                    type="text"
-                    id="areasOfOperation"
-                    name="areasOfOperation"
-                    required
-                    value={formData.areasOfOperation}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    placeholder="e.g., Lagos, Ogun, Oyo"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium font-sans text-gray-300">
+                      Areas of Operation / Coverage <span className="text-red-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllAreas}
+                      className="text-xs text-accent-400 hover:text-accent-300 font-semibold transition-colors"
+                    >
+                      {formData.areasOfOperation.length === NIGERIAN_STATES.length ? 'Clear All' : 'Select All'}
+                    </button>
+                  </div>
+                  <div className="mt-3 bg-primary-700/60 border border-primary-600 rounded-md p-3">
+                    <div className="max-h-56 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {NIGERIAN_STATES.map((state) => {
+                        const isChecked = formData.areasOfOperation.includes(state);
+                        return (
+                          <label
+                            key={state}
+                            className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${
+                              isChecked ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
+                            } transition-colors`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleAreaToggle(state)}
+                              className="h-4 w-4 rounded border-primary-500 text-accent-500 focus:ring-accent-500"
+                            />
+                            <span className="font-sans">{state}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {formData.areasOfOperation.length > 0 ? (
+                      <p className="mt-3 text-xs text-gray-400 font-serif">
+                        Selected: {formData.areasOfOperation.length}{' '}
+                        {formData.areasOfOperation.length === 1 ? 'state' : 'states'}
+                      </p>
+                    ) : (
+                      <p className="mt-3 text-xs text-red-400 font-serif">Select at least one state.</p>
+                    )}
+                  </div>
                 </div>
               </div>
 

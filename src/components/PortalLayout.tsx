@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useNotifications, type NotificationItem } from '../context/NotificationContext';
+import { updateFundProviderStatus, getActiveFundProviderRecord } from '../utils/localDatabase';
 
 interface PortalLayoutProps {
   role: string;
@@ -41,6 +42,11 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
   const [approvalDecision, setApprovalDecision] = useState('');
   const [approvalRemarks, setApprovalRemarks] = useState('');
   const [showFullApplication, setShowFullApplication] = useState(false);
+  const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread' | 'viewed'>('all');
+  const [documentModal, setDocumentModal] = useState<{
+    title: string;
+    documents: { label: string; name: string; type: string }[];
+  } | null>(null);
   const location = useLocation();
 
   // Auto-open dropdowns that contain the active page
@@ -124,6 +130,12 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     }
   }, [location.pathname, sidebarItems]);
 
+  React.useEffect(() => {
+    if (notificationDropdownOpen) {
+      setNotificationFilter('all');
+    }
+  }, [notificationDropdownOpen]);
+
   const toggleDropdown = (itemId: string) => {
     setOpenDropdowns(prev =>
       prev.includes(itemId)
@@ -156,58 +168,186 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
   const currentUserRole = getCurrentUserRole();
 
   // Get notifications from context
-  const { getNotificationsByRole, getPendingCount, addNotification, getApprovedApplicationForScheme } = useNotifications();
+  const {
+    getNotificationsByRole,
+    addNotification,
+    getApprovedApplicationForScheme,
+    updateNotificationStatus,
+    setNotificationViewed,
+  } = useNotifications();
 
   // Filter notifications based on current user role
+  const activeFundProviderRecord = useMemo(() => {
+    if (currentUserRole !== 'fund-provider') return null;
+    return getActiveFundProviderRecord();
+  }, [currentUserRole]);
+
   const notifications = useMemo<NotificationItem[]>(() => {
     if (!currentUserRole) return [];
     if (currentUserRole === 'coordinating-agency') {
       return getNotificationsByRole('coordinating-agency');
     }
+    if (currentUserRole === 'fund-provider') {
+      const fundProviderId = activeFundProviderRecord?.id;
+      if (!fundProviderId) return [];
+      return getNotificationsByRole('fund-provider').filter(
+        (notif) => notif.metadata?.fundProviderId === fundProviderId
+      );
+    }
     return getNotificationsByRole(currentUserRole);
-  }, [currentUserRole, getNotificationsByRole]);
+  }, [currentUserRole, getNotificationsByRole, activeFundProviderRecord]);
 
-  const pendingNotifications = notifications.filter(n => n.status === 'pending');
-  const unreadCount = currentUserRole ? getPendingCount(currentUserRole) : 0;
+  const sortedNotifications = useMemo(() => {
+    const sorted = [...notifications].sort((a, b) => {
+      if (a.isViewed === b.isViewed) {
+        return new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime();
+      }
+      return a.isViewed ? 1 : -1;
+    });
+    return sorted;
+  }, [notifications]);
 
-  const { updateNotificationStatus } = useNotifications();
+  const unreadNotifications = useMemo(
+    () => sortedNotifications.filter((n) => !n.isViewed),
+    [sortedNotifications]
+  );
+
+  const viewedNotifications = useMemo(
+    () => sortedNotifications.filter((n) => n.isViewed),
+    [sortedNotifications]
+  );
+
+  const filteredNotifications = useMemo(() => {
+    switch (notificationFilter) {
+      case 'unread':
+        return unreadNotifications;
+      case 'viewed':
+        return viewedNotifications;
+      default:
+        return sortedNotifications;
+    }
+  }, [notificationFilter, sortedNotifications, unreadNotifications, viewedNotifications]);
+
+  const unreadCount = unreadNotifications.length;
+  const notificationTabs = [
+    { id: 'all' as const, label: 'All', count: sortedNotifications.length },
+    { id: 'unread' as const, label: 'Unread', count: unreadNotifications.length },
+    { id: 'viewed' as const, label: 'Viewed', count: viewedNotifications.length },
+  ];
 
   const handleNotificationClick = (notificationId: string) => {
     setNotificationDropdownOpen(false);
     setShowApprovalModal(notificationId);
     setApprovalDecision('');
     setApprovalRemarks('');
-    // Mark notification as read
+    setNotificationViewed(notificationId, true);
     updateNotificationStatus(notificationId, 'read');
   };
 
+  const renderNotificationItem = (notification: NotificationItem) => (
+    <div
+      key={notification.id}
+      onClick={() => handleNotificationClick(notification.id)}
+      className={`p-4 cursor-pointer transition-colors ${
+        notification.isViewed
+          ? 'text-gray-300 hover:bg-primary-800/60'
+          : 'bg-primary-800/60 hover:bg-primary-700 text-gray-100'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 pt-1">
+          <span
+            className={`inline-flex h-2.5 w-2.5 rounded-full ${
+              notification.isViewed ? 'bg-primary-500' : 'bg-accent-400'
+            }`}
+          ></span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-3">
+            <p className={`text-xs font-sans font-medium ${notification.isViewed ? 'text-gray-400' : 'text-accent-300'}`}>
+              {notification.role}
+            </p>
+            <p className="text-[11px] text-gray-500 font-serif">
+              {new Date(notification.receivedAt).toLocaleString()}
+            </p>
+          </div>
+          <p className={`mt-1 text-sm font-sans ${notification.isViewed ? 'text-gray-300' : 'text-gray-100 font-semibold'}`}>
+            {notification.message}
+          </p>
+          {notification.metadata?.type === 'fundProviderRegistration' && (
+            <p className="mt-1 text-[11px] text-gray-400 font-serif">
+              Registration update awaiting your review.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   const handleApprovalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (showApprovalModal && approvalDecision) {
-      const notification = notifications.find(n => n.id === showApprovalModal);
-      if (!notification) return;
+    if (!showApprovalModal || !approvalDecision) return;
 
-      // If CA is approving/rejecting an application
-      if (currentUserRole === 'coordinating-agency' && notification.applicationData) {
+    const notification = notifications.find(n => n.id === showApprovalModal);
+    if (!notification) return;
+
+    const trimmedRemarks = approvalRemarks.trim();
+
+    if (currentUserRole === 'coordinating-agency') {
+      // Handle Fund Provider registration approvals/rejections
+      if (notification.metadata?.type === 'fundProviderRegistration') {
+        const isApproved = approvalDecision === 'approve';
+        const fundProviderId = notification.metadata?.fundProviderId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this Fund Provider.');
+          return;
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        if (fundProviderId) {
+          updateFundProviderStatus(fundProviderId, isApproved ? 'verified' : 'unverified', {
+            rejectionReason: isApproved ? undefined : trimmedRemarks,
+            pendingNotificationId: null,
+          });
+        }
+
+        if (fundProviderId) {
+          const message = isApproved
+            ? 'Your registration has been approved. You now have full access.'
+            : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole: 'fund-provider',
+            message,
+            metadata: {
+              type: 'fundProviderRegistrationResponse',
+              fundProviderId,
+              relatedNotificationId: notification.id,
+            },
+          });
+        }
+      }
+      // Handle scheme application approvals/rejections
+      else if (notification.applicationData) {
         const isApproved = approvalDecision === 'approve';
         const status = isApproved ? 'approved' : 'rejected';
-        
-        // Update the application notification status
+
         updateNotificationStatus(showApprovalModal, status);
-        
-        // Determine applicant role from notification role
+
         const roleMap: Record<string, 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm'> = {
           '💼 Fund Provider': 'fund-provider',
           '🏦 PFI': 'pfi',
           '⚓ Anchor': 'anchor',
           '🌱 Lead Firm': 'lead-firm',
           '🌾 Producer': 'producer',
-          '🌾 Producer/Farmer': 'producer' // Handle Producer/Farmer role variant
+          '🌾 Producer/Farmer': 'producer'
         };
-        
+
         const applicantRole = roleMap[notification.role];
-        
-        // Check if there's already an approved application for this scheme and role (for roles with "only 1 per scheme")
+
         if (isApproved && applicantRole && ['pfi', 'anchor', 'lead-firm', 'producer'].includes(applicantRole)) {
           const existingApproval = getApprovedApplicationForScheme(notification.schemeId || '', applicantRole as 'pfi' | 'anchor' | 'lead-firm' | 'producer');
           if (existingApproval && existingApproval.id !== notification.id) {
@@ -218,8 +358,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
             return;
           }
         }
-        
-        // Create role-specific instructions
+
         const instructions: Record<string, string> = {
           'fund-provider': 'Go ahead and make payments to the nearest approved PFI\'s branch.',
           'pfi': 'Receive payments from approved Fund Providers and disburse funds to approved beneficiaries.',
@@ -227,32 +366,43 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
           'lead-firm': 'Receive payments from approved PFIs.',
           'producer': 'Receive payments from approved PFIs.'
         };
-        
-        // Create notification to applicant
+
         if (applicantRole) {
           const message = isApproved
             ? `Your application for scheme "${notification.schemeName}" has been approved. ${instructions[applicantRole]}`
-            : `Your application for scheme "${notification.schemeName}" has been rejected. ${approvalRemarks ? `Reason: ${approvalRemarks}` : ''}`;
-          
+            : `Your application for scheme "${notification.schemeName}" has been rejected. ${trimmedRemarks ? `Reason: ${trimmedRemarks}` : ''}`;
+
+          const metadata =
+            applicantRole === 'fund-provider'
+              ? {
+                  type: 'fundProviderRegistrationResponse',
+                  fundProviderId: notification.metadata?.fundProviderId,
+                  relatedNotificationId: notification.id,
+                }
+              : undefined;
+
           addNotification({
             role: '🏛️ Coordinating Agency',
             targetRole: applicantRole,
-            message: message,
+            message,
             schemeId: notification.schemeId,
             schemeName: notification.schemeName,
-            applicationStatus: status
+            applicationStatus: status,
+            metadata,
           });
         }
       } else {
-        // For non-CA users or non-application notifications
         updateNotificationStatus(showApprovalModal, approvalDecision === 'approve' ? 'approved' : 'ignored');
       }
-      
-      setShowApprovalModal(null);
-      setApprovalDecision('');
-      setApprovalRemarks('');
-      setShowFullApplication(false);
+    } else {
+      updateNotificationStatus(showApprovalModal, approvalDecision === 'approve' ? 'approved' : 'ignored');
     }
+
+    setNotificationViewed(showApprovalModal, true);
+    setShowApprovalModal(null);
+    setApprovalDecision('');
+    setApprovalRemarks('');
+    setShowFullApplication(false);
   };
 
   return (
@@ -471,31 +621,69 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                         className="fixed inset-0 z-40" 
                         onClick={() => setNotificationDropdownOpen(false)}
                       />
-                      <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-primary-900 rounded-lg shadow-xl border border-primary-700 z-50 max-h-96 overflow-y-auto">
+                      <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-primary-900 rounded-lg shadow-xl border border-primary-700 z-50 overflow-hidden">
                         <div className="p-4 border-b border-primary-700">
                           <h3 className="text-lg font-semibold text-gray-100">Notifications</h3>
                         </div>
-                        <div className="divide-y divide-primary-700">
-                          {pendingNotifications.length > 0 ? (
-                            pendingNotifications.map((notification) => (
-                              <div
-                                key={notification.id}
-                                onClick={() => handleNotificationClick(notification.id)}
-                                className="p-4 hover:bg-primary-800 cursor-pointer transition-colors"
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="text-xl flex-shrink-0">🔔</div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-accent-400 font-sans font-medium mb-1">{notification.role}</p>
-                                    <p className="text-sm text-gray-100 font-sans leading-relaxed">{notification.message}</p>
-                                    <p className="text-xs text-gray-400 mt-1">{new Date(notification.receivedAt).toLocaleString()}</p>
+                        <div className="px-4 py-2 border-b border-primary-700 flex items-center gap-2">
+                          {notificationTabs.map((tab) => (
+                            <button
+                              key={tab.id}
+                              type="button"
+                              onClick={() => setNotificationFilter(tab.id)}
+                              className={`flex-1 px-3 py-2 rounded-md text-xs font-semibold transition-colors ${
+                                notificationFilter === tab.id
+                                  ? 'bg-accent-600 text-white'
+                                  : 'bg-primary-800 text-gray-300 hover:bg-primary-700 hover:text-white'
+                              }`}
+                            >
+                              {tab.label}
+                              <span className="ml-1 text-[10px] font-normal text-gray-300">
+                                {tab.count}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                        <div className="max-h-80 overflow-y-auto">
+                          {notificationFilter === 'all' ? (
+                            <>
+                              {unreadNotifications.length > 0 && (
+                                <>
+                                  <div className="px-4 py-2 text-xs font-semibold text-accent-400 uppercase tracking-wide">
+                                    New / Unread
                                   </div>
+                                  <div className="divide-y divide-primary-700">
+                                    {unreadNotifications.map(renderNotificationItem)}
+                                  </div>
+                                </>
+                              )}
+                              {viewedNotifications.length > 0 && (
+                                <>
+                                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                    Viewed / Previous
+                                  </div>
+                                  <div className="divide-y divide-primary-700">
+                                    {viewedNotifications.map(renderNotificationItem)}
+                                  </div>
+                                </>
+                              )}
+                              {unreadNotifications.length === 0 && viewedNotifications.length === 0 && (
+                                <div className="p-4 text-center text-gray-400 font-serif">
+                                  <p>No notifications yet</p>
                                 </div>
-                              </div>
-                            ))
+                              )}
+                            </>
+                          ) : filteredNotifications.length > 0 ? (
+                            <div className="divide-y divide-primary-700">
+                              {filteredNotifications.map(renderNotificationItem)}
+                            </div>
                           ) : (
-                            <div className="p-4 text-center text-gray-400">
-                              <p>No pending notifications</p>
+                            <div className="p-4 text-center text-gray-400 font-serif">
+                              <p>
+                                {notificationFilter === 'unread'
+                                  ? 'No unread notifications'
+                                  : 'No viewed notifications yet'}
+                              </p>
                             </div>
                           )}
                         </div>
@@ -672,92 +860,194 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                         {showFullApplication ? '▼' : '▶'} View Full Application
                       </span>
                       <span className="text-xs text-gray-400 font-serif">
-                        {showFullApplication ? 'Hide' : 'Show'} all 5 steps
+                        {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                       </span>
                     </button>
-                    
-                    {showFullApplication && notification.applicationData && (
-                      <div className="mt-4 space-y-4 bg-primary-800 rounded-md p-4">
-                        {/* Step 1 */}
-                        {notification.applicationData.step1 && (
-                          <div className="border-b border-primary-700 pb-4">
-                            <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Step 1: Contact Information</h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                              {Object.entries(notification.applicationData.step1).map(([key, value]) => (
-                                <div key={key}>
-                                  <span className="text-gray-400 font-serif">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                                  <span className="text-gray-200 font-sans ml-2">{String(value)}</span>
+
+                    {showFullApplication && (() => {
+                      const applicationData = notification.applicationData;
+                      const step1 = applicationData.step1 ?? {};
+                      const step2 = applicationData.step2 ?? {};
+                      const step3 = applicationData.step3 ?? {};
+                      const step4 = applicationData.step4 ?? {};
+                      const step5 = applicationData.step5 ?? {};
+
+                      const buildEntries = (source: Record<string, any>, labels: Record<string, string>) =>
+                        Object.entries(labels)
+                          .map(([key, label]) => {
+                            const rawValue = source?.[key];
+                            if (rawValue === undefined || rawValue === null) return null;
+                            const value = Array.isArray(rawValue) ? rawValue.join(', ') : String(rawValue);
+                            const trimmed = value.trim();
+                            if (!trimmed || trimmed === 'Not provided') return null;
+                            return { label, value: trimmed };
+                          })
+                          .filter(Boolean) as { label: string; value: string }[];
+
+                      const personalDetailsEntries = buildEntries(step1, {
+                        fullName: 'Full Name',
+                        position: 'Position / Role in Organization',
+                        gender: 'Gender',
+                        birthDate: 'Date of Birth',
+                      });
+
+                      const contactInformationEntries = buildEntries(step2, {
+                        email: 'Email Address',
+                        phone: 'Phone Number',
+                        whatsapp: 'WhatsApp (Optional)',
+                        address: 'Residential / Office Address',
+                        city: 'City',
+                        state: 'State',
+                        country: 'Country',
+                      });
+
+                      const verificationEntries = buildEntries(step3, {
+                        idType: 'ID Type',
+                        idNumber: 'ID Number',
+                        emergencyContactName: 'Emergency Contact Name',
+                        emergencyContactPhone: 'Emergency Contact Phone',
+                        emergencyRelationship: 'Relationship with Emergency Contact',
+                        idDocument: 'Uploaded ID Document',
+                      });
+
+                      const basicInformationEntries = buildEntries(step4, {
+                        organizationName: 'Organization Name',
+                        registrationNumber: 'Registration Number / CAC Number',
+                        organizationType: 'Type of Organization',
+                        yearEstablished: 'Year Established',
+                        industry: 'Industry / Sector',
+                        missionStatement: 'Short Description / Mission Statement',
+                      });
+
+                      const addressInformationEntries = buildEntries(step4, {
+                        headquartersAddress: 'Headquarters Address',
+                        hqCity: 'Headquarters City',
+                        hqState: 'Headquarters State',
+                        hqCountry: 'Headquarters Country',
+                        officePhone: 'Office Phone Number',
+                        officialEmail: 'Official Email Address',
+                        website: 'Website URL',
+                        facebook: 'Facebook Handle',
+                        linkedin: 'LinkedIn Handle',
+                        twitter: 'X Handle',
+                        instagram: 'Instagram Handle',
+                      });
+
+                      const operationsEntries = buildEntries(
+                        {
+                          numEmployees: step5.numEmployees,
+                          areasOfOperation: step5.areasOfOperation,
+                          hasPartnership: step5.hasPartnership,
+                          partnershipDetails: step5.partnershipDetails,
+                        },
+                        {
+                          numEmployees: 'Number of Employees / Volunteers',
+                          areasOfOperation: 'Areas of Operation / Coverage',
+                          hasPartnership: 'Has Partnership or Affiliation',
+                          partnershipDetails: 'Partnership Details',
+                        }
+                      );
+
+                      const deriveDocumentType = (fileName: string) => {
+                        if (!fileName) return 'Unknown';
+                        const extension = fileName.split('.').pop();
+                        return extension ? extension.toUpperCase() : 'Unknown';
+                      };
+
+                      const openDocuments = (title: string, docs: { label: string; name: string }[]) => {
+                        if (!docs.length) return;
+                        setDocumentModal({
+                          title,
+                          documents: docs.map((doc) => ({
+                            ...doc,
+                            type: deriveDocumentType(doc.name),
+                          })),
+                        });
+                      };
+
+                      const verificationDocuments =
+                        step3?.idDocument && step3.idDocument !== 'Not provided'
+                          ? [{ label: 'Government-issued ID', name: String(step3.idDocument) }]
+                          : [];
+
+                      const operationsDocuments = [
+                        step5?.organizationLogo && step5.organizationLogo !== 'Not provided'
+                          ? { label: 'Organization Logo', name: String(step5.organizationLogo) }
+                          : null,
+                        step5?.certificateOfIncorporation && step5.certificateOfIncorporation !== 'Not provided'
+                          ? {
+                              label: 'Certificate of Incorporation / Registration',
+                              name: String(step5.certificateOfIncorporation),
+                            }
+                          : null,
+                      ].filter(Boolean) as { label: string; name: string }[];
+
+                      const renderGroup = (
+                        title: string,
+                        entries: { label: string; value: string }[],
+                        action?: React.ReactNode
+                      ) => (
+                        <div key={title} className="bg-primary-900/60 rounded-md border border-primary-700 p-4 space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <h6 className="text-sm font-semibold text-accent-300 font-sans">{title}</h6>
+                            {action}
+                          </div>
+                          {entries.length > 0 ? (
+                            <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                              {entries.map(({ label, value }) => (
+                                <div key={label}>
+                                  <dt className="text-xs uppercase tracking-wide text-gray-400 font-serif">{label}</dt>
+                                  <dd className="text-sm text-gray-100 font-sans mt-1 whitespace-pre-line break-words">{value}</dd>
                                 </div>
                               ))}
-                            </div>
+                            </dl>
+                          ) : (
+                            <p className="text-xs text-gray-500 font-serif">No data provided.</p>
+                          )}
+                        </div>
+                      );
+
+                      return (
+                        <div className="mt-4 space-y-6 bg-primary-800 rounded-md p-4">
+                          <div className="space-y-4">
+                            <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Contact Info</h5>
+                            {renderGroup('Personal Details', personalDetailsEntries)}
+                            {renderGroup('Contact Information', contactInformationEntries)}
+                            {renderGroup(
+                              'Verification & Emergency',
+                              verificationEntries,
+                              verificationDocuments.length > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openDocuments('Verification Documents', verificationDocuments)}
+                                  className="text-xs text-accent-400 hover:text-accent-300 font-semibold transition-colors"
+                                >
+                                  View Documents
+                                </button>
+                              ) : undefined
+                            )}
                           </div>
-                        )}
-                        
-                        {/* Step 2 */}
-                        {notification.applicationData.step2 && (
-                          <div className="border-b border-primary-700 pb-4">
-                            <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Step 2: Account Profile</h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                              {Object.entries(notification.applicationData.step2).map(([key, value]) => (
-                                <div key={key} className={Array.isArray(value) ? 'md:col-span-2' : ''}>
-                                  <span className="text-gray-400 font-serif">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                                  <span className="text-gray-200 font-sans ml-2">
-                                    {Array.isArray(value) ? value.join(', ') : String(value)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
+                          <div className="space-y-4">
+                            <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Organization Info</h5>
+                            {renderGroup('Basic Information', basicInformationEntries)}
+                            {renderGroup('Address & Contact Info', addressInformationEntries)}
+                            {renderGroup(
+                              'Operations & Documentation',
+                              operationsEntries,
+                              operationsDocuments.length > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openDocuments('Operations & Documentation Documents', operationsDocuments)}
+                                  className="text-xs text-accent-400 hover:text-accent-300 font-semibold transition-colors"
+                                >
+                                  View Documents
+                                </button>
+                              ) : undefined
+                            )}
                           </div>
-                        )}
-                        
-                        {/* Step 3 */}
-                        {notification.applicationData.step3 && (
-                          <div className="border-b border-primary-700 pb-4">
-                            <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Step 3: Financial Products and Terms</h5>
-                            <div className="space-y-2 text-xs">
-                              {Object.entries(notification.applicationData.step3).map(([key, value]) => (
-                                <div key={key} className={key.includes('Terms') ? 'md:col-span-2' : ''}>
-                                  <span className="text-gray-400 font-serif">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                                  <div className="text-gray-200 font-sans mt-1">
-                                    {Array.isArray(value) ? value.join(', ') : String(value)}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Step 4 */}
-                        {notification.applicationData.step4 && (
-                          <div className="border-b border-primary-700 pb-4">
-                            <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Step 4: Reporting and Transparency</h5>
-                            <div className="space-y-2 text-xs">
-                              {Object.entries(notification.applicationData.step4).map(([key, value]) => (
-                                <div key={key}>
-                                  <span className="text-gray-400 font-serif">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                                  <div className="text-gray-200 font-sans mt-1">{String(value)}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Step 5 */}
-                        {notification.applicationData.step5 && (
-                          <div>
-                            <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Step 5: Compliance and Documentation</h5>
-                            <div className="space-y-2 text-xs">
-                              {Object.entries(notification.applicationData.step5).map(([key, value]) => (
-                                <div key={key}>
-                                  <span className="text-gray-400 font-serif">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                                  <div className="text-gray-200 font-sans mt-1">{String(value)}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -779,13 +1069,20 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-300 font-serif mb-1">Remarks</label>
+                      <label className="block text-sm text-gray-300 font-serif mb-1">
+                        {notification.metadata?.type === 'fundProviderRegistration' && approvalDecision === 'reject'
+                          ? 'Reason for Rejection'
+                          : 'Remarks'}
+                      </label>
                       <textarea 
                         value={approvalRemarks} 
                         onChange={(e) => setApprovalRemarks(e.target.value)} 
                         rows={3} 
                         className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600" 
-                        placeholder="Add remarks (optional)" 
+                        placeholder={notification.metadata?.type === 'fundProviderRegistration' && approvalDecision === 'reject'
+                          ? 'Provide the reason for rejection'
+                          : 'Add remarks (optional)'} 
+                        required={notification.metadata?.type === 'fundProviderRegistration' && approvalDecision === 'reject'}
                       />
                     </div>
                     <div className="flex justify-end gap-2">
@@ -818,6 +1115,63 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
           </div>
         ) : null;
       })()}
+
+      {/* Document Viewer Modal */}
+      {documentModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"
+          onClick={() => setDocumentModal(null)}
+        >
+          <div
+            className="w-full max-w-md bg-primary-900 border border-primary-700 rounded-lg p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-100">{documentModal.title}</h3>
+                <p className="text-xs text-gray-400 font-serif mt-1">
+                  Document preview and downloads are not available in this demo environment.
+                </p>
+              </div>
+              <button
+                className="text-gray-400 hover:text-gray-200 transition-colors"
+                onClick={() => setDocumentModal(null)}
+              >
+                ✖
+              </button>
+            </div>
+            <div className="space-y-3">
+              {documentModal.documents.map((doc) => (
+                <div key={`${doc.label}-${doc.name}`} className="border border-primary-700 rounded-md p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-100">{doc.label}</p>
+                      <p className="text-xs text-gray-400 font-serif break-all">{doc.name}</p>
+                    </div>
+                    <span className="text-xs font-semibold text-accent-400">{doc.type}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => alert('Document preview is not available in the demo environment.')}
+                      className="px-3 py-1.5 text-xs rounded-md bg-primary-700 hover:bg-primary-600 text-gray-100 transition-colors"
+                    >
+                      View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => alert('Download is not available in the demo environment.')}
+                      className="px-3 py-1.5 text-xs rounded-md bg-accent-600 hover:bg-accent-700 text-white transition-colors"
+                    >
+                      Download
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

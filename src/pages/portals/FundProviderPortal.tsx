@@ -1,5 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PortalLayout from '../../components/PortalLayout';
+import { getFundProviderStatusSnapshot, FundProviderStatus } from '../../utils/localDatabase';
 
 const FundProviderPortal: React.FC = () => {
   const sidebarItems = [
@@ -8,86 +10,136 @@ const FundProviderPortal: React.FC = () => {
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }
   ];
 
-  const stats = [
-    { title: 'Total Funds Deployed', value: '₦2.4B', change: '+12.5%', icon: '💼' },
-    { title: 'Performing Schemes', value: '1,456', change: '+4.3%', icon: '✅' },
-    { title: 'Non-Performing Schemes', value: '234', change: '-2.1%', icon: '⚠️' },
-    { title: 'Bad Schemes', value: '157', change: '+0.9%', icon: '❌' }
-  ];
-
-  const recentActivities = useMemo(() => ([
-    { id: 'SCHEME-001', type: 'Scheme', description: '₦50M Climate Smart Agriculture Scheme', time: '2 hours ago', status: 'performing', startDate: '2024-01-15', endDate: '2024-12-31', details: 'This scheme focuses on promoting climate-resilient agricultural practices among smallholder farmers. It includes training programs, seed distribution, and access to modern irrigation systems. The scheme targets 5,000 farmers across 10 states and aims to improve crop yields by 30% while reducing water usage by 25%.' },
-    { id: 'SCHEME-002', type: 'Scheme', description: '₦25M Anchor Company Partnership Scheme', time: '3 days ago', status: 'performing', startDate: '2024-02-01', endDate: '2024-11-30', details: 'A partnership program linking smallholder farmers with established anchor companies for guaranteed market access. This scheme provides farmers with technical support, quality inputs, and assured pricing. Over 200 anchor companies are participating, benefiting approximately 3,000 farmers nationwide.' },
-    { id: 'SCHEME-003', type: 'Scheme', description: '₦120M Youth Agriculture Fund Scheme', time: '5 hours ago', status: 'performing', startDate: '2024-01-10', endDate: '2025-01-09', details: 'Designed to engage young people aged 18-35 in sustainable agriculture. The scheme provides start-up capital, mentorship, and access to modern farming technologies. It includes special incentives for agri-tech innovations and digital farming solutions. Expected to create 1,500 jobs and support 800 youth-led agribusinesses.' },
-    { id: 'SCHEME-004', type: 'Scheme', description: '₦8M Women Farmers Association Scheme', time: '8 hours ago', status: 'non-performing', startDate: '2024-03-01', endDate: '2024-12-31', details: 'Empowerment program specifically targeting women farmers and women-led agricultural cooperatives. The scheme provides soft loans, training in financial management, and market linkage support. Currently facing challenges with repayment rates due to seasonal income fluctuations.' },
-    { id: 'SCHEME-005', type: 'Scheme', description: '₦12M Approved Scheme Tranche', time: '1 day ago', status: 'performing', startDate: '2024-04-01', endDate: '2024-10-31', details: 'Second tranche release for the approved agricultural development program. This tranche focuses on equipment procurement and infrastructure development. All milestones from the first tranche have been met, leading to timely approval and disbursement.' },
-    { id: 'SCHEME-006', type: 'Scheme', description: '₦3.5M Youth Agri Group Scheme', time: '2 days ago', status: 'non-performing', startDate: '2024-02-15', endDate: '2024-11-15', details: 'Small-scale funding for youth agricultural groups focusing on vegetable production. The scheme provides input financing and technical support. Currently experiencing delays in implementation due to coordination challenges among group members.' },
-    { id: 'SCHEME-007', type: 'Scheme', description: '₦200M Tech Innovation Fund Scheme', time: '2 days ago', status: 'performing', startDate: '2024-01-05', endDate: '2025-06-30', details: 'Major innovation fund supporting agricultural technology startups and research institutions. The scheme funds projects in precision farming, farm management software, IoT applications, and AI-driven crop monitoring. Already showing strong results with 15 active projects and 3 successful product launches.' },
-    { id: 'SCHEME-008', type: 'Scheme', description: '₦1.2M Scheme Adjustment Request', time: '3 days ago', status: 'bad schemes', startDate: '2023-11-01', endDate: '2024-08-31', details: 'This scheme has been flagged for review due to significant deviations from the original plan. Multiple adjustment requests have been made, indicating poor initial planning or changing circumstances. Recovery rates have dropped below acceptable thresholds, requiring intervention and restructuring.' },
-    { id: 'SCHEME-009', type: 'Scheme', description: '₦75M Agro Processing Initiative', time: '4 days ago', status: 'performing', startDate: '2024-01-20', endDate: '2024-12-20', details: 'Initiative to support agro-processing businesses with modern equipment and capacity building. The scheme targets processors of cassava, rice, maize, and oil palm. It includes grants for machinery, training in food safety standards, and market access facilitation.' },
-    { id: 'SCHEME-010', type: 'Scheme', description: '₦9.8M Cassava Growers Union Scheme', time: '5 days ago', status: 'non-performing', startDate: '2024-03-10', endDate: '2024-11-10', details: 'Funding scheme for cassava growers union with focus on improving yield and processing capacity. The scheme faces challenges with delayed repayments and lower-than-expected adoption rates. Regular monitoring and support visits are being conducted to improve performance.' },
-    { id: 'SCHEME-011', type: 'Scheme', description: '₦6.4M Women Farmer Fund Scheme', time: '6 days ago', status: 'bad schemes', startDate: '2023-09-01', endDate: '2024-07-31', details: 'This scheme has been classified as bad due to extremely high default rates and evidence of mismanagement. Multiple attempts at restructuring have failed. The scheme is now under review for potential write-off and lessons learned documentation.' },
-    { id: 'SCHEME-012', type: 'Scheme', description: '₦4.2M Rice Cooperative Scheme', time: '7 days ago', status: 'performing', startDate: '2024-02-20', endDate: '2024-11-20', details: 'Support program for rice farming cooperatives, providing access to improved seeds, fertilizers, and post-harvest equipment. The scheme includes training in cooperative management and collective marketing strategies. All cooperatives are meeting their repayment obligations on time.' },
-    { id: 'SCHEME-013', type: 'Scheme', description: '₦30M Agri-Tech Pilot Program', time: '1 week ago', status: 'performing', startDate: '2024-01-08', endDate: '2024-12-08', details: 'Pilot program testing innovative agricultural technologies across 50 demonstration farms. Technologies include drone-based crop monitoring, automated irrigation systems, and soil health sensors. Initial results show 40% improvement in resource efficiency and positive farmer feedback.' },
-    { id: 'SCHEME-014', type: 'Scheme', description: '₦15M Livestock Development Scheme', time: '1 week ago', status: 'non-performing', startDate: '2024-02-25', endDate: '2024-11-25', details: 'Livestock development program supporting cattle, goat, and poultry farmers. The scheme provides veterinary services, feed subsidies, and breeding stock. Currently experiencing delays in service delivery and some farmers reporting challenges with feed quality and availability.' },
-    { id: 'SCHEME-015', type: 'Scheme', description: '₦22M Irrigation Infrastructure Scheme', time: '2 weeks ago', status: 'bad schemes', startDate: '2023-08-15', endDate: '2024-06-15', details: 'Infrastructure development scheme that has been classified as bad due to project abandonment and contractor disputes. The irrigation infrastructure was never completed, leaving farmers without the promised support. Recovery efforts are ongoing but prospects are limited.' }
-  ]), []);
-
-  // Past schemes data
-  const pastSchemes = useMemo(() => ([
-    { id: 'PAST-001', type: 'Scheme', description: '₦45M Smallholder Farmer Support Scheme', time: '3 months ago', startDate: '2023-01-15', endDate: '2023-12-31', details: 'Completed scheme that successfully supported 4,200 smallholder farmers across 8 states. The scheme provided access to improved seeds, fertilizers, and extension services. Final recovery rate was 94%, exceeding the target of 90%.' },
-    { id: 'PAST-002', type: 'Scheme', description: '₦18M Cooperative Development Program', time: '4 months ago', startDate: '2023-02-01', endDate: '2023-11-30', details: 'Program focused on strengthening agricultural cooperatives through capacity building and financial support. Successfully established 120 new cooperatives and trained over 2,000 members in cooperative management and modern farming techniques.' },
-    { id: 'PAST-003', type: 'Scheme', description: '₦95M Market Linkage Initiative', time: '5 months ago', startDate: '2023-01-10', endDate: '2023-10-09', details: 'Initiative that connected farmers directly with buyers, eliminating middlemen and improving profit margins. The scheme facilitated over 1,500 direct contracts and improved farmer incomes by an average of 35%. All repayments were completed on schedule.' },
-    { id: 'PAST-004', type: 'Scheme', description: '₦12M Post-Harvest Loss Reduction', time: '6 months ago', startDate: '2023-03-01', endDate: '2023-09-30', details: 'Scheme providing farmers with post-harvest storage facilities and training in preservation techniques. Reduced post-harvest losses from 25% to 12% among participating farmers. The scheme achieved its targets and was completed successfully.' },
-    { id: 'PAST-005', type: 'Scheme', description: '₦35M Organic Farming Promotion', time: '7 months ago', startDate: '2022-12-01', endDate: '2023-08-31', details: 'Promotion of organic farming practices among farmers interested in sustainable agriculture. The scheme provided certification support, training, and market access for organic produce. Over 800 farmers transitioned to organic farming methods.' },
-    { id: 'PAST-006', type: 'Scheme', description: '₦28M Livestock Feed Subsidy Program', time: '8 months ago', startDate: '2022-11-15', endDate: '2023-07-15', details: 'Program that subsidized livestock feed costs for small-scale livestock farmers. The scheme supported 1,200 farmers and helped maintain livestock productivity during periods of high feed prices. Recovery rate was 91%.' },
-    { id: 'PAST-007', type: 'Scheme', description: '₦60M Mechanization Support Scheme', time: '9 months ago', startDate: '2022-10-05', endDate: '2023-06-05', details: 'Scheme providing access to farm machinery through rental services and cooperative ownership models. Successfully mechanized operations on over 15,000 hectares of farmland, significantly improving efficiency and reducing labor costs.' },
-    { id: 'PAST-008', type: 'Scheme', description: '₦8M Seed Multiplication Program', time: '10 months ago', startDate: '2022-09-01', endDate: '2023-05-31', details: 'Program supporting local seed production and multiplication to reduce dependency on imported seeds. Established 50 seed multiplication centers and trained 300 seed producers. Program completed successfully with all targets met.' },
-    { id: 'PAST-009', type: 'Scheme', description: '₦22M Fisheries Development Scheme', time: '11 months ago', startDate: '2022-08-20', endDate: '2023-04-20', details: 'Development program for small-scale fish farmers, providing fingerlings, feed, and technical support. The scheme supported 450 fish farmers and established 120 fish ponds. Recovery rate was 88%.' },
-    { id: 'PAST-010', type: 'Scheme', description: '₦15M Rural Women Empowerment', time: '1 year ago', startDate: '2022-07-10', endDate: '2023-03-10', details: 'Empowerment scheme specifically targeting rural women in agriculture. Provided training, financial support, and market linkages. Over 600 women participated, with 85% reporting improved household income and food security.' }
-  ]), []);
-
-  // Recent activities search and pagination
-  const [activitySearch, setActivitySearch] = useState('');
-  const [activityPage, setActivityPage] = useState(1);
-  const activityPageSize = 3;
-  const [selectedScheme, setSelectedScheme] = useState<any>(null);
-  const [showForwardModal, setShowForwardModal] = useState(false);
-
-  // Past schemes search and pagination
-  const [pastSearch, setPastSearch] = useState('');
-  const [pastPage, setPastPage] = useState(1);
-  const pastPageSize = 3;
-
-  const filteredActivities = useMemo(() => {
-    const q = activitySearch.trim().toLowerCase();
-    if (!q) return recentActivities;
-    return recentActivities.filter(a =>
-      a.type.toLowerCase().includes(q) ||
-      a.description.toLowerCase().includes(q) ||
-      a.time.toLowerCase().includes(q)
-    );
-  }, [activitySearch, recentActivities]);
-
-  const totalActivityPages = Math.max(1, Math.ceil(filteredActivities.length / activityPageSize));
-  const currentActivityPage = Math.min(activityPage, totalActivityPages);
-  const startIndex = (currentActivityPage - 1) * activityPageSize;
-  const paginatedActivities = filteredActivities.slice(startIndex, startIndex + activityPageSize);
-
-  const filteredPastSchemes = useMemo(() => {
-    const q = pastSearch.trim().toLowerCase();
-    if (!q) return pastSchemes;
-    return pastSchemes.filter(s =>
-      s.type.toLowerCase().includes(q) ||
-      s.description.toLowerCase().includes(q) ||
-      s.time.toLowerCase().includes(q)
-    );
-  }, [pastSearch, pastSchemes]);
-
-  const totalPastPages = Math.max(1, Math.ceil(filteredPastSchemes.length / pastPageSize));
-  const currentPastPage = Math.min(pastPage, totalPastPages);
-  const pastStartIndex = (currentPastPage - 1) * pastPageSize;
-  const paginatedPastSchemes = filteredPastSchemes.slice(pastStartIndex, pastStartIndex + pastPageSize);
+  const [status, setStatus] = useState<FundProviderStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [recordLoaded, setRecordLoaded] = useState(false);
+ 
+   useEffect(() => {
+     const snapshot = getFundProviderStatusSnapshot();
+     if (snapshot) {
+       setStatus(snapshot.status);
+       setRejectionReason(snapshot.rejectionReason);
+     }
+     setRecordLoaded(true);
+   }, []);
+ 
+   const isVerified = status === 'verified';
+ 
+   const stats = [
+     { title: 'Total Funds Deployed', value: '₦2.4B', change: '+12.5%', icon: '💼' },
+     { title: 'Performing Schemes', value: '1,456', change: '+4.3%', icon: '✅' },
+     { title: 'Non-Performing Schemes', value: '234', change: '-2.1%', icon: '⚠️' },
+     { title: 'Bad Schemes', value: '157', change: '+0.9%', icon: '❌' }
+   ];
+ 
+   const recentActivities = useMemo(() => ([
+     { id: 'SCHEME-001', type: 'Scheme', description: '₦50M Climate Smart Agriculture Scheme', time: '2 hours ago', status: 'performing', startDate: '2024-01-15', endDate: '2024-12-31', details: 'This scheme focuses on promoting climate-resilient agricultural practices among smallholder farmers. It includes training programs, seed distribution, and access to modern irrigation systems. The scheme targets 5,000 farmers across 10 states and aims to improve crop yields by 30% while reducing water usage by 25%.' },
+     { id: 'SCHEME-002', type: 'Scheme', description: '₦25M Anchor Company Partnership Scheme', time: '3 days ago', status: 'performing', startDate: '2024-02-01', endDate: '2024-11-30', details: 'A partnership program linking smallholder farmers with established anchor companies for guaranteed market access. This scheme provides farmers with technical support, quality inputs, and assured pricing. Over 200 anchor companies are participating, benefiting approximately 3,000 farmers nationwide.' },
+     { id: 'SCHEME-003', type: 'Scheme', description: '₦120M Youth Agriculture Fund Scheme', time: '5 hours ago', status: 'performing', startDate: '2024-01-10', endDate: '2025-01-09', details: 'Designed to engage young people aged 18-35 in sustainable agriculture. The scheme provides start-up capital, mentorship, and access to modern farming technologies. It includes special incentives for agri-tech innovations and digital farming solutions. Expected to create 1,500 jobs and support 800 youth-led agribusinesses.' },
+     { id: 'SCHEME-004', type: 'Scheme', description: '₦8M Women Farmers Association Scheme', time: '8 hours ago', status: 'non-performing', startDate: '2024-03-01', endDate: '2024-12-31', details: 'Empowerment program specifically targeting women farmers and women-led agricultural cooperatives. The scheme provides soft loans, training in financial management, and market linkage support. Currently facing challenges with repayment rates due to seasonal income fluctuations.' },
+     { id: 'SCHEME-005', type: 'Scheme', description: '₦12M Approved Scheme Tranche', time: '1 day ago', status: 'performing', startDate: '2024-04-01', endDate: '2024-10-31', details: 'Second tranche release for the approved agricultural development program. This tranche focuses on equipment procurement and infrastructure development. All milestones from the first tranche have been met, leading to timely approval and disbursement.' },
+     { id: 'SCHEME-006', type: 'Scheme', description: '₦3.5M Youth Agri Group Scheme', time: '2 days ago', status: 'non-performing', startDate: '2024-02-15', endDate: '2024-11-15', details: 'Small-scale funding for youth agricultural groups focusing on vegetable production. The scheme provides input financing and technical support. Currently experiencing delays in implementation due to coordination challenges among group members.' },
+     { id: 'SCHEME-007', type: 'Scheme', description: '₦200M Tech Innovation Fund Scheme', time: '2 days ago', status: 'performing', startDate: '2024-01-05', endDate: '2025-06-30', details: 'Major innovation fund supporting agricultural technology startups and research institutions. The scheme funds projects in precision farming, farm management software, IoT applications, and AI-driven crop monitoring. Already showing strong results with 15 active projects and 3 successful product launches.' },
+     { id: 'SCHEME-008', type: 'Scheme', description: '₦1.2M Scheme Adjustment Request', time: '3 days ago', status: 'bad schemes', startDate: '2023-11-01', endDate: '2024-08-31', details: 'This scheme has been flagged for review due to significant deviations from the original plan. Multiple adjustment requests have been made, indicating poor initial planning or changing circumstances. Recovery rates have dropped below acceptable thresholds, requiring intervention and restructuring.' },
+     { id: 'SCHEME-009', type: 'Scheme', description: '₦75M Agro Processing Initiative', time: '4 days ago', status: 'performing', startDate: '2024-01-20', endDate: '2024-12-20', details: 'Initiative to support agro-processing businesses with modern equipment and capacity building. The scheme targets processors of cassava, rice, maize, and oil palm. It includes grants for machinery, training in food safety standards, and market access facilitation.' },
+     { id: 'SCHEME-010', type: 'Scheme', description: '₦9.8M Cassava Growers Union Scheme', time: '5 days ago', status: 'non-performing', startDate: '2024-03-10', endDate: '2024-11-10', details: 'Funding scheme for cassava growers union with focus on improving yield and processing capacity. The scheme faces challenges with delayed repayments and lower-than-expected adoption rates. Regular monitoring and support visits are being conducted to improve performance.' },
+     { id: 'SCHEME-011', type: 'Scheme', description: '₦6.4M Women Farmer Fund Scheme', time: '6 days ago', status: 'bad schemes', startDate: '2023-09-01', endDate: '2024-07-31', details: 'This scheme has been classified as bad due to extremely high default rates and evidence of mismanagement. Multiple attempts at restructuring have failed. The scheme is now under review for potential write-off and lessons learned documentation.' },
+     { id: 'SCHEME-012', type: 'Scheme', description: '₦4.2M Rice Cooperative Scheme', time: '7 days ago', status: 'performing', startDate: '2024-02-20', endDate: '2024-11-20', details: 'Support program for rice farming cooperatives, providing access to improved seeds, fertilizers, and post-harvest equipment. The scheme includes training in cooperative management and collective marketing strategies. All cooperatives are meeting their repayment obligations on time.' },
+     { id: 'SCHEME-013', type: 'Scheme', description: '₦30M Agri-Tech Pilot Program', time: '1 week ago', status: 'performing', startDate: '2024-01-08', endDate: '2024-12-08', details: 'Pilot program testing innovative agricultural technologies across 50 demonstration farms. Technologies include drone-based crop monitoring, automated irrigation systems, and soil health sensors. Initial results show 40% improvement in resource efficiency and positive farmer feedback.' },
+     { id: 'SCHEME-014', type: 'Scheme', description: '₦15M Livestock Development Scheme', time: '1 week ago', status: 'non-performing', startDate: '2024-02-25', endDate: '2024-11-25', details: 'Livestock development program supporting cattle, goat, and poultry farmers. The scheme provides veterinary services, feed subsidies, and breeding stock. Currently experiencing delays in service delivery and some farmers reporting challenges with feed quality and availability.' },
+     { id: 'SCHEME-015', type: 'Scheme', description: '₦22M Irrigation Infrastructure Scheme', time: '2 weeks ago', status: 'bad schemes', startDate: '2023-08-15', endDate: '2024-06-15', details: 'Infrastructure development scheme that has been classified as bad due to project abandonment and contractor disputes. The irrigation infrastructure was never completed, leaving farmers without the promised support. Recovery efforts are ongoing but prospects are limited.' }
+   ]), []);
+ 
+   const pastSchemes = useMemo(() => ([
+     { id: 'PAST-001', type: 'Scheme', description: '₦45M Smallholder Farmer Support Scheme', time: '3 months ago', startDate: '2023-01-15', endDate: '2023-12-31', details: 'Completed scheme that successfully supported 4,200 smallholder farmers across 8 states. The scheme provided access to improved seeds, fertilizers, and extension services. Final recovery rate was 94%, exceeding the target of 90%.' },
+     { id: 'PAST-002', type: 'Scheme', description: '₦18M Cooperative Development Program', time: '4 months ago', startDate: '2023-02-01', endDate: '2023-11-30', details: 'Program focused on strengthening agricultural cooperatives through capacity building and financial support. Successfully established 120 new cooperatives and trained over 2,000 members in cooperative management and modern farming techniques.' },
+     { id: 'PAST-003', type: 'Scheme', description: '₦95M Market Linkage Initiative', time: '5 months ago', startDate: '2023-01-10', endDate: '2023-10-09', details: 'Initiative that connected farmers directly with buyers, eliminating middlemen and improving profit margins. The scheme facilitated over 1,500 direct contracts and improved farmer incomes by an average of 35%. All repayments were completed on schedule.' },
+     { id: 'PAST-004', type: 'Scheme', description: '₦12M Post-Harvest Loss Reduction', time: '6 months ago', startDate: '2023-03-01', endDate: '2023-09-30', details: 'Scheme providing farmers with post-harvest storage facilities and training in preservation techniques. Reduced post-harvest losses from 25% to 12% among participating farmers. The scheme achieved its targets and was completed successfully.' },
+     { id: 'PAST-005', type: 'Scheme', description: '₦35M Organic Farming Promotion', time: '7 months ago', startDate: '2022-12-01', endDate: '2023-08-31', details: 'Promotion of organic farming practices among farmers interested in sustainable agriculture. The scheme provided certification support, training, and market access for organic produce. Over 800 farmers transitioned to organic farming methods.' },
+     { id: 'PAST-006', type: 'Scheme', description: '₦28M Livestock Feed Subsidy Program', time: '8 months ago', startDate: '2022-11-15', endDate: '2023-07-15', details: 'Program that subsidized livestock feed costs for small-scale livestock farmers. The scheme supported 1,200 farmers and helped maintain livestock productivity during periods of high feed prices. Recovery rate was 91%.' },
+     { id: 'PAST-007', type: 'Scheme', description: '₦60M Mechanization Support Scheme', time: '9 months ago', startDate: '2022-10-05', endDate: '2023-06-05', details: 'Scheme providing access to farm machinery through rental services and cooperative ownership models. Successfully mechanized operations on over 15,000 hectares of farmland, significantly improving efficiency and reducing labor costs.' },
+     { id: 'PAST-008', type: 'Scheme', description: '₦8M Seed Multiplication Program', time: '10 months ago', startDate: '2022-09-01', endDate: '2023-05-31', details: 'Program supporting local seed production and multiplication to reduce dependency on imported seeds. Established 50 seed multiplication centers and trained 300 seed producers. Program completed successfully with all targets met.' },
+     { id: 'PAST-009', type: 'Scheme', description: '₦22M Fisheries Development Scheme', time: '11 months ago', startDate: '2022-08-20', endDate: '2023-04-20', details: 'Development program for small-scale fish farmers, providing fingerlings, feed, and technical support. The scheme supported 450 fish farmers and established 120 fish ponds. Recovery rate was 88%.' },
+     { id: 'PAST-010', type: 'Scheme', description: '₦15M Rural Women Empowerment', time: '1 year ago', startDate: '2022-07-10', endDate: '2023-03-10', details: 'Empowerment scheme specifically targeting rural women in agriculture. Provided training, financial support, and market linkages. Over 600 women participated, with 85% reporting improved household income and food security.' }
+   ]), []);
+ 
+   const [activitySearch, setActivitySearch] = useState('');
+   const [activityPage, setActivityPage] = useState(1);
+   const activityPageSize = 3;
+   const [selectedScheme, setSelectedScheme] = useState<any>(null);
+   const [showForwardModal, setShowForwardModal] = useState(false);
+ 
+   const [pastSearch, setPastSearch] = useState('');
+   const [pastPage, setPastPage] = useState(1);
+   const pastPageSize = 3;
+ 
+   const filteredActivities = useMemo(() => {
+     const q = activitySearch.trim().toLowerCase();
+     if (!q) return recentActivities;
+     return recentActivities.filter(a =>
+       a.type.toLowerCase().includes(q) ||
+       a.description.toLowerCase().includes(q) ||
+       a.time.toLowerCase().includes(q)
+     );
+   }, [activitySearch, recentActivities]);
+ 
+   const totalActivityPages = Math.max(1, Math.ceil(filteredActivities.length / activityPageSize));
+   const currentActivityPage = Math.min(activityPage, totalActivityPages);
+   const startIndex = (currentActivityPage - 1) * activityPageSize;
+   const paginatedActivities = filteredActivities.slice(startIndex, startIndex + activityPageSize);
+ 
+   const filteredPastSchemes = useMemo(() => {
+     const q = pastSearch.trim().toLowerCase();
+     if (!q) return pastSchemes;
+     return pastSchemes.filter(s =>
+       s.type.toLowerCase().includes(q) ||
+       s.description.toLowerCase().includes(q) ||
+       s.time.toLowerCase().includes(q)
+     );
+   }, [pastSearch, pastSchemes]);
+ 
+   const totalPastPages = Math.max(1, Math.ceil(filteredPastSchemes.length / pastPageSize));
+   const currentPastPage = Math.min(pastPage, totalPastPages);
+   const pastStartIndex = (currentPastPage - 1) * pastPageSize;
+   const paginatedPastSchemes = filteredPastSchemes.slice(pastStartIndex, pastStartIndex + pastPageSize);
+ 
+   if (!recordLoaded) {
+     return (
+       <PortalLayout role="Fund Provider" roleIcon="💼" sidebarItems={sidebarItems}>
+         <div className="card">
+           <h1 className="text-lg font-semibold font-sans text-gray-100">Loading Dashboard</h1>
+           <p className="text-sm text-gray-300 font-serif mt-2">Fetching your Fund Provider details...</p>
+         </div>
+       </PortalLayout>
+     );
+   }
+ 
+   if (!isVerified) {
+     return (
+       <PortalLayout role="Fund Provider" roleIcon="💼" sidebarItems={sidebarItems}>
+         <div className="space-y-4">
+           <div className="card">
+             <h1 className="text-xl font-bold font-sans text-gray-100 mb-2">Awaiting Verification</h1>
+             <p className="text-sm text-gray-300 font-serif">
+               Your Fund Provider account is pending approval from the Coordinating Agency. You can update and resubmit your details from the Settings page while you wait.
+             </p>
+             <Link
+               to="/portal/fund-provider/settings"
+               className="inline-flex items-center mt-4 px-4 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium"
+             >
+               Go to Settings
+             </Link>
+           </div>
+           {rejectionReason && (
+             <div className="card">
+               <h2 className="text-lg font-semibold font-sans text-gray-100 mb-2">Most Recent Feedback</h2>
+               <p className="text-sm text-red-400 font-serif">{rejectionReason}</p>
+             </div>
+           )}
+         </div>
+       </PortalLayout>
+     );
+   }
 
   return (
     <PortalLayout role="Fund Provider" roleIcon="💼" sidebarItems={sidebarItems}>

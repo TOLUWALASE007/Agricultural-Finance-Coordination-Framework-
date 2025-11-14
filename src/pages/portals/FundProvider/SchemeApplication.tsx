@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import PortalLayout from '../../../components/PortalLayout';
 import { schemeAPI } from '../../../utils/api';
 import { useNotifications } from '../../../context/NotificationContext';
+import { getFundProviderStatusSnapshot, FundProviderStatus, getActiveFundProviderRecord } from '../../../utils/localDatabase';
 
 const SchemeApplication: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -20,7 +22,23 @@ const SchemeApplication: React.FC = () => {
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/fund-provider/settings' }
   ];
 
+  const [status, setStatus] = useState<FundProviderStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [recordLoaded, setRecordLoaded] = useState(false);
+
+  useEffect(() => {
+    const snapshot = getFundProviderStatusSnapshot();
+    if (snapshot) {
+      setStatus(snapshot.status);
+      setRejectionReason(snapshot.rejectionReason);
+    }
+    setRecordLoaded(true);
+  }, []);
+
+  const isVerified = status === 'verified';
+
   const { addNotification } = useNotifications();
+  const activeFundProvider = useMemo(() => getActiveFundProviderRecord(), []);
 
   const [formData, setFormData] = useState({
     // Step 1: Contact Information
@@ -323,7 +341,11 @@ const SchemeApplication: React.FC = () => {
         schemeName: selectedSchemeData?.title || '',
         applicationId: applicationId,
         applicationData: applicationData,
-        applicationStatus: 'pending'
+        applicationStatus: 'pending',
+        metadata: {
+          type: 'fundProviderSchemeApplication',
+          fundProviderId: activeFundProvider?.id,
+        },
       });
 
       // Simulate API call
@@ -348,6 +370,44 @@ const SchemeApplication: React.FC = () => {
     setSelectedScheme(null);
     setCurrentStep(1);
   };
+
+  if (!recordLoaded) {
+    return (
+      <PortalLayout role="Fund Provider" roleIcon="💼" sidebarItems={sidebarItems}>
+        <div className="card">
+          <h1 className="text-lg font-semibold font-sans text-gray-100">Loading Schemes</h1>
+          <p className="text-sm text-gray-300 font-serif mt-2">Preparing the list of available schemes...</p>
+        </div>
+      </PortalLayout>
+    );
+  }
+
+  if (!isVerified) {
+    return (
+      <PortalLayout role="Fund Provider" roleIcon="💼" sidebarItems={sidebarItems}>
+        <div className="space-y-4">
+          <div className="card">
+            <h1 className="text-xl font-bold font-sans text-gray-100 mb-2">Access Restricted</h1>
+            <p className="text-sm text-gray-300 font-serif">
+              Scheme applications are available only after your Fund Provider registration is verified by the Coordinating Agency. Review and update your registration details from the Settings page, then await approval.
+            </p>
+            <Link
+              to="/portal/fund-provider/settings"
+              className="inline-flex items-center mt-4 px-4 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium"
+            >
+              Review Registration Details
+            </Link>
+          </div>
+          {rejectionReason && (
+            <div className="card">
+              <h2 className="text-lg font-semibold font-sans text-gray-100 mb-2">Most Recent Feedback</h2>
+              <p className="text-sm text-red-400 font-serif">{rejectionReason}</p>
+            </div>
+          )}
+        </div>
+      </PortalLayout>
+    );
+  }
 
   const renderStep1 = () => (
     <div className="space-y-4">

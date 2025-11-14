@@ -16,6 +16,7 @@ export type NotificationItem = {
   message: string;
   status: 'pending' | 'approved' | 'ignored' | 'read' | 'rejected';
   receivedAt: string;
+  isViewed: boolean;
   applicantName?: string;
   applicantType?: 'Individual' | 'Company';
   companyName?: string;
@@ -33,11 +34,12 @@ export type NotificationItem = {
   applicationId?: string;
   applicationData?: ApplicationData;
   applicationStatus?: 'pending' | 'approved' | 'rejected';
+  metadata?: Record<string, any>;
 };
 
 interface NotificationContextType {
   notifications: NotificationItem[];
-  addNotification: (notification: Omit<NotificationItem, 'id' | 'receivedAt' | 'status'>) => void;
+  addNotification: (notification: Omit<NotificationItem, 'id' | 'receivedAt' | 'status' | 'isViewed'>) => string;
   updateNotificationStatus: (id: string, status: NotificationItem['status']) => void;
   getNotificationsByRole: (role: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm' | 'coordinating-agency') => NotificationItem[];
   getPendingCount: (role: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm' | 'coordinating-agency') => number;
@@ -45,6 +47,7 @@ interface NotificationContextType {
   hasAppliedToScheme: (schemeId: string, userRole: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm') => boolean;
   getApplicationsForScheme: (schemeId: string) => NotificationItem[];
   getApprovedApplicationForScheme: (schemeId: string, role: 'pfi' | 'anchor' | 'lead-firm' | 'producer') => NotificationItem | null;
+  setNotificationViewed: (id: string, viewed?: boolean) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -57,7 +60,11 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed: NotificationItem[] = JSON.parse(stored);
+        return parsed.map((notif) => ({
+          ...notif,
+          isViewed: Boolean((notif as any).isViewed),
+        }));
       }
     } catch (error) {
       console.error('Error loading notifications from localStorage:', error);
@@ -74,12 +81,13 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   }, [notifications]);
 
-  const addNotification = useCallback((notificationData: Omit<NotificationItem, 'id' | 'receivedAt' | 'status'>) => {
+  const addNotification = useCallback((notificationData: Omit<NotificationItem, 'id' | 'receivedAt' | 'status' | 'isViewed'>) => {
     const newNotification: NotificationItem = {
       ...notificationData,
       id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       receivedAt: new Date().toISOString(),
       status: 'pending',
+      isViewed: false,
     };
 
     setNotifications(prev => [newNotification, ...prev]);
@@ -88,7 +96,21 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const updateNotificationStatus = useCallback((id: string, status: NotificationItem['status']) => {
     setNotifications(prev =>
-      prev.map(notif => (notif.id === id ? { ...notif, status } : notif))
+      prev.map(notif =>
+        notif.id === id
+          ? {
+              ...notif,
+              status,
+              isViewed: status !== 'pending' ? true : notif.isViewed,
+            }
+          : notif
+      )
+    );
+  }, []);
+
+  const setNotificationViewed = useCallback((id: string, viewed: boolean = true) => {
+    setNotifications(prev =>
+      prev.map(notif => (notif.id === id ? { ...notif, isViewed: viewed } : notif))
     );
   }, []);
 
@@ -97,7 +119,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, [notifications]);
 
   const getPendingCount = useCallback((role: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm' | 'coordinating-agency') => {
-    return notifications.filter(n => n.targetRole === role && n.status === 'pending').length;
+    return notifications.filter(n => n.targetRole === role && !n.isViewed).length;
   }, [notifications]);
 
   const clearNotifications = useCallback(() => {
@@ -150,6 +172,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
         hasAppliedToScheme,
         getApplicationsForScheme,
         getApprovedApplicationForScheme,
+        setNotificationViewed,
       }}
     >
       {children}
