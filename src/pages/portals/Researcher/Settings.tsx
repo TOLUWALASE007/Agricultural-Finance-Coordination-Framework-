@@ -1,84 +1,75 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PortalLayout from '../../../components/PortalLayout';
 import { showNotification } from '../../../utils/quickActions';
+import { useNotifications } from '../../../context/NotificationContext';
+import {
+  findResearcherById,
+  ResearcherFormData,
+  ResearcherStatus,
+  buildResearcherApplicationData,
+  updateResearcherRecord,
+  ResearcherRecord,
+} from '../../../utils/localDatabase';
 
 const Settings: React.FC = () => {
-  const [activeSection, setActiveSection] = useState<'contact' | 'organization'>('contact');
-
+  const [activeSection, setActiveSection] = useState<'contact' | 'academic' | 'security'>('contact');
+  
   const [formData, setFormData] = useState({
-    // Contact Info - Personal Details
-    fullName: 'Prof. Olufemi Adebayo',
-    position: 'Lead Research Fellow',
-    gender: 'Male',
-    birthDate: '1972-01-30',
-
-    // Contact Info - Contact Information
-    email: 'olufemi.adebayo@agroresearch.org',
-    phone: '+234-802-555-7788',
-    whatsapp: '+234-807-555-2233',
-    address: 'Institute Avenue, University Research Park',
-    city: 'Ibadan',
-    state: 'Oyo State',
-    country: 'Nigeria',
-
-    // Contact Info - Verification & Emergency
-    idType: 'Passport',
-    idNumber: 'NGP7788990',
+    // Step 1: Contact Information
+    fullName: '',
+    gender: '',
+    birthDate: '',
+    nationality: '',
+    email: '',
+    phone: '',
+    whatsapp: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    idType: '',
+    idNumber: '',
     idDocument: '',
-    emergencyContactName: 'Tosin Adebayo',
-    emergencyContactPhone: '+234-803-777-8899',
-    emergencyRelationship: 'Spouse',
-
-    // Organization Info - Basic Information
-    organizationName: 'African Agricultural Research Consortium',
-    registrationNumber: 'AARC-REG-2001-018',
-    organizationType: 'Research Institution',
-    yearEstablished: '2001',
-    industry: 'Agricultural Research & Innovation',
-    missionStatement: 'Advance evidence-based agricultural innovation through collaborative research and knowledge sharing.',
-
-    // Organization Info - Address & Contact Info
-    headquartersAddress: 'Institute Avenue, University Research Park, Ibadan',
-    hqCity: 'Ibadan',
-    hqState: 'Oyo State',
-    hqCountry: 'Nigeria',
-    officePhone: '+234-802-555-7788',
-    officialEmail: 'info@agroresearch.org',
-    website: 'https://agroresearch.org',
-    facebook: 'AgroResearchAfrica',
-    linkedin: 'african-agricultural-research-consortium',
-    twitter: '@AgroResearchNG',
-    instagram: 'agroresearch_ng',
-
-    // Organization Info - Operations & Documentation
-    numEmployees: '95',
-    areasOfOperation: 'Nigeria, Ghana, Kenya, Rwanda',
-    organizationLogo: '',
-    certificateOfIncorporation: '',
-    hasPartnership: 'Yes',
-    partnershipDetails: 'Research collaborations with universities, PFIs, extension services, and international donors.',
-
-    // Organization Info - Security & Terms
+    
+    // Step 2: Academic / Research Information
+    institutionName: '',
+    faculty: '',
+    currentLevel: '',
+    studentResearcherId: '',
+    yearOfEntry: '',
+    expectedCompletionYear: '',
+    areaOfStudy: '',
+    researchTopic: '',
+    supervisorName: '',
+    supervisorEmail: '',
+    supportingDocument: '',
+    googleScholar: '',
+    researchGate: '',
+    linkedinProfile: '',
+    
+    // Step 3: Security
     password: '',
     confirmPassword: '',
-    agreeToTerms: true
+    agreeToTerms: false,
+    agreeToAccuracy: false,
   });
+
+  const [recordId, setRecordId] = useState<string | null>(null);
+  const [status, setStatus] = useState<ResearcherStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [isLoadingRecord, setIsLoadingRecord] = useState(true);
+  const { addNotification } = useNotifications();
+
+  const isVerified = status === 'verified';
+  const awaitingApproval = status === 'unverified' && !rejectionReason;
 
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/researcher' },
-    { id: 'research-projects', name: 'Research Projects', icon: '🧪', href: '/portal/researcher/research-projects' },
-    { id: 'data-collection', name: 'Data Collection', icon: '📋', href: '/portal/researcher/data-collection' },
-    { id: 'publications', name: 'Publications', icon: '📚', href: '/portal/researcher/publications' },
-    { id: 'collaborations', name: 'Collaborations', icon: '🤝', href: '/portal/researcher/collaborations' },
-    { id: 'funding', name: 'Funding', icon: '💰', href: '/portal/researcher/funding' },
-    { id: 'conferences', name: 'Conferences', icon: '🎤', href: '/portal/researcher/conferences' },
-    { id: 'reports', name: 'Reports', icon: '📈', href: '/portal/researcher/reports' },
+    { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/researcher/scheme-application' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/researcher/settings' }
   ];
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -94,30 +85,232 @@ const Settings: React.FC = () => {
     }
   };
 
+  const populateFormFromRecord = (record: ResearcherRecord) => {
+    const data = record.formData;
+    setFormData(prev => ({
+      ...prev,
+      fullName: data.fullName || '',
+      gender: data.gender || '',
+      birthDate: data.birthDate || '',
+      nationality: data.nationality || '',
+      email: data.email || '',
+      phone: data.phone || '',
+      whatsapp: data.whatsapp || '',
+      address: data.address || '',
+      city: data.city || '',
+      state: data.state || '',
+      country: data.country || '',
+      idType: data.idType || '',
+      idNumber: data.idNumber || '',
+      idDocument: data.idDocumentName || '',
+      institutionName: data.institutionName || '',
+      faculty: data.faculty || '',
+      currentLevel: data.currentLevel || '',
+      studentResearcherId: data.studentResearcherId || '',
+      yearOfEntry: data.yearOfEntry || '',
+      expectedCompletionYear: data.expectedCompletionYear || '',
+      areaOfStudy: data.areaOfStudy || '',
+      researchTopic: data.researchTopic || '',
+      supervisorName: data.supervisorName || '',
+      supervisorEmail: data.supervisorEmail || '',
+      supportingDocument: data.supportingDocumentName || '',
+      googleScholar: data.googleScholar || '',
+      researchGate: data.researchGate || '',
+      linkedinProfile: data.linkedinProfile || '',
+      password: '',
+      confirmPassword: '',
+      agreeToTerms: true,
+      agreeToAccuracy: true,
+    }));
+  };
+
+  useEffect(() => {
+    const loadRecord = () => {
+      const rawSession = localStorage.getItem('user');
+      if (!rawSession) {
+        setIsLoadingRecord(false);
+        return;
+      }
+
+      try {
+        const session = JSON.parse(rawSession);
+        if (!session || session.role !== 'Researcher/Student') {
+          setIsLoadingRecord(false);
+          return;
+        }
+
+        if (!session.id) {
+          setIsLoadingRecord(false);
+          return;
+        }
+
+        if (session.status) {
+          setStatus(session.status as ResearcherStatus);
+        }
+
+        const record = findResearcherById(session.id);
+        if (record) {
+          setRecordId(record.id);
+          setStatus(record.status);
+          setRejectionReason(record.rejectionReason || null);
+          populateFormFromRecord(record);
+        } else {
+          setRecordId(null);
+        }
+      } catch (error) {
+        console.error('Failed to load researcher registration', error);
+      } finally {
+        setIsLoadingRecord(false);
+      }
+    };
+
+    loadRecord();
+  }, []);
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    showNotification('Settings saved successfully!', 'success');
+
+    if (isVerified) {
+      showNotification('Your registration is already verified and cannot be modified.', 'info');
+      return;
+    }
+
+    if (!recordId) {
+      showNotification('No registration record found. Please complete the Researcher/Student registration first.', 'error');
+      return;
+    }
+
+    const storedFormData: ResearcherFormData = {
+      fullName: formData.fullName.trim(),
+      gender: formData.gender,
+      birthDate: formData.birthDate,
+      nationality: formData.nationality.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      whatsapp: formData.whatsapp.trim() || undefined,
+      address: formData.address.trim(),
+      city: formData.city.trim(),
+      state: formData.state.trim(),
+      country: formData.country.trim(),
+      idType: formData.idType,
+      idNumber: formData.idNumber.trim(),
+      idDocumentName: formData.idDocument.trim() || undefined,
+      institutionName: formData.institutionName.trim(),
+      faculty: formData.faculty.trim(),
+      currentLevel: formData.currentLevel,
+      studentResearcherId: formData.studentResearcherId.trim(),
+      yearOfEntry: formData.yearOfEntry.trim(),
+      expectedCompletionYear: formData.expectedCompletionYear.trim(),
+      areaOfStudy: formData.areaOfStudy.trim(),
+      researchTopic: formData.researchTopic.trim() || undefined,
+      supervisorName: formData.supervisorName.trim() || undefined,
+      supervisorEmail: formData.supervisorEmail.trim() || undefined,
+      supportingDocumentName: formData.supportingDocument.trim() || undefined,
+      googleScholar: formData.googleScholar.trim() || undefined,
+      researchGate: formData.researchGate.trim() || undefined,
+      linkedinProfile: formData.linkedinProfile.trim() || undefined,
+      password: '',
+    };
+
+    const applicationData = buildResearcherApplicationData(storedFormData);
+
+    const notificationId = addNotification({
+      role: '🎓 Researcher/Student',
+      targetRole: 'coordinating-agency',
+      message: `${storedFormData.fullName} updated their Researcher/Student details for review.`,
+      applicantName: storedFormData.fullName,
+      applicantType: 'Individual',
+      fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+      contactPersonName: storedFormData.fullName,
+      contactPersonEmail: storedFormData.email,
+      contactPersonPhone: storedFormData.phone,
+      applicationData,
+      metadata: {
+        type: 'researcherRegistration',
+        researcherId: recordId,
+        email: storedFormData.email,
+        requiresDecision: true,
+      },
+    });
+
+    const updatedRecord = updateResearcherRecord(recordId, {
+      formData: storedFormData,
+      status: 'unverified',
+      rejectionReason: undefined,
+      lastSubmittedAt: new Date().toISOString(),
+      pendingNotificationId: notificationId,
+      email: storedFormData.email,
+    } as Partial<Omit<ResearcherRecord, 'id'>>);
+
+    setStatus('unverified');
+    setRejectionReason(null);
+
+    if (updatedRecord) {
+      populateFormFromRecord(updatedRecord);
+    }
+
+    showNotification('Your updates have been sent to the Coordinating Agency for approval.', 'success');
   };
 
   return (
-    <PortalLayout role="Researcher" roleIcon="🔬" sidebarItems={sidebarItems}>
+    <PortalLayout 
+      role="Researcher/Student" 
+      roleIcon="🎓" 
+      sidebarItems={sidebarItems}
+    >
       <div className="space-y-6">
+        <div className="bg-primary-800 border border-primary-700 rounded-lg p-4">
+          <p className="text-sm font-semibold font-sans text-gray-100">
+            Verification Status:{' '}
+            <span className={isVerified ? 'text-green-400' : 'text-red-400'}>
+              {isVerified ? 'Verified 🟢' : 'Unverified 🔴'}
+            </span>
+          </p>
+          {isLoadingRecord ? (
+            <p className="text-xs text-gray-400 font-serif mt-2">Loading registration details...</p>
+          ) : (
+            <>
+              {isVerified ? (
+                <p className="text-xs text-gray-400 font-serif mt-2">
+                  Your account is verified. Contact the Coordinating Agency to request changes.
+                </p>
+              ) : rejectionReason ? (
+                <p className="text-xs text-red-400 font-serif mt-2">
+                  Rejection reason: {rejectionReason}
+                </p>
+              ) : awaitingApproval ? (
+                <p className="text-xs text-gray-400 font-serif mt-2">
+                  Awaiting approval from the Coordinating Agency.
+                </p>
+              ) : null}
+              {!recordId && (
+                <p className="text-xs text-yellow-400 font-serif mt-2">
+                  No registration data found. Please complete your Researcher/Student registration.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold font-sans text-gray-100">Settings</h1>
-            <p className="text-sm md:text-base text-gray-400 font-serif mt-2">
-              Manage your research institution profile and collaboration preferences
-            </p>
+            <p className="text-sm md:text-base text-gray-400 font-serif mt-2">Manage your account information and preferences</p>
           </div>
-          <button type="submit" form="settings-form" className="btn-primary w-full sm:w-auto justify-center">
+          <button 
+            type="submit"
+            form="settings-form"
+            disabled={isVerified || isLoadingRecord || !recordId}
+            className={`btn-primary w-full sm:w-auto justify-center ${isVerified || isLoadingRecord || !recordId ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
             💾 Save Changes
           </button>
         </div>
 
         {/* Section Tabs */}
         <div className="bg-primary-800 rounded-lg p-2">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => setActiveSection('contact')}
@@ -131,676 +324,564 @@ const Settings: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setActiveSection('organization')}
+              onClick={() => setActiveSection('academic')}
               className={`p-3 rounded-lg text-center transition-all duration-200 ${
-                activeSection === 'organization'
+                activeSection === 'academic'
                   ? 'bg-primary-500 text-white'
                   : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
               }`}
             >
-              <div className="font-medium font-sans">Organization Info</div>
+              <div className="font-medium font-sans">Academic / Research</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSection('security')}
+              className={`p-3 rounded-lg text-center transition-all duration-200 ${
+                activeSection === 'security'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
+              }`}
+            >
+              <div className="font-medium font-sans">Security</div>
             </button>
           </div>
         </div>
 
         <form id="settings-form" onSubmit={handleSave} className="space-y-6">
-          {activeSection === 'contact' && (
-            <>
-              {/* Personal Details */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Personal Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Position / Role in Organization <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="position"
-                      value={formData.position}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter your position/role"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Gender <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Date of Birth <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="birthDate"
-                      value={formData.birthDate}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Contact Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Email Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter your email address"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Phone Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter your phone number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      WhatsApp (Optional)
-                    </label>
-                    <input
-                      type="tel"
-                      name="whatsapp"
-                      value={formData.whatsapp}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter WhatsApp number"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Office / Lab Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter address"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      City <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter city"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      State <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter state"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Country <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter country"
-                    />
+          <fieldset disabled={isVerified} className="space-y-6">
+            {activeSection === 'contact' && (
+              <>
+                {/* Personal Details */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Personal Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Gender <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Date of Birth <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        name="birthDate"
+                        value={formData.birthDate}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Nationality <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="nationality"
+                        value={formData.nationality}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter your nationality"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Verification & Emergency */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Verification & Emergency</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      ID Type
-                    </label>
-                    <select
-                      name="idType"
-                      value={formData.idType}
-                      onChange={handleInputChange}
-                      className="input-field"
-                    >
-                      <option value="National ID">National ID</option>
-                      <option value="Driver's License">Driver's License</option>
-                      <option value="Passport">Passport</option>
-                      <option value="Voter's Card">Voter's Card</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      ID Number
-                    </label>
-                    <input
-                      type="text"
-                      name="idNumber"
-                      value={formData.idNumber}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter ID number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Upload ID Document
-                    </label>
-                    <input
-                      type="file"
-                      name="idDocument"
-                      onChange={handleFileChange}
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="input-field"
-                    />
-                    {formData.idDocument && (
-                      <p className="text-sm text-gray-400 font-serif mt-2">Current: {formData.idDocument}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Emergency Contact Name
-                    </label>
-                    <input
-                      type="text"
-                      name="emergencyContactName"
-                      value={formData.emergencyContactName}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter emergency contact name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Emergency Contact Phone
-                    </label>
-                    <input
-                      type="tel"
-                      name="emergencyContactPhone"
-                      value={formData.emergencyContactPhone}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter emergency contact phone"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Relationship with Emergency Contact
-                    </label>
-                    <input
-                      type="text"
-                      name="emergencyRelationship"
-                      value={formData.emergencyRelationship}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="e.g., Spouse, Parent, Sibling"
-                    />
+                {/* Contact Details */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Contact Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter your email address"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Phone <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter your phone number"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        WhatsApp (Optional)
+                      </label>
+                      <input
+                        type="tel"
+                        name="whatsapp"
+                        value={formData.whatsapp}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        placeholder="Enter WhatsApp number"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Residential Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter your residential address"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        City <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter city"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        State/Province <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter state/province"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Country <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter country"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </>
-          )}
 
-          {activeSection === 'organization' && (
-            <>
-              {/* Basic Information */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Basic Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Organization Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="organizationName"
-                      value={formData.organizationName}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter organization name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Registration Number
-                    </label>
-                    <input
-                      type="text"
-                      name="registrationNumber"
-                      value={formData.registrationNumber}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter registration number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Organization Type <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="organizationType"
-                      value={formData.organizationType}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                    >
-                      <option value="">Select Organization Type</option>
-                      <option value="Research Institution">Research Institution</option>
-                      <option value="University">University</option>
-                      <option value="Research Center">Research Center</option>
-                      <option value="Private Company">Private Company</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Year Established
-                    </label>
-                    <input
-                      type="text"
-                      name="yearEstablished"
-                      value={formData.yearEstablished}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter year established"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Industry <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="industry"
-                      value={formData.industry}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                    >
-                      <option value="">Select Industry</option>
-                      <option value="Agricultural Research & Innovation">Agricultural Research & Innovation</option>
-                      <option value="Food & Beverage">Food & Beverage</option>
-                      <option value="Biotechnology">Biotechnology</option>
-                      <option value="Pharmaceutical">Pharmaceutical</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Mission Statement
-                    </label>
-                    <textarea
-                      name="missionStatement"
-                      value={formData.missionStatement}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      rows={4}
-                      placeholder="Enter mission statement"
-                    />
+                {/* Identity Verification */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Identity Verification</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        ID Type <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="idType"
+                        value={formData.idType}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                      >
+                        <option value="">Select ID Type</option>
+                        <option value="National ID">National ID</option>
+                        <option value="Passport">Passport</option>
+                        <option value="Driver's License">Driver's License</option>
+                        <option value="Student ID">Student ID</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        ID Number <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="idNumber"
+                        value={formData.idNumber}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter ID number"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Upload ID Document <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="file"
+                        name="idDocument"
+                        onChange={handleFileChange}
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="input-field"
+                      />
+                      {formData.idDocument && (
+                        <p className="text-sm text-gray-400 font-serif mt-2">Current: {formData.idDocument}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
+            )}
 
-              {/* Address & Contact Info */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Address & Contact Info</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Headquarters Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="headquartersAddress"
-                      value={formData.headquartersAddress}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter headquarters address"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      City <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="hqCity"
-                      value={formData.hqCity}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter city"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      State <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="hqState"
-                      value={formData.hqState}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter state"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Country <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="hqCountry"
-                      value={formData.hqCountry}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter country"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Office Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      name="officePhone"
-                      value={formData.officePhone}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter office phone number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Official Email Address
-                    </label>
-                    <input
-                      type="email"
-                      name="officialEmail"
-                      value={formData.officialEmail}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter official email address"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Website
-                    </label>
-                    <input
-                      type="url"
-                      name="website"
-                      value={formData.website}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter website URL"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Facebook Page
-                    </label>
-                    <input
-                      type="url"
-                      name="facebook"
-                      value={formData.facebook}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter Facebook URL"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      LinkedIn Profile
-                    </label>
-                    <input
-                      type="url"
-                      name="linkedin"
-                      value={formData.linkedin}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter LinkedIn URL"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Twitter Handle
-                    </label>
-                    <input
-                      type="url"
-                      name="twitter"
-                      value={formData.twitter}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter Twitter URL"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Instagram Handle
-                    </label>
-                    <input
-                      type="url"
-                      name="instagram"
-                      value={formData.instagram}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter Instagram URL"
-                    />
+            {activeSection === 'academic' && (
+              <>
+                {/* Academic Profile */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Academic Profile</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Institution <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="institutionName"
+                        value={formData.institutionName}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter institution name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Faculty <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="faculty"
+                        value={formData.faculty}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter faculty/department"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Current Level <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="currentLevel"
+                        value={formData.currentLevel}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                      >
+                        <option value="">Select Current Level</option>
+                        <option value="Undergraduate">Undergraduate</option>
+                        <option value="Postgraduate (Masters)">Postgraduate (Masters)</option>
+                        <option value="Postgraduate (PhD)">Postgraduate (PhD)</option>
+                        <option value="Researcher">Researcher</option>
+                        <option value="Lecturer">Lecturer</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Student/Researcher ID <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="studentResearcherId"
+                        value={formData.studentResearcherId}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter student/researcher ID"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Year of Entry <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="yearOfEntry"
+                        value={formData.yearOfEntry}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="YYYY"
+                        min="1900"
+                        max="2100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Expected Completion Year <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="expectedCompletionYear"
+                        value={formData.expectedCompletionYear}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="YYYY"
+                        min="1900"
+                        max="2100"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Operations & Documentation */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Operations & Documentation</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Number of Employees
-                    </label>
-                    <input
-                      type="text"
-                      name="numEmployees"
-                      value={formData.numEmployees}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter number of employees"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Areas of Operation
-                    </label>
-                    <input
-                      type="text"
-                      name="areasOfOperation"
-                      value={formData.areasOfOperation}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter areas of operation (comma-separated)"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Upload Organization Logo
-                    </label>
-                    <input
-                      type="file"
-                      name="organizationLogo"
-                      onChange={handleFileChange}
-                      accept=".jpg,.jpeg,.png,.svg"
-                      className="input-field"
-                    />
-                    {formData.organizationLogo && (
-                      <p className="text-sm text-gray-400 font-serif mt-2">Current: {formData.organizationLogo}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Upload Certificate of Incorporation
-                    </label>
-                    <input
-                      type="file"
-                      name="certificateOfIncorporation"
-                      onChange={handleFileChange}
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="input-field"
-                    />
-                    {formData.certificateOfIncorporation && (
-                      <p className="text-sm text-gray-400 font-serif mt-2">Current: {formData.certificateOfIncorporation}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Has Partnership
-                    </label>
-                    <select
-                      name="hasPartnership"
-                      value={formData.hasPartnership}
-                      onChange={handleInputChange}
-                      className="input-field"
-                    >
-                      <option value="Yes">Yes</option>
-                      <option value="No">No</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Partnership Details
-                    </label>
-                    <textarea
-                      name="partnershipDetails"
-                      value={formData.partnershipDetails}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      rows={4}
-                      placeholder="Enter partnership details"
-                    />
+                {/* Research Information */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Research Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Area of Study <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="areaOfStudy"
+                        value={formData.areaOfStudy}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter area of study"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Research Topic (Optional)
+                      </label>
+                      <textarea
+                        name="researchTopic"
+                        value={formData.researchTopic}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        rows={3}
+                        placeholder="Enter research topic (optional)"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Supervisor Name (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        name="supervisorName"
+                        value={formData.supervisorName}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        placeholder="Enter supervisor name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Supervisor Email (Optional)
+                      </label>
+                      <input
+                        type="email"
+                        name="supervisorEmail"
+                        value={formData.supervisorEmail}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        placeholder="Enter supervisor email"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Supporting Document (Optional)
+                      </label>
+                      <input
+                        type="file"
+                        name="supportingDocument"
+                        onChange={handleFileChange}
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        className="input-field"
+                      />
+                      {formData.supportingDocument && (
+                        <p className="text-sm text-gray-400 font-serif mt-2">Current: {formData.supportingDocument}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Security & Terms */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Security & Terms</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Password <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter password"
-                    />
+                {/* Optional Professional Links */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Optional Professional Links</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Google Scholar Profile (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        name="googleScholar"
+                        value={formData.googleScholar}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        placeholder="Enter Google Scholar profile URL"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        ResearchGate Profile (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        name="researchGate"
+                        value={formData.researchGate}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        placeholder="Enter ResearchGate profile URL"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        LinkedIn Profile (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        name="linkedinProfile"
+                        value={formData.linkedinProfile}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        placeholder="Enter LinkedIn profile URL"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Confirm Password <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Confirm password"
-                    />
+                </div>
+              </>
+            )}
+
+            {activeSection === 'security' && (
+              <>
+                {/* Account Security */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Account Security</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Password <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Enter password"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Confirm Password <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        placeholder="Confirm password"
+                      />
+                    </div>
                   </div>
-                  <div className="md:col-span-2">
-                    <div className="flex items-center">
+                </div>
+
+                {/* Terms & Confirmation */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Terms & Confirmation</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-start">
                       <input
                         type="checkbox"
+                        id="agreeToTerms"
                         name="agreeToTerms"
                         checked={formData.agreeToTerms}
                         onChange={handleInputChange}
-                        className="mr-2"
+                        required
+                        className="mt-1 mr-2"
                       />
-                      <label className="text-sm text-gray-300 font-serif">
-                        I agree to the <a href="#" className="text-primary-400 hover:underline">Terms of Service</a> and <a href="#" className="text-primary-400 hover:underline">Privacy Policy</a>
+                      <label htmlFor="agreeToTerms" className="text-sm text-gray-300 font-serif">
+                        I agree to the Terms and Conditions <span className="text-red-500">*</span>
+                      </label>
+                    </div>
+                    <div className="flex items-start">
+                      <input
+                        type="checkbox"
+                        id="agreeToAccuracy"
+                        name="agreeToAccuracy"
+                        checked={formData.agreeToAccuracy}
+                        onChange={handleInputChange}
+                        required
+                        className="mt-1 mr-2"
+                      />
+                      <label htmlFor="agreeToAccuracy" className="text-sm text-gray-300 font-serif">
+                        I confirm that all information provided is accurate <span className="text-red-500">*</span>
                       </label>
                     </div>
                   </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </fieldset>
         </form>
+        
+        <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
+          Powered by Mc. George
+        </div>
       </div>
     </PortalLayout>
   );

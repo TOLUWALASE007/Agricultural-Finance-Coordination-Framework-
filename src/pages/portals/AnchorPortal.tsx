@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import PortalLayout from '../../components/PortalLayout';
 import { generateReport, processAction, addNewRecord, contactPerson } from '../../utils/quickActions';
+import { getAnchorStatusSnapshot, AnchorStatus } from '../../utils/localDatabase';
 
 const AnchorPortal: React.FC = () => {
   const sidebarItems = [
@@ -8,6 +10,21 @@ const AnchorPortal: React.FC = () => {
     { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/anchor/scheme-application' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/anchor/settings' }
   ];
+
+  const [status, setStatus] = useState<AnchorStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [recordLoaded, setRecordLoaded] = useState(false);
+ 
+  useEffect(() => {
+    const snapshot = getAnchorStatusSnapshot();
+    if (snapshot) {
+      setStatus(snapshot.status);
+      setRejectionReason(snapshot.rejectionReason);
+    }
+    setRecordLoaded(true);
+  }, []);
+ 
+  const isVerified = status === 'verified';
 
   const stats = [
     { title: 'Producer Network', value: '1,247', change: '+23', icon: '🌾' },
@@ -89,6 +106,44 @@ const AnchorPortal: React.FC = () => {
   const currentPastPage = Math.min(pastPage, totalPastPages);
   const pastStartIndex = (currentPastPage - 1) * pastPageSize;
   const paginatedPastSchemes = filteredPastSchemes.slice(pastStartIndex, pastStartIndex + pastPageSize);
+
+  if (!recordLoaded) {
+    return (
+      <PortalLayout role="Anchor" roleIcon="⚓" sidebarItems={sidebarItems}>
+        <div className="card">
+          <h1 className="text-lg font-semibold font-sans text-gray-100">Loading Dashboard</h1>
+          <p className="text-sm text-gray-300 font-serif mt-2">Fetching your Anchor details...</p>
+        </div>
+      </PortalLayout>
+    );
+  }
+ 
+  if (!isVerified) {
+    return (
+      <PortalLayout role="Anchor" roleIcon="⚓" sidebarItems={sidebarItems}>
+        <div className="space-y-4">
+          <div className="card">
+            <h1 className="text-xl font-bold font-sans text-gray-100 mb-2">Awaiting Verification</h1>
+            <p className="text-sm text-gray-300 font-serif">
+              Your Anchor account is pending approval from the Coordinating Agency. You can update and resubmit your details from the Settings page while you wait.
+            </p>
+            <Link
+              to="/portal/anchor/settings"
+              className="inline-flex items-center mt-4 px-4 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium"
+            >
+              Go to Settings
+            </Link>
+          </div>
+          {rejectionReason && (
+            <div className="card">
+              <h2 className="text-lg font-semibold font-sans text-gray-100 mb-2">Most Recent Feedback</h2>
+              <p className="text-sm text-red-400 font-serif">{rejectionReason}</p>
+            </div>
+          )}
+        </div>
+      </PortalLayout>
+    );
+  }
 
   return (
     <PortalLayout role="Anchor" roleIcon="⚓" sidebarItems={sidebarItems}>
@@ -295,30 +350,18 @@ const AnchorPortal: React.FC = () => {
         {/* Quick Actions */}
         <div className="card">
           <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button 
-              className="btn-primary"
-              onClick={() => addNewRecord('Supply Contract')}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              to="/portal/anchor/scheme-application"
+              className="btn-primary text-center"
             >
-              📋 Create Contract
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => addNewRecord('Producer Registration')}
-            >
-              🌾 Add Producer
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => processAction('Loan Facilitation')}
-            >
-              💰 Facilitate Loan
-            </button>
+              📝 Apply to Schemes
+            </Link>
             <button 
               className="btn-secondary"
               onClick={() => generateReport('Quality Assessment Report', 'PDF')}
             >
-              📊 Quality Report
+              📊 Generate Reports
             </button>
           </div>
         </div>

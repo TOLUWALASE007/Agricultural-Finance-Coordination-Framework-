@@ -68,6 +68,8 @@ import ITDept from './pages/portals/CoordinatingAgency/Stakeholders/IT';
 import TrainingDept from './pages/portals/CoordinatingAgency/Stakeholders/Training';
 import MonitoringDept from './pages/portals/CoordinatingAgency/Stakeholders/Monitoring';
 // Insurance sub-pages
+import InsuranceSchemeApplication from './pages/portals/Insurance/SchemeApplication';
+import CooperativeSchemeApplication from './pages/portals/Cooperative/SchemeApplication';
 import InsurancePolicies from './pages/portals/Insurance/Policies';
 import InsuranceClaimsPage from './pages/portals/Insurance/Claims';
 import InsuranceRiskAssessment from './pages/portals/Insurance/RiskAssessment';
@@ -92,6 +94,7 @@ import CooperativeTraining from './pages/portals/Cooperative/Training';
 import ExtensionFarmers from './pages/portals/Extension/Farmers';
 import ExtensionTrainingPrograms from './pages/portals/Extension/TrainingPrograms';
 import ExtensionSettings from './pages/portals/Extension/Settings';
+import ExtensionSchemeApplication from './pages/portals/Extension/SchemeApplication';
 import ExtensionAdvisoryServices from './pages/portals/Extension/AdvisoryServices';
 import ExtensionTechnologyTransfer from './pages/portals/Extension/TechnologyTransfer';
 import ExtensionFieldMonitoring from './pages/portals/Extension/FieldMonitoring';
@@ -100,6 +103,7 @@ import ExtensionReports from './pages/portals/Extension/Reports';
 import ResearcherResearchProjects from './pages/portals/Researcher/ResearchProjects';
 import ResearcherDataCollection from './pages/portals/Researcher/DataCollection';
 import ResearcherSettings from './pages/portals/Researcher/Settings';
+import ResearcherSchemeApplication from './pages/portals/Researcher/SchemeApplication';
 import ResearcherPublications from './pages/portals/Researcher/Publications';
 import ResearcherCollaborations from './pages/portals/Researcher/Collaborations';
 import ResearcherFunding from './pages/portals/Researcher/Funding';
@@ -173,6 +177,8 @@ function App() {
         <Route path="/portal/pfi/scheme-application" element={<PFISchemeApplication />} />
         <Route path="/portal/pfi/settings" element={<PFISettings />} />
         <Route path="/portal/insurance" element={<InsurancePortal />} />
+        <Route path="/portal/insurance/scheme-application" element={<InsuranceSchemeApplication />} />
+        <Route path="/portal/cooperative/scheme-application" element={<CooperativeSchemeApplication />} />
         <Route path="/portal/insurance/policies" element={<InsurancePolicies />} />
         <Route path="/portal/insurance/claims" element={<InsuranceClaimsPage />} />
         <Route path="/portal/insurance/risk" element={<InsuranceRiskAssessment />} />
@@ -197,6 +203,7 @@ function App() {
                <Route path="/portal/cooperative/market" element={<CooperativeMarketAccess />} />
                <Route path="/portal/cooperative/training" element={<CooperativeTraining />} />
         <Route path="/portal/extension" element={<ExtensionPortal />} />
+        <Route path="/portal/extension/scheme-application" element={<ExtensionSchemeApplication />} />
         <Route path="/portal/extension/farmers" element={<ExtensionFarmers />} />
         <Route path="/portal/extension/training" element={<ExtensionTrainingPrograms />} />
                <Route path="/portal/extension/settings" element={<ExtensionSettings />} />
@@ -205,6 +212,7 @@ function App() {
                <Route path="/portal/extension/monitoring" element={<ExtensionFieldMonitoring />} />
                <Route path="/portal/extension/reports" element={<ExtensionReports />} />
         <Route path="/portal/researcher" element={<ResearcherPortal />} />
+        <Route path="/portal/researcher/scheme-application" element={<ResearcherSchemeApplication />} />
         <Route path="/portal/researcher/projects" element={<ResearcherResearchProjects />} />
         <Route path="/portal/researcher/data" element={<ResearcherDataCollection />} />
                <Route path="/portal/researcher/settings" element={<ResearcherSettings />} />

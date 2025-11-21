@@ -1,42 +1,91 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PortalLayout from '../../components/PortalLayout';
 import { generateReport, processAction, addNewRecord, viewDetails } from '../../utils/quickActions';
+import { getResearcherStatusSnapshot, ResearcherStatus } from '../../utils/localDatabase';
 
 const ResearcherPortal: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/researcher' },
-    { id: 'research', name: 'Research Projects', icon: '🔬', href: '/portal/researcher/projects' },
-    { id: 'data', name: 'Data Collection', icon: '📊', href: '/portal/researcher/data' },
-    { id: 'publications', name: 'Publications', icon: '📚', href: '/portal/researcher/publications' },
-    { id: 'collaborations', name: 'Collaborations', icon: '🤝', href: '/portal/researcher/collaborations' },
-    { id: 'funding', name: 'Funding', icon: '💰', href: '/portal/researcher/funding' },
-    { id: 'conferences', name: 'Conferences', icon: '🎓', href: '/portal/researcher/conferences' },
-    { id: 'reports', name: 'Reports', icon: '📊', href: '/portal/researcher/reports' },
+    { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/researcher/scheme-application' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/researcher/settings' }
   ];
 
+  const [status, setStatus] = useState<ResearcherStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [recordLoaded, setRecordLoaded] = useState(false);
+ 
+  useEffect(() => {
+    const snapshot = getResearcherStatusSnapshot();
+    if (snapshot) {
+      setStatus(snapshot.status);
+      setRejectionReason(snapshot.rejectionReason);
+    }
+    setRecordLoaded(true);
+  }, []);
+ 
+  const isVerified = status === 'verified';
+
   const stats = [
-    { title: 'Active Projects', value: '8', change: '+2', icon: '🔬' },
-    { title: 'Publications', value: '23', change: '+5', icon: '📚' },
-    { title: 'Data Points', value: '15.6K', change: '+2.3K', icon: '📊' },
-    { title: 'Collaborations', value: '12', change: '+3', icon: '🤝' }
+    { title: 'Research Projects', value: '12', change: '+3', icon: '🧪' },
+    { title: 'Publications', value: '8', change: '+2', icon: '📚' },
+    { title: 'Active Collaborations', value: '5', change: '+1', icon: '🤝' },
+    { title: 'Data Collections', value: '24', change: '+6', icon: '📋' }
   ];
 
   const recentActivities = [
-    { type: 'Data Collection', description: 'Field data collection in Kano State completed', time: '2 hours ago', status: 'completed' },
-    { type: 'Publication', description: 'Research paper published in Agricultural Journal', time: '1 day ago', status: 'completed' },
-    { type: 'Conference', description: 'Presented findings at AFCF Research Conference', time: '3 days ago', status: 'completed' },
-    { type: 'Funding', description: 'Grant application submitted for climate research', time: '5 days ago', status: 'pending' }
+    { type: 'Scheme Application', description: 'Applied to Research Funding Scheme', time: '2 days ago', status: 'pending' },
+    { type: 'Publication', description: 'Published research paper on agricultural finance', time: '1 week ago', status: 'completed' },
+    { type: 'Data Collection', description: 'Completed field data collection', time: '2 weeks ago', status: 'completed' },
+    { type: 'Conference', description: 'Presented at Agricultural Finance Conference', time: '3 weeks ago', status: 'completed' }
   ];
+
+  if (!recordLoaded) {
+    return (
+      <PortalLayout role="Researcher/Student" roleIcon="🎓" sidebarItems={sidebarItems}>
+        <div className="card">
+          <h1 className="text-lg font-semibold font-sans text-gray-100">Loading Dashboard</h1>
+          <p className="text-sm text-gray-300 font-serif mt-2">Fetching your Researcher/Student details...</p>
+        </div>
+      </PortalLayout>
+    );
+  }
+ 
+  if (!isVerified) {
+    return (
+      <PortalLayout role="Researcher/Student" roleIcon="🎓" sidebarItems={sidebarItems}>
+        <div className="space-y-4">
+          <div className="card">
+            <h1 className="text-xl font-bold font-sans text-gray-100 mb-2">Awaiting Verification</h1>
+            <p className="text-sm text-gray-300 font-serif">
+              Your Researcher/Student account is pending approval from the Coordinating Agency. You can update and resubmit your details from the Settings page while you wait.
+            </p>
+            <Link
+              to="/portal/researcher/settings"
+              className="inline-flex items-center mt-4 px-4 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium"
+            >
+              Go to Settings
+            </Link>
+          </div>
+          {rejectionReason && (
+            <div className="card">
+              <h2 className="text-lg font-semibold font-sans text-gray-100 mb-2">Most Recent Feedback</h2>
+              <p className="text-sm text-red-400 font-serif">{rejectionReason}</p>
+            </div>
+          )}
+        </div>
+      </PortalLayout>
+    );
+  }
 
   return (
     <PortalLayout role="Researcher/Student" roleIcon="🎓" sidebarItems={sidebarItems}>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-violet-600 to-violet-800 rounded-xl p-6 text-white">
-          <h1 className="text-2xl font-bold font-sans mb-2">Welcome to Researcher Portal</h1>
+        <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-xl p-6 text-white">
+          <h1 className="text-2xl font-bold font-sans mb-2">Welcome to Researcher/Student Portal</h1>
           <p className="text-gray-200 font-serif">
-            Conduct agricultural finance research, collect field data, publish findings, and collaborate with stakeholders to advance agricultural development.
+            Manage your research projects, apply to funding schemes, track publications, and collaborate with agricultural finance stakeholders.
           </p>
         </div>
 
@@ -81,58 +130,55 @@ const ResearcherPortal: React.FC = () => {
             </div>
           </div>
 
-          {/* Research Projects */}
+          {/* Research Areas */}
           <div className="card">
-            <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Active Research Projects</h3>
+            <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Research Areas</h3>
             <div className="space-y-3">
               {[
-                { project: 'Climate Finance Impact', progress: '78%', funding: '₦2.5M', status: 'Active' },
-                { project: 'Digital Payment Adoption', progress: '65%', funding: '₦1.8M', status: 'Active' },
-                { project: 'Women Farmer Access', progress: '45%', funding: '₦3.2M', status: 'Active' },
-                { project: 'Insurance Penetration', progress: '92%', funding: '₦1.5M', status: 'Completed' }
-              ].map((project, index) => (
+                { category: 'Agricultural Finance', count: '5 projects', percentage: '42%', color: 'bg-green-500' },
+                { category: 'Rural Development', count: '4 projects', percentage: '33%', color: 'bg-blue-500' },
+                { category: 'Value Chain', count: '3 projects', percentage: '25%', color: 'bg-purple-500' }
+              ].map((category, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-primary-700 rounded-lg">
-                  <div>
-                    <p className="font-medium font-sans text-gray-100">{project.project}</p>
-                    <p className="text-sm text-gray-300 font-serif">{project.funding} funding</p>
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-3 h-3 rounded-full ${category.color}`}></div>
+                    <div>
+                      <p className="font-medium font-sans text-gray-100">{category.category}</p>
+                      <p className="text-sm text-gray-300 font-serif">{category.count}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold font-sans text-accent-400">{project.progress}</p>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      project.status === 'Active' ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
-                    }`}>
-                      {project.status}
-                    </span>
-                  </div>
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary-600 text-gray-100">
+                    {category.percentage}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Research Areas */}
+        {/* Academic Overview */}
         <div className="card">
-          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Research Areas</h3>
+          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Academic Overview</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center p-4 bg-primary-700 rounded-lg">
+              <div className="text-2xl mb-2">📚</div>
+              <p className="text-2xl font-bold font-sans text-gray-100">8</p>
+              <p className="text-sm text-gray-400 font-serif">Publications</p>
+            </div>
+            <div className="text-center p-4 bg-primary-700 rounded-lg">
+              <div className="text-2xl mb-2">🧪</div>
+              <p className="text-2xl font-bold font-sans text-gray-100">12</p>
+              <p className="text-sm text-gray-400 font-serif">Research Projects</p>
+            </div>
+            <div className="text-center p-4 bg-primary-700 rounded-lg">
+              <div className="text-2xl mb-2">🤝</div>
+              <p className="text-2xl font-bold font-sans text-gray-100">5</p>
+              <p className="text-sm text-gray-400 font-serif">Collaborations</p>
+            </div>
+            <div className="text-center p-4 bg-primary-700 rounded-lg">
               <div className="text-2xl mb-2">💰</div>
-              <p className="text-2xl font-bold font-sans text-gray-100">4</p>
-              <p className="text-sm text-gray-400 font-serif">Finance Studies</p>
-            </div>
-            <div className="text-center p-4 bg-primary-700 rounded-lg">
-              <div className="text-2xl mb-2">🌍</div>
-              <p className="text-2xl font-bold font-sans text-gray-100">3</p>
-              <p className="text-sm text-gray-400 font-serif">Climate Research</p>
-            </div>
-            <div className="text-center p-4 bg-primary-700 rounded-lg">
-              <div className="text-2xl mb-2">📱</div>
-              <p className="text-2xl font-bold font-sans text-gray-100">2</p>
-              <p className="text-sm text-gray-400 font-serif">Digital Studies</p>
-            </div>
-            <div className="text-center p-4 bg-primary-700 rounded-lg">
-              <div className="text-2xl mb-2">👥</div>
-              <p className="text-2xl font-bold font-sans text-gray-100">3</p>
-              <p className="text-sm text-gray-400 font-serif">Social Impact</p>
+              <p className="text-2xl font-bold font-sans text-gray-100">₦3.2M</p>
+              <p className="text-sm text-gray-400 font-serif">Funding Received</p>
             </div>
           </div>
         </div>
@@ -140,30 +186,18 @@ const ResearcherPortal: React.FC = () => {
         {/* Quick Actions */}
         <div className="card">
           <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button 
-              className="btn-primary"
-              onClick={() => addNewRecord('Research Project')}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              to="/portal/researcher/scheme-application"
+              className="btn-primary text-center"
             >
-              🔬 Start Research
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => processAction('Data Analysis')}
-            >
-              📊 Data Analysis
-            </button>
+              📝 Apply to Schemes
+            </Link>
             <button 
               className="btn-secondary"
-              onClick={() => processAction('Paper Publication')}
+              onClick={() => generateReport('Research Performance Report', 'PDF')}
             >
-              📚 Publish Paper
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => processAction('Collaborator Search')}
-            >
-              🤝 Find Collaborators
+              📊 Generate Reports
             </button>
           </div>
         </div>

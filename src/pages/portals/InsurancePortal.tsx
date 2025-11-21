@@ -1,18 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PortalLayout from '../../components/PortalLayout';
 import { generateReport, processAction, addNewRecord, viewDetails } from '../../utils/quickActions';
+import { getInsuranceCompanyStatusSnapshot, InsuranceCompanyStatus } from '../../utils/localDatabase';
 
 const InsurancePortal: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/insurance' },
-    { id: 'policies', name: 'Policies', icon: '🛡️', href: '/portal/insurance/policies' },
-    { id: 'claims', name: 'Claims', icon: '📋', href: '/portal/insurance/claims' },
-    { id: 'producers', name: 'Insured Producers', icon: '🌾', href: '/portal/insurance/producers' },
-    { id: 'risk', name: 'Risk Assessment', icon: '📈', href: '/portal/insurance/risk' },
-    { id: 'weather', name: 'Weather Monitoring', icon: '🌦️', href: '/portal/insurance/weather' },
-    { id: 'payments', name: 'Premium Payments', icon: '💰', href: '/portal/insurance/payments' },
-    { id: 'reports', name: 'Reports', icon: '📊', href: '/portal/insurance/reports' }
+    { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/insurance/scheme-application' },
+    { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/insurance/settings' }
   ];
+
+  const [status, setStatus] = useState<InsuranceCompanyStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [recordLoaded, setRecordLoaded] = useState(false);
+ 
+  useEffect(() => {
+    const snapshot = getInsuranceCompanyStatusSnapshot();
+    if (snapshot) {
+      setStatus(snapshot.status);
+      setRejectionReason(snapshot.rejectionReason);
+    }
+    setRecordLoaded(true);
+  }, []);
+ 
+  const isVerified = status === 'verified';
 
   const stats = [
     { title: 'Active Policies', value: '8,247', change: '+156', icon: '🛡️' },
@@ -27,6 +39,44 @@ const InsurancePortal: React.FC = () => {
     { type: 'Risk Assessment', description: 'Weather risk evaluation for North Central', time: '5 hours ago', status: 'completed' },
     { type: 'Claim Submitted', description: 'New drought damage claim from Jigawa', time: '1 day ago', status: 'pending' }
   ];
+
+  if (!recordLoaded) {
+    return (
+      <PortalLayout role="Insurance Company" roleIcon="🛡️" sidebarItems={sidebarItems}>
+        <div className="card">
+          <h1 className="text-lg font-semibold font-sans text-gray-100">Loading Dashboard</h1>
+          <p className="text-sm text-gray-300 font-serif mt-2">Fetching your Insurance Company details...</p>
+        </div>
+      </PortalLayout>
+    );
+  }
+ 
+  if (!isVerified) {
+    return (
+      <PortalLayout role="Insurance Company" roleIcon="🛡️" sidebarItems={sidebarItems}>
+        <div className="space-y-4">
+          <div className="card">
+            <h1 className="text-xl font-bold font-sans text-gray-100 mb-2">Awaiting Verification</h1>
+            <p className="text-sm text-gray-300 font-serif">
+              Your Insurance Company account is pending approval from the Coordinating Agency. You can update and resubmit your details from the Settings page while you wait.
+            </p>
+            <Link
+              to="/portal/insurance/settings"
+              className="inline-flex items-center mt-4 px-4 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium"
+            >
+              Go to Settings
+            </Link>
+          </div>
+          {rejectionReason && (
+            <div className="card">
+              <h2 className="text-lg font-semibold font-sans text-gray-100 mb-2">Most Recent Feedback</h2>
+              <p className="text-sm text-red-400 font-serif">{rejectionReason}</p>
+            </div>
+          )}
+        </div>
+      </PortalLayout>
+    );
+  }
 
   return (
     <PortalLayout role="Insurance Company" roleIcon="🛡️" sidebarItems={sidebarItems}>
@@ -139,30 +189,18 @@ const InsurancePortal: React.FC = () => {
         {/* Quick Actions */}
         <div className="card">
           <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button 
-              className="btn-primary"
-              onClick={() => addNewRecord('Insurance Policy')}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              to="/portal/insurance/scheme-application"
+              className="btn-primary text-center"
             >
-              🛡️ Issue Policy
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => processAction('Claim Processing')}
-            >
-              📋 Process Claim
-            </button>
+              📝 Apply to Schemes
+            </Link>
             <button 
               className="btn-secondary"
-              onClick={() => processAction('Risk Assessment')}
+              onClick={() => generateReport('Insurance Reports', 'PDF')}
             >
-              📈 Risk Assessment
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => generateReport('Insurance Claims Report', 'PDF')}
-            >
-              📊 Generate Report
+              📊 Generate Reports
             </button>
           </div>
         </div>

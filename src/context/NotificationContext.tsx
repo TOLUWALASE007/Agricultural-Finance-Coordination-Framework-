@@ -12,7 +12,7 @@ export type ApplicationData = {
 export type NotificationItem = {
   id: string;
   role: string;
-  targetRole: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm' | 'coordinating-agency';
+  targetRole: 'fund-provider' | 'anchor' | 'producer' | 'researcher' | 'pfi' | 'lead-firm' | 'coordinating-agency' | 'insurance' | 'cooperative' | 'extension';
   message: string;
   status: 'pending' | 'approved' | 'ignored' | 'read' | 'rejected';
   receivedAt: string;
@@ -41,12 +41,12 @@ interface NotificationContextType {
   notifications: NotificationItem[];
   addNotification: (notification: Omit<NotificationItem, 'id' | 'receivedAt' | 'status' | 'isViewed'>) => string;
   updateNotificationStatus: (id: string, status: NotificationItem['status']) => void;
-  getNotificationsByRole: (role: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm' | 'coordinating-agency') => NotificationItem[];
-  getPendingCount: (role: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm' | 'coordinating-agency') => number;
+  getNotificationsByRole: (role: 'fund-provider' | 'anchor' | 'producer' | 'researcher' | 'pfi' | 'lead-firm' | 'coordinating-agency' | 'insurance' | 'cooperative' | 'extension') => NotificationItem[];
+  getPendingCount: (role: 'fund-provider' | 'anchor' | 'producer' | 'researcher' | 'pfi' | 'lead-firm' | 'coordinating-agency' | 'insurance' | 'cooperative' | 'extension') => number;
   clearNotifications: () => void;
-  hasAppliedToScheme: (schemeId: string, userRole: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm') => boolean;
+  hasAppliedToScheme: (schemeId: string, userRole: 'fund-provider' | 'anchor' | 'producer' | 'researcher' | 'pfi' | 'lead-firm') => boolean;
   getApplicationsForScheme: (schemeId: string) => NotificationItem[];
-  getApprovedApplicationForScheme: (schemeId: string, role: 'pfi' | 'anchor' | 'lead-firm' | 'producer') => NotificationItem | null;
+  getApprovedApplicationForScheme: (schemeId: string, role: 'pfi' | 'anchor' | 'lead-firm' | 'producer' | 'researcher') => NotificationItem | null;
   setNotificationViewed: (id: string, viewed?: boolean) => void;
 }
 
@@ -114,11 +114,11 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     );
   }, []);
 
-  const getNotificationsByRole = useCallback((role: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm' | 'coordinating-agency') => {
+  const getNotificationsByRole = useCallback((role: 'fund-provider' | 'anchor' | 'producer' | 'researcher' | 'pfi' | 'lead-firm' | 'coordinating-agency' | 'insurance' | 'cooperative' | 'extension') => {
     return notifications.filter(n => n.targetRole === role);
   }, [notifications]);
 
-  const getPendingCount = useCallback((role: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm' | 'coordinating-agency') => {
+  const getPendingCount = useCallback((role: 'fund-provider' | 'anchor' | 'producer' | 'researcher' | 'pfi' | 'lead-firm' | 'coordinating-agency' | 'insurance' | 'cooperative' | 'extension') => {
     return notifications.filter(n => n.targetRole === role && !n.isViewed).length;
   }, [notifications]);
 
@@ -127,7 +127,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  const hasAppliedToScheme = useCallback((schemeId: string, userRole: 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm') => {
+  const hasAppliedToScheme = useCallback((schemeId: string, userRole: 'fund-provider' | 'anchor' | 'producer' | 'researcher' | 'pfi' | 'lead-firm') => {
     return notifications.some(n => 
       n.schemeId === schemeId && 
       n.targetRole === 'coordinating-agency' && 
@@ -144,12 +144,13 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     );
   }, [notifications]);
 
-  const getApprovedApplicationForScheme = useCallback((schemeId: string, role: 'pfi' | 'anchor' | 'lead-firm' | 'producer') => {
+  const getApprovedApplicationForScheme = useCallback((schemeId: string, role: 'pfi' | 'anchor' | 'lead-firm' | 'producer' | 'researcher') => {
     const roleMap: Record<string, string[]> = {
       'pfi': ['🏦 PFI'],
       'anchor': ['⚓ Anchor'],
       'lead-firm': ['🌱 Lead Firm'],
-      'producer': ['🌾 Producer', '🌾 Producer/Farmer'] // Handle both Producer role variants
+      'producer': ['🌾 Producer', '🌾 Producer/Farmer'], // Handle both Producer role variants
+      'researcher': ['🎓 Researcher/Student']
     };
     const roleLabels = roleMap[role] || [];
     return notifications.find(n => 

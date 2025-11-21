@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authenticateFundProvider, buildFundProviderSession } from '../utils/localDatabase';
+import { authenticateFundProvider, buildFundProviderSession, authenticateInsuranceCompany, buildInsuranceCompanySession, authenticateCooperativeGroup, buildCooperativeGroupSession, authenticateExtensionOrganization, buildExtensionOrganizationSession, authenticatePFI, buildPFISession, authenticateAnchor, buildAnchorSession, authenticateLeadFirm, buildLeadFirmSession, authenticateProducer, buildProducerSession, authenticateResearcher, buildResearcherSession } from '../utils/localDatabase';
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -226,12 +226,98 @@ const Login: React.FC = () => {
     return true;
   };
 
+  const attemptInsuranceCompanyLocalLogin = (): boolean => {
+    if (formData.role !== 'Insurance Company') return false;
+    const email = formData.email.trim();
+    const record = authenticateInsuranceCompany(email, formData.password);
+    if (!record) return false;
+    const session = buildInsuranceCompanySession(record);
+    handleSuccessfulLogin(session, 'Insurance Company', `ic-token-${Date.now()}`);
+    return true;
+  };
+
+  const attemptCooperativeGroupLocalLogin = (): boolean => {
+    if (formData.role !== 'Cooperative Group') return false;
+    const email = formData.email.trim();
+    const record = authenticateCooperativeGroup(email, formData.password);
+    if (!record) return false;
+    const session = buildCooperativeGroupSession(record);
+    handleSuccessfulLogin(session, 'Cooperative Group', `cg-token-${Date.now()}`);
+    return true;
+  };
+
+  const attemptExtensionOrganizationLocalLogin = (): boolean => {
+    if (formData.role !== 'Extension Organization') return false;
+    const email = formData.email.trim();
+    const record = authenticateExtensionOrganization(email, formData.password);
+    if (!record) return false;
+    const session = buildExtensionOrganizationSession(record);
+    handleSuccessfulLogin(session, 'Extension Organization', `eo-token-${Date.now()}`);
+    return true;
+  };
+
+  const attemptPFILocalLogin = (): boolean => {
+    if (formData.role !== 'Participating Bank (PFI)') return false;
+    const email = formData.email.trim();
+    const record = authenticatePFI(email, formData.password);
+    if (!record) return false;
+    const session = buildPFISession(record);
+    handleSuccessfulLogin(session, 'Participating Bank (PFI)', `pfi-token-${Date.now()}`);
+    return true;
+  };
+
+  const attemptAnchorLocalLogin = (): boolean => {
+    if (formData.role !== 'Anchor') return false;
+    const email = formData.email.trim();
+    const record = authenticateAnchor(email, formData.password);
+    if (!record) return false;
+    const session = buildAnchorSession(record);
+    handleSuccessfulLogin(session, 'Anchor', `anchor-token-${Date.now()}`);
+    return true;
+  };
+
+  const attemptLeadFirmLocalLogin = (): boolean => {
+    if (formData.role !== 'Lead Firm') return false;
+    const email = formData.email.trim();
+    const record = authenticateLeadFirm(email, formData.password);
+    if (!record) return false;
+    const session = buildLeadFirmSession(record);
+    handleSuccessfulLogin(session, 'Lead Firm', `lf-token-${Date.now()}`);
+    return true;
+  };
+
+  const attemptProducerLocalLogin = (): boolean => {
+    // Producer/Farmer uses individual email or phone (since email is optional) + password
+    // This is separate from organizational login mechanisms used by other roles
+    if (formData.role !== 'Producer/Farmer') return false;
+    const emailOrPhone = formData.email.trim();
+    if (!emailOrPhone) return false;
+    const record = authenticateProducer(emailOrPhone, formData.password);
+    if (!record) return false;
+    const session = buildProducerSession(record);
+    handleSuccessfulLogin(session, 'Producer/Farmer', `producer-token-${Date.now()}`);
+    return true;
+  };
+
+  const attemptResearcherLocalLogin = (): boolean => {
+    // Researcher/Student uses individual email (required) + password
+    // This is separate from organizational login mechanisms used by other roles
+    if (formData.role !== 'Researcher/Student') return false;
+    const email = formData.email.trim();
+    if (!email) return false;
+    const record = authenticateResearcher(email, formData.password);
+    if (!record) return false;
+    const session = buildResearcherSession(record);
+    handleSuccessfulLogin(session, 'Researcher/Student', `researcher-token-${Date.now()}`);
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
 
-    const localLoginHandled = attemptFundProviderLocalLogin();
+    const localLoginHandled = attemptFundProviderLocalLogin() || attemptInsuranceCompanyLocalLogin() || attemptCooperativeGroupLocalLogin() || attemptExtensionOrganizationLocalLogin() || attemptPFILocalLogin() || attemptAnchorLocalLogin() || attemptLeadFirmLocalLogin() || attemptProducerLocalLogin() || attemptResearcherLocalLogin();
     if (localLoginHandled) {
       setIsSubmitting(false);
       return;
@@ -248,8 +334,26 @@ const Login: React.FC = () => {
       return;
     }
 
+    // On localhost, skip backend login attempt to avoid ERR_CONNECTION_REFUSED errors
+    // Local and demo login should handle authentication when backend is not running
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (isLocalhost) {
+      // On localhost, only use local/demo login to avoid connection errors
+      // Try demo login as final fallback
+      const loggedIn = tryDemoLogin();
+      if (!loggedIn) {
+        alert('Login failed. Please verify your email, password, and selected role. If you just registered, your account may need to be verified.');
+      }
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Attempt backend login with proper error handling (only for non-localhost environments)
+    let backendLoginSuccess = false;
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 2000); // 2 second timeout
+    
     try {
-      // Call the backend login API
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
@@ -258,204 +362,84 @@ const Login: React.FC = () => {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password
-        })
+        }),
+        signal: abortController.signal
       });
 
-      const data = await response.json();
+      clearTimeout(timeoutId);
 
+      // Check for network/connection errors in response
+      if (response.status === 0 || response.type === 'error') {
+        // Network error - backend not running, try local login
+        const localLoginHandled = attemptFundProviderLocalLogin() || attemptInsuranceCompanyLocalLogin() || attemptCooperativeGroupLocalLogin() || attemptExtensionOrganizationLocalLogin() || attemptPFILocalLogin() || attemptAnchorLocalLogin() || attemptLeadFirmLocalLogin() || attemptProducerLocalLogin() || attemptResearcherLocalLogin();
+        if (localLoginHandled) {
+          setIsSubmitting(false);
+          return;
+        }
+        throw new Error('Backend server is not running');
+      }
+
+      const data = await response.json();
+      
       if (response.ok && data.success && data.token) {
-        // Store token in localStorage
+        // Backend login successful
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Navigate to role-specific portal
         const portalPath = roleMap[formData.role] || '/portal/fund-provider';
         navigate(portalPath);
+        setIsSubmitting(false);
+        backendLoginSuccess = true;
+        return;
       } else {
-        // Auto-register if user doesn't exist for specific roles
-        if (data.error?.includes('Invalid credentials')) {
-          let shouldAutoRegister = false;
-          let registerData: any = null;
-
-          // Coordinating Agency auto-register
-          if (formData.email === 'ca@email.com' && 
-              formData.password === '123456' &&
-              formData.role === 'Coordinating Agency') {
-            shouldAutoRegister = true;
-            registerData = {
-              email: 'ca@email.com',
-              password: '123456',
-              firstName: 'Coordinating',
-              lastName: 'Agency',
-              userType: 'coordinating_agency',
-              organizationName: 'AFCF Coordinating Agency'
-            };
-          }
-          // Fund Provider auto-register
-          else if (formData.email === 'fp@email.com' && 
-                   formData.password === '123456' &&
-                   formData.role === 'Fund Provider') {
-            shouldAutoRegister = true;
-            registerData = {
-              email: 'fp@email.com',
-              password: '123456',
-              firstName: 'Fund',
-              lastName: 'Provider',
-              userType: 'fund_provider',
-              organizationName: 'AFCF Fund Provider'
-            };
-          }
-          // PFI auto-register
-          else if (formData.email === 'pfi@email.com' && 
-                   formData.password === '123456' &&
-                   formData.role === 'Participating Bank (PFI)') {
-            shouldAutoRegister = true;
-            registerData = {
-              email: 'pfi@email.com',
-              password: '123456',
-              firstName: 'PFI',
-              lastName: 'Bank',
-              userType: 'pfi',
-              organizationName: 'AFCF Participating Bank'
-            };
-          }
-          // Anchor auto-register
-          else if (formData.email === 'anchor@email.com' && 
-                   formData.password === '123456' &&
-                   formData.role === 'Anchor') {
-            shouldAutoRegister = true;
-            registerData = {
-              email: 'anchor@email.com',
-              password: '123456',
-              firstName: 'Anchor',
-              lastName: 'Company',
-              userType: 'anchor',
-              organizationName: 'AFCF Anchor Company'
-            };
-          }
-          // Lead Firm auto-register
-          else if (formData.email === 'leadfirm@email.com' && 
-                   formData.password === '123456' &&
-                   formData.role === 'Lead Firm') {
-            shouldAutoRegister = true;
-            registerData = {
-              email: 'leadfirm@email.com',
-              password: '123456',
-              firstName: 'Lead',
-              lastName: 'Firm',
-              userType: 'lead_firm',
-              organizationName: 'AFCF Lead Firm'
-            };
-          }
-          // Producer/Farmer auto-register
-          else if (formData.email === 'farmer@email.com' && 
-                   formData.password === '123456' &&
-                   formData.role === 'Producer/Farmer') {
-            shouldAutoRegister = true;
-            registerData = {
-              email: 'farmer@email.com',
-              password: '123456',
-              firstName: 'Producer',
-              lastName: 'Farmer',
-              userType: 'farmer',
-              organizationName: undefined
-            };
-          }
-          // Insurance Company auto-register
-          else if (formData.email === 'insurance@email.com' &&
-                   formData.password === '123456' &&
-                   formData.role === 'Insurance Company') {
-            shouldAutoRegister = true;
-            registerData = {
-              email: 'insurance@email.com',
-              password: '123456',
-              firstName: 'Insurance',
-              lastName: 'Company',
-              userType: 'insurance',
-              organizationName: 'AFCF Insurance Company'
-            };
-          }
-          // Cooperative Group auto-register
-          else if (formData.email === 'cooperative@email.com' &&
-                   formData.password === '123456' &&
-                   formData.role === 'Cooperative Group') {
-            shouldAutoRegister = true;
-            registerData = {
-              email: 'cooperative@email.com',
-              password: '123456',
-              firstName: 'Cooperative',
-              lastName: 'Group',
-              userType: 'cooperative_group',
-              organizationName: 'AFCF Cooperative Group'
-            };
-          }
-          // Extension Organization auto-register
-          else if (formData.email === 'extension@email.com' &&
-                   formData.password === '123456' &&
-                   formData.role === 'Extension Organization') {
-            shouldAutoRegister = true;
-            registerData = {
-              email: 'extension@email.com',
-              password: '123456',
-              firstName: 'Extension',
-              lastName: 'Org',
-              userType: 'extension_organization',
-              organizationName: 'AFCF Extension Organization'
-            };
-          }
-          // Researcher/Student auto-register
-          else if (formData.email === 'researcher@email.com' &&
-                   formData.password === '123456' &&
-                   formData.role === 'Researcher/Student') {
-            shouldAutoRegister = true;
-            registerData = {
-              email: 'researcher@email.com',
-              password: '123456',
-              firstName: 'Researcher',
-              lastName: 'Student',
-              userType: 'researcher_student',
-              organizationName: undefined
-            };
-          }
-
-          if (shouldAutoRegister && registerData) {
-            try {
-              const registerResponse = await fetch('http://localhost:5000/api/auth/register', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(registerData)
-              });
-
-              const registerResult = await registerResponse.json();
-              
-              if (registerResponse.ok && registerResult.success && registerResult.token) {
-                localStorage.setItem('authToken', registerResult.token);
-                localStorage.setItem('user', JSON.stringify(registerResult.user));
-                alert('User created successfully! Logging in...');
-                
-                const portalPath = roleMap[formData.role] || '/portal/fund-provider';
-                navigate(portalPath);
-                return;
-              }
-            } catch (regError) {
-              console.error('Auto-register failed:', regError);
-            }
-          }
-        }
-        
-        // Show error message
-        alert(data.error || 'Login failed. Please check your credentials.');
+        // Backend returned error - will fall through to local login attempt
+        throw new Error(data.error || 'Invalid credentials');
       }
-    } catch (error: any) {
-      console.error('Login error:', error);
+    } catch (backendError: any) {
+      clearTimeout(timeoutId);
+      
+      // Check if this is an abort (timeout) or connection error
+      const isAborted = backendError?.name === 'AbortError';
+      const errorMessage = backendError?.message || String(backendError) || '';
+      const isConnectionError = 
+        isAborted ||
+        errorMessage.includes('Failed to fetch') || 
+        errorMessage.includes('ERR_CONNECTION_REFUSED') ||
+        errorMessage.includes('NetworkError') ||
+        backendError?.name === 'TypeError' ||
+        backendError?.name === 'NetworkError' ||
+        !backendError?.message; // If no message, likely connection error
+      
+      if (isConnectionError) {
+        // Connection error - try local login silently (don't log to console)
+        const localLoginHandled = attemptFundProviderLocalLogin() || attemptInsuranceCompanyLocalLogin() || attemptCooperativeGroupLocalLogin() || attemptExtensionOrganizationLocalLogin() || attemptPFILocalLogin() || attemptAnchorLocalLogin() || attemptLeadFirmLocalLogin() || attemptProducerLocalLogin() || attemptResearcherLocalLogin();
+        if (localLoginHandled) {
+          setIsSubmitting(false);
+          return;
+        }
+        // If local login also fails, continue to demo login fallback
+      }
+      
+      // If backend login failed for other reasons, continue to local/demo login
+      // Don't throw here - let the flow continue to try local and demo login
+    }
+
+    // If we reach here, backend login failed and we need to try local/demo login
+    // This code should not execute if backend login succeeded or local login succeeded above
+    if (!backendLoginSuccess) {
+      // Try local login one more time (in case it wasn't tried above)
+      const localLoginHandled = attemptFundProviderLocalLogin() || attemptInsuranceCompanyLocalLogin() || attemptCooperativeGroupLocalLogin() || attemptExtensionOrganizationLocalLogin() || attemptPFILocalLogin() || attemptAnchorLocalLogin() || attemptLeadFirmLocalLogin() || attemptProducerLocalLogin() || attemptResearcherLocalLogin();
+      if (localLoginHandled) {
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Try demo login
       const demoHandled = tryDemoLogin();
       if (!demoHandled) {
-        alert('Login failed. Please verify your credentials. If you are using the hosted demo, use the provided demo accounts.');
+        alert('Login failed. Please verify your credentials. If the backend server is not running, ensure you have registered locally or use demo accounts.');
       }
-    } finally {
       setIsSubmitting(false);
+      return;
     }
   };
 

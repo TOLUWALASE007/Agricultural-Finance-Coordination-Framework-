@@ -1,18 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PortalLayout from '../../components/PortalLayout';
 import { generateReport, processAction, addNewRecord, viewDetails } from '../../utils/quickActions';
+import { getExtensionOrganizationStatusSnapshot, ExtensionOrganizationStatus } from '../../utils/localDatabase';
 
 const ExtensionPortal: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/extension' },
-    { id: 'farmers', name: 'Farmers', icon: '🌾', href: '/portal/extension/farmers' },
-    { id: 'training', name: 'Training Programs', icon: '🎓', href: '/portal/extension/training' },
-    { id: 'advisory', name: 'Advisory Services', icon: '💡', href: '/portal/extension/advisory' },
-    { id: 'technology', name: 'Technology Transfer', icon: '🔬', href: '/portal/extension/tech' },
-    { id: 'monitoring', name: 'Field Monitoring', icon: '📱', href: '/portal/extension/monitoring' },
-    { id: 'reports', name: 'Reports', icon: '📊', href: '/portal/extension/reports' },
+    { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/extension/scheme-application' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/extension/settings' }
   ];
+
+  const [status, setStatus] = useState<ExtensionOrganizationStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [recordLoaded, setRecordLoaded] = useState(false);
+ 
+  useEffect(() => {
+    const snapshot = getExtensionOrganizationStatusSnapshot();
+    if (snapshot) {
+      setStatus(snapshot.status);
+      setRejectionReason(snapshot.rejectionReason);
+    }
+    setRecordLoaded(true);
+  }, []);
+ 
+  const isVerified = status === 'verified';
 
   const stats = [
     { title: 'Farmers Served', value: '3,247', change: '+89', icon: '🌾' },
@@ -28,8 +40,46 @@ const ExtensionPortal: React.FC = () => {
     { type: 'Assessment', description: 'Crop yield assessment in Kano State', time: '2 days ago', status: 'pending' }
   ];
 
+  if (!recordLoaded) {
+    return (
+      <PortalLayout role="Extension Organization" roleIcon="🌱" sidebarItems={sidebarItems}>
+        <div className="card">
+          <h1 className="text-lg font-semibold font-sans text-gray-100">Loading Dashboard</h1>
+          <p className="text-sm text-gray-300 font-serif mt-2">Fetching your Extension Organization details...</p>
+        </div>
+      </PortalLayout>
+    );
+  }
+ 
+  if (!isVerified) {
+    return (
+      <PortalLayout role="Extension Organization" roleIcon="🌱" sidebarItems={sidebarItems}>
+        <div className="space-y-4">
+          <div className="card">
+            <h1 className="text-xl font-bold font-sans text-gray-100 mb-2">Awaiting Verification</h1>
+            <p className="text-sm text-gray-300 font-serif">
+              Your Extension Organization account is pending approval from the Coordinating Agency. You can update and resubmit your details from the Settings page while you wait.
+            </p>
+            <Link
+              to="/portal/extension/settings"
+              className="inline-flex items-center mt-4 px-4 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium"
+            >
+              Go to Settings
+            </Link>
+          </div>
+          {rejectionReason && (
+            <div className="card">
+              <h2 className="text-lg font-semibold font-sans text-gray-100 mb-2">Most Recent Feedback</h2>
+              <p className="text-sm text-red-400 font-serif">{rejectionReason}</p>
+            </div>
+          )}
+        </div>
+      </PortalLayout>
+    );
+  }
+
   return (
-    <PortalLayout role="Extension Organization" roleIcon="🌾" sidebarItems={sidebarItems}>
+    <PortalLayout role="Extension Organization" roleIcon="🌱" sidebarItems={sidebarItems}>
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-orange-600 to-orange-800 rounded-xl p-6 text-white">
@@ -139,30 +189,18 @@ const ExtensionPortal: React.FC = () => {
         {/* Quick Actions */}
         <div className="card">
           <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button 
-              className="btn-primary"
-              onClick={() => processAction('Training Scheduling')}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              to="/portal/extension/scheme-application"
+              className="btn-primary text-center"
             >
-              🎓 Schedule Training
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => processAction('Advisory Visit')}
-            >
-              💡 Advisory Visit
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => processAction('Technology Demonstration')}
-            >
-              🔬 Technology Demo
-            </button>
+              📝 Apply to Schemes
+            </Link>
             <button 
               className="btn-secondary"
               onClick={() => generateReport('Extension Services Report', 'PDF')}
             >
-              📊 Generate Report
+              📊 Generate Reports
             </button>
           </div>
         </div>

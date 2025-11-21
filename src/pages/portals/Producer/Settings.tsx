@@ -1,68 +1,79 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PortalLayout from '../../../components/PortalLayout';
 import { showNotification } from '../../../utils/quickActions';
+import { useNotifications } from '../../../context/NotificationContext';
+import {
+  findProducerById,
+  ProducerFormData,
+  ProducerStatus,
+  buildProducerApplicationData,
+  updateProducerRecord,
+  ProducerRecord,
+} from '../../../utils/localDatabase';
 
 const Settings: React.FC = () => {
-  const [activeSection, setActiveSection] = useState<'contact' | 'organization'>('contact');
-
+  const [activeSection, setActiveSection] = useState<'personal' | 'farm' | 'produce' | 'market' | 'verification' | 'banking' | 'security'>('personal');
+  
   const [formData, setFormData] = useState({
-    // Contact Info - Personal Details
-    fullName: 'Ahmadu Ibrahim',
-    position: 'Lead Farmer',
-    gender: 'Male',
-    birthDate: '1988-11-02',
-
-    // Contact Info - Contact Information
-    email: 'ahmadu.ibrahim@email.com',
-    phone: '+234-801-234-5678',
-    whatsapp: '+234-807-123-4567',
-    address: 'Plot 12, Farm Settlement Road',
-    city: 'Kaduna',
-    state: 'Kaduna State',
-    country: 'Nigeria',
-
-    // Contact Info - Verification & Emergency
-    idType: 'National ID',
-    idNumber: 'NG445566778',
+    // Step 1: Personal Information
+    fullName: '',
+    gender: '',
+    birthDate: '',
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    
+    // Step 2: Farm / Business Details
+    farmBusinessName: '',
+    typeOfFarmer: [] as string[],
+    farmAddress: '',
+    farmSize: '',
+    yearsOfExperience: '',
+    primarySourceOfIncome: '',
+    farmerAssociation: '',
+    
+    // Step 3: Type of Produce
+    crops: [] as string[],
+    livestock: [] as string[],
+    hasProcessingValueAddition: '',
+    processingValueAdditionDetails: '',
+    
+    // Step 4: Production Capacity & Market
+    totalAnnualProduction: '',
+    primaryMarket: '',
+    majorBuyers: '',
+    challengesFaced: '',
+    
+    // Step 5: Verification & Documents
+    idType: '',
+    idNumber: '',
     idDocument: '',
-    emergencyContactName: 'Halima Ibrahim',
-    emergencyContactPhone: '+234-809-555-6677',
-    emergencyRelationship: 'Spouse',
-
-    // Organization Info - Basic Information
-    organizationName: 'Kaduna Rice Growers Cooperative',
-    registrationNumber: 'RC-COOP-2024-012',
-    organizationType: 'Cooperative',
-    yearEstablished: '2012',
-    industry: 'Agriculture',
-    missionStatement: 'To improve food security through sustainable rice cultivation.',
-
-    // Organization Info - Address & Contact Info
-    headquartersAddress: 'Plot 12, Farm Settlement Road, Kaduna',
-    hqCity: 'Kaduna',
-    hqState: 'Kaduna State',
-    hqCountry: 'Nigeria',
-    officePhone: '+234-803-890-1234',
-    officialEmail: 'info@kadunaricecoop.ng',
-    website: 'https://kadunaricecoop.ng',
-    facebook: 'KadunaRiceCoop',
-    linkedin: 'kaduna-rice-growers-cooperative',
-    twitter: '@KadunaRiceCoop',
-    instagram: 'kaduna_rice_coop',
-
-    // Organization Info - Operations & Documentation
-    numEmployees: '120',
-    areasOfOperation: 'Kaduna, Kano, Katsina',
-    organizationLogo: '',
-    certificateOfIncorporation: '',
-    hasPartnership: 'Yes',
-    partnershipDetails: 'Works with local PFIs and anchor companies for market access.',
-
-    // Organization Info - Security & Terms
+    farmImages: '',
+    certification: '',
+    
+    // Step 6: Banking & Payment Details
+    preferredPaymentMethod: '',
+    bankName: '',
+    accountName: '',
+    accountNumber: '',
+    
+    // Step 7: Security
     password: '',
     confirmPassword: '',
-    agreeToTerms: true
+    agreeToTerms: false,
   });
+
+  const [recordId, setRecordId] = useState<string | null>(null);
+  const [status, setStatus] = useState<ProducerStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [isLoadingRecord, setIsLoadingRecord] = useState(true);
+  const { addNotification } = useNotifications();
+
+  const isVerified = status === 'verified';
+  const awaitingApproval = status === 'unverified' && !rejectionReason;
 
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/producer' },
@@ -70,9 +81,7 @@ const Settings: React.FC = () => {
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/producer/settings' }
   ];
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -88,61 +97,323 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleTypeOfFarmerToggle = (type: string) => {
+    if (isVerified) return;
+    setFormData(prev => {
+      const exists = prev.typeOfFarmer.includes(type);
+      const updated = exists
+        ? prev.typeOfFarmer.filter(t => t !== type)
+        : [...prev.typeOfFarmer, type];
+      return {
+        ...prev,
+        typeOfFarmer: updated,
+      };
+    });
+  };
+
+  const handleCropToggle = (crop: string) => {
+    if (isVerified) return;
+    setFormData(prev => {
+      const exists = prev.crops.includes(crop);
+      const updated = exists
+        ? prev.crops.filter(c => c !== crop)
+        : [...prev.crops, crop];
+      return {
+        ...prev,
+        crops: updated,
+      };
+    });
+  };
+
+  const handleLivestockToggle = (animal: string) => {
+    if (isVerified) return;
+    setFormData(prev => {
+      const exists = prev.livestock.includes(animal);
+      const updated = exists
+        ? prev.livestock.filter(l => l !== animal)
+        : [...prev.livestock, animal];
+      return {
+        ...prev,
+        livestock: updated,
+      };
+    });
+  };
+
+  const populateFormFromRecord = (record: ProducerRecord) => {
+    const data = record.formData;
+    setFormData(prev => ({
+      ...prev,
+      fullName: data.fullName || '',
+      gender: data.gender || '',
+      birthDate: data.birthDate || '',
+      phone: data.phone || '',
+      email: data.email || '',
+      address: data.address || '',
+      city: data.city || '',
+      state: data.state || '',
+      country: data.country || '',
+      farmBusinessName: data.farmBusinessName || '',
+      typeOfFarmer: Array.isArray(data.typeOfFarmer) ? data.typeOfFarmer : [],
+      farmAddress: data.farmAddress || '',
+      farmSize: data.farmSize || '',
+      yearsOfExperience: data.yearsOfExperience || '',
+      primarySourceOfIncome: data.primarySourceOfIncome || '',
+      farmerAssociation: data.farmerAssociation || '',
+      crops: Array.isArray(data.crops) ? data.crops : [],
+      livestock: Array.isArray(data.livestock) ? data.livestock : [],
+      hasProcessingValueAddition: data.hasProcessingValueAddition || '',
+      processingValueAdditionDetails: data.processingValueAdditionDetails || '',
+      totalAnnualProduction: data.totalAnnualProduction || '',
+      primaryMarket: data.primaryMarket || '',
+      majorBuyers: data.majorBuyers || '',
+      challengesFaced: data.challengesFaced || '',
+      idType: data.idType || '',
+      idNumber: data.idNumber || '',
+      idDocument: data.idDocumentName || '',
+      farmImages: data.farmImagesName || '',
+      certification: data.certificationName || '',
+      preferredPaymentMethod: data.preferredPaymentMethod || '',
+      bankName: data.bankName || '',
+      accountName: data.accountName || '',
+      accountNumber: data.accountNumber || '',
+      password: '',
+      confirmPassword: '',
+      agreeToTerms: true,
+    }));
+  };
+
+  useEffect(() => {
+    const loadRecord = () => {
+      const rawSession = localStorage.getItem('user');
+      if (!rawSession) {
+        setIsLoadingRecord(false);
+        return;
+      }
+
+      try {
+        const session = JSON.parse(rawSession);
+        if (!session || session.role !== 'Producer/Farmer') {
+          setIsLoadingRecord(false);
+          return;
+        }
+
+        if (!session.id) {
+          setIsLoadingRecord(false);
+          return;
+        }
+
+        if (session.status) {
+          setStatus(session.status as ProducerStatus);
+        }
+
+        const record = findProducerById(session.id);
+        if (record) {
+          setRecordId(record.id);
+          setStatus(record.status);
+          setRejectionReason(record.rejectionReason || null);
+          populateFormFromRecord(record);
+        } else {
+          setRecordId(null);
+        }
+      } catch (error) {
+        console.error('Failed to load producer registration', error);
+      } finally {
+        setIsLoadingRecord(false);
+      }
+    };
+
+    loadRecord();
+  }, []);
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    showNotification('Settings saved successfully!', 'success');
+
+    if (isVerified) {
+      showNotification('Your registration is already verified and cannot be modified.', 'info');
+      return;
+    }
+
+    if (!recordId) {
+      showNotification('No registration record found. Please complete the Producer/Farmer registration first.', 'error');
+      return;
+    }
+
+    if (formData.typeOfFarmer.length === 0) {
+      showNotification('Select at least one type of farmer before submitting.', 'error');
+      return;
+    }
+
+    if (formData.hasProcessingValueAddition === 'Yes' && !formData.processingValueAdditionDetails) {
+      showNotification('Please specify processing/value addition activities.', 'error');
+      return;
+    }
+
+    const storedFormData: ProducerFormData = {
+      fullName: formData.fullName.trim(),
+      gender: formData.gender,
+      birthDate: formData.birthDate,
+      phone: formData.phone.trim(),
+      email: formData.email.trim() || undefined,
+      address: formData.address.trim(),
+      city: formData.city.trim(),
+      state: formData.state.trim(),
+      country: formData.country.trim(),
+      farmBusinessName: formData.farmBusinessName.trim(),
+      typeOfFarmer: [...formData.typeOfFarmer],
+      farmAddress: formData.farmAddress.trim(),
+      farmSize: formData.farmSize.trim(),
+      yearsOfExperience: formData.yearsOfExperience.trim(),
+      primarySourceOfIncome: formData.primarySourceOfIncome,
+      farmerAssociation: formData.farmerAssociation.trim() || undefined,
+      crops: [...formData.crops],
+      livestock: [...formData.livestock],
+      hasProcessingValueAddition: formData.hasProcessingValueAddition,
+      processingValueAdditionDetails: formData.processingValueAdditionDetails.trim() || undefined,
+      totalAnnualProduction: formData.totalAnnualProduction.trim(),
+      primaryMarket: formData.primaryMarket,
+      majorBuyers: formData.majorBuyers.trim() || undefined,
+      challengesFaced: formData.challengesFaced.trim() || undefined,
+      idType: formData.idType,
+      idNumber: formData.idNumber.trim(),
+      idDocumentName: formData.idDocument.trim() || undefined,
+      farmImagesName: formData.farmImages.trim() || undefined,
+      certificationName: formData.certification.trim() || undefined,
+      preferredPaymentMethod: formData.preferredPaymentMethod,
+      bankName: formData.bankName.trim(),
+      accountName: formData.accountName.trim(),
+      accountNumber: formData.accountNumber.trim(),
+      password: '',
+    };
+
+    const applicationData = buildProducerApplicationData(storedFormData);
+
+    const notificationId = addNotification({
+      role: '🌾 Producer/Farmer',
+      targetRole: 'coordinating-agency',
+      message: `${storedFormData.fullName} updated their Producer/Farmer details for review.`,
+      applicantName: storedFormData.fullName,
+      applicantType: 'Individual',
+      fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+      contactPersonName: storedFormData.fullName,
+      contactPersonEmail: storedFormData.email || 'Not provided',
+      contactPersonPhone: storedFormData.phone,
+      applicationData,
+      metadata: {
+        type: 'producerRegistration',
+        producerId: recordId,
+        email: storedFormData.email || '',
+        requiresDecision: true,
+      },
+    });
+
+    const updatedRecord = updateProducerRecord(recordId, {
+      formData: storedFormData,
+      status: 'unverified',
+      rejectionReason: undefined,
+      lastSubmittedAt: new Date().toISOString(),
+      pendingNotificationId: notificationId,
+      email: storedFormData.email || storedFormData.phone,
+    } as Partial<Omit<ProducerRecord, 'id'>>);
+
+    setStatus('unverified');
+    setRejectionReason(null);
+
+    if (updatedRecord) {
+      populateFormFromRecord(updatedRecord);
+    }
+
+    showNotification('Your updates have been sent to the Coordinating Agency for approval.', 'success');
   };
 
   return (
-    <PortalLayout role="Producer/Farmer" roleIcon="🌾" sidebarItems={sidebarItems}>
+    <PortalLayout 
+      role="Producer/Farmer" 
+      roleIcon="🌾" 
+      sidebarItems={sidebarItems}
+    >
       <div className="space-y-6">
+        <div className="bg-primary-800 border border-primary-700 rounded-lg p-4">
+          <p className="text-sm font-semibold font-sans text-gray-100">
+            Verification Status:{' '}
+            <span className={isVerified ? 'text-green-400' : 'text-red-400'}>
+              {isVerified ? 'Verified 🟢' : 'Unverified 🔴'}
+            </span>
+          </p>
+          {isLoadingRecord ? (
+            <p className="text-xs text-gray-400 font-serif mt-2">Loading registration details...</p>
+          ) : (
+            <>
+              {isVerified ? (
+                <p className="text-xs text-gray-400 font-serif mt-2">
+                  Your account is verified. Contact the Coordinating Agency to request changes.
+                </p>
+              ) : rejectionReason ? (
+                <p className="text-xs text-red-400 font-serif mt-2">
+                  Rejection reason: {rejectionReason}
+                </p>
+              ) : awaitingApproval ? (
+                <p className="text-xs text-gray-400 font-serif mt-2">
+                  Awaiting approval from the Coordinating Agency.
+                </p>
+              ) : null}
+              {!recordId && (
+                <p className="text-xs text-yellow-400 font-serif mt-2">
+                  No registration data found. Please complete your Producer/Farmer registration.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold font-sans text-gray-100">Settings</h1>
-            <p className="text-sm md:text-base text-gray-400 font-serif mt-2">
-              Manage your account information and preferences
-            </p>
+            <p className="text-sm md:text-base text-gray-400 font-serif mt-2">Manage your account information and preferences</p>
           </div>
-          <button type="submit" form="settings-form" className="btn-primary w-full sm:w-auto justify-center">
+          <button 
+            type="submit"
+            form="settings-form"
+            disabled={isVerified || isLoadingRecord || !recordId}
+            className={`btn-primary w-full sm:w-auto justify-center ${isVerified || isLoadingRecord || !recordId ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
             💾 Save Changes
           </button>
         </div>
 
         {/* Section Tabs */}
         <div className="bg-primary-800 rounded-lg p-2">
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveSection('contact')}
-              className={`p-3 rounded-lg text-center transition-all duration-200 ${
-                activeSection === 'contact'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
-              }`}
-            >
-              <div className="font-medium font-sans">Contact Info</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveSection('organization')}
-              className={`p-3 rounded-lg text-center transition-all duration-200 ${
-                activeSection === 'organization'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
-              }`}
-            >
-              <div className="font-medium font-sans">Organization Info</div>
-            </button>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+            {[
+              { id: 'personal', label: 'Personal' },
+              { id: 'farm', label: 'Farm/Business' },
+              { id: 'produce', label: 'Produce' },
+              { id: 'market', label: 'Market' },
+              { id: 'verification', label: 'Documents' },
+              { id: 'banking', label: 'Banking' },
+              { id: 'security', label: 'Security' },
+            ].map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => setActiveSection(section.id as any)}
+                className={`p-2 md:p-3 rounded-lg text-center transition-all duration-200 text-xs md:text-sm ${
+                  activeSection === section.id
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
+                }`}
+              >
+                <div className="font-medium font-sans">{section.label}</div>
+              </button>
+            ))}
           </div>
         </div>
 
         <form id="settings-form" onSubmit={handleSave} className="space-y-6">
-          {activeSection === 'contact' && (
-            <>
-              {/* Personal Details */}
+          <fieldset disabled={isVerified} className="space-y-6">
+            {activeSection === 'personal' && (
               <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Personal Details</h3>
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Personal Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
@@ -156,20 +427,6 @@ const Settings: React.FC = () => {
                       required
                       className="input-field"
                       placeholder="Enter your full name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Position / Role in Organization <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="position"
-                      value={formData.position}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter your position/role"
                     />
                   </div>
                   <div>
@@ -202,27 +459,6 @@ const Settings: React.FC = () => {
                       className="input-field"
                     />
                   </div>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Contact Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Email Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter your email address"
-                    />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
                       Phone Number <span className="text-red-500">*</span>
@@ -234,25 +470,25 @@ const Settings: React.FC = () => {
                       onChange={handleInputChange}
                       required
                       className="input-field"
-                      placeholder="Enter your phone number"
+                      placeholder="Enter phone number"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      WhatsApp (Optional)
+                      Email (Optional)
                     </label>
                     <input
-                      type="tel"
-                      name="whatsapp"
-                      value={formData.whatsapp}
+                      type="email"
+                      name="email"
+                      value={formData.email}
                       onChange={handleInputChange}
                       className="input-field"
-                      placeholder="Enter WhatsApp number"
+                      placeholder="Enter email address (optional)"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Residential / Office Address <span className="text-red-500">*</span>
+                      Residential Address <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -261,7 +497,7 @@ const Settings: React.FC = () => {
                       onChange={handleInputChange}
                       required
                       className="input-field"
-                      placeholder="Enter your address"
+                      placeholder="Enter residential address"
                     />
                   </div>
                   <div>
@@ -308,10 +544,283 @@ const Settings: React.FC = () => {
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* Verification & Emergency */}
+            {activeSection === 'farm' && (
               <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Verification & Emergency</h3>
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Farm / Business Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Farm/Business Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="farmBusinessName"
+                      value={formData.farmBusinessName}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter farm/business name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Type of Farmer * (Select all that apply)
+                    </label>
+                    <div className="space-y-2">
+                      {['Crop', 'Livestock', 'Mixed'].map((type) => (
+                        <div key={type} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id={`typeOfFarmer-${type}`}
+                            checked={formData.typeOfFarmer.includes(type)}
+                            onChange={() => handleTypeOfFarmerToggle(type)}
+                            disabled={isVerified}
+                            className="mr-2"
+                          />
+                          <label htmlFor={`typeOfFarmer-${type}`} className="text-sm text-gray-300 font-serif">
+                            {type}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Farm Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="farmAddress"
+                      value={formData.farmAddress}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter farm address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Farm Size (in hectares) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="farmSize"
+                      value={formData.farmSize}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter farm size"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Years of Experience <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="yearsOfExperience"
+                      value={formData.yearsOfExperience}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter years of experience"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Is farming your primary source of income? <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="primarySourceOfIncome"
+                      value={formData.primarySourceOfIncome}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Farmer Association/Cooperative (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      name="farmerAssociation"
+                      value={formData.farmerAssociation}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter association/cooperative name (optional)"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'produce' && (
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Type of Produce</h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Crops (Select all that apply)
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 bg-primary-700/60 border border-primary-600 rounded-md p-3">
+                      {['Maize', 'Rice', 'Wheat', 'Cassava', 'Yam', 'Potato', 'Tomato', 'Pepper', 'Onion', 'Beans', 'Groundnut', 'Soybean', 'Cotton', 'Cocoa', 'Coffee', 'Other'].map((crop) => (
+                        <label
+                          key={crop}
+                          className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${
+                            formData.crops.includes(crop) ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
+                          } transition-colors`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.crops.includes(crop)}
+                            onChange={() => handleCropToggle(crop)}
+                            disabled={isVerified}
+                            className="h-4 w-4 rounded border-primary-500 text-accent-500 focus:ring-accent-500 disabled:opacity-50"
+                          />
+                          <span className="font-sans">{crop}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Livestock (Select all that apply)
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 bg-primary-700/60 border border-primary-600 rounded-md p-3">
+                      {['Cattle', 'Goat', 'Sheep', 'Poultry', 'Pig', 'Fish', 'Rabbit', 'Other'].map((animal) => (
+                        <label
+                          key={animal}
+                          className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${
+                            formData.livestock.includes(animal) ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
+                          } transition-colors`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.livestock.includes(animal)}
+                            onChange={() => handleLivestockToggle(animal)}
+                            disabled={isVerified}
+                            className="h-4 w-4 rounded border-primary-500 text-accent-500 focus:ring-accent-500 disabled:opacity-50"
+                          />
+                          <span className="font-sans">{animal}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Do you engage in Processing/Value Addition? <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="hasProcessingValueAddition"
+                      value={formData.hasProcessingValueAddition}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                  {formData.hasProcessingValueAddition === 'Yes' && (
+                    <div>
+                      <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                        Specify Processing/Value Addition Activities <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        name="processingValueAdditionDetails"
+                        value={formData.processingValueAdditionDetails}
+                        onChange={handleInputChange}
+                        required
+                        className="input-field"
+                        rows={3}
+                        placeholder="Describe your processing/value addition activities"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'market' && (
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Production Capacity & Market</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Total Annual Production <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="totalAnnualProduction"
+                      value={formData.totalAnnualProduction}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="e.g., 500 tons, 1000 bags, etc."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Primary Market <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="primaryMarket"
+                      value={formData.primaryMarket}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                    >
+                      <option value="">Select Primary Market</option>
+                      <option value="Local">Local</option>
+                      <option value="Regional">Regional</option>
+                      <option value="National">National</option>
+                      <option value="Export">Export</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Major Buyers (Optional)
+                    </label>
+                    <textarea
+                      name="majorBuyers"
+                      value={formData.majorBuyers}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      rows={3}
+                      placeholder="List your major buyers (optional)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Challenges Faced (Optional)
+                    </label>
+                    <textarea
+                      name="challengesFaced"
+                      value={formData.challengesFaced}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      rows={3}
+                      placeholder="Describe challenges you face (optional)"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'verification' && (
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Verification & Documents</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
@@ -326,9 +835,10 @@ const Settings: React.FC = () => {
                     >
                       <option value="">Select ID Type</option>
                       <option value="National ID">National ID</option>
+                      <option value="Passport">Passport</option>
                       <option value="Driver's License">Driver's License</option>
-                      <option value="International Passport">International Passport</option>
                       <option value="Voter's Card">Voter's Card</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
                   <div>
@@ -342,431 +852,135 @@ const Settings: React.FC = () => {
                       onChange={handleInputChange}
                       required
                       className="input-field"
-                      placeholder="Enter your ID number"
+                      placeholder="Enter ID number"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      ID Document (Optional)
+                      Upload ID Document <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="file"
                       name="idDocument"
                       onChange={handleFileChange}
+                      accept=".pdf,.jpg,.jpeg,.png"
                       className="input-field"
                     />
                     {formData.idDocument && (
-                      <p className="text-xs text-gray-400 mt-1">{formData.idDocument}</p>
+                      <p className="text-sm text-gray-400 font-serif mt-2">Current: {formData.idDocument}</p>
                     )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Emergency Contact Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="emergencyContactName"
-                      value={formData.emergencyContactName}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter emergency contact name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Emergency Contact Phone <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      name="emergencyContactPhone"
-                      value={formData.emergencyContactPhone}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter emergency contact phone"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Emergency Relationship <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="emergencyRelationship"
-                      value={formData.emergencyRelationship}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                    >
-                      <option value="">Select Relationship</option>
-                      <option value="Spouse">Spouse</option>
-                      <option value="Parent">Parent</option>
-                      <option value="Child">Child</option>
-                      <option value="Sibling">Sibling</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {activeSection === 'organization' && (
-            <>
-              {/* Basic Information */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Basic Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Organization Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="organizationName"
-                      value={formData.organizationName}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter organization name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Registration Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="registrationNumber"
-                      value={formData.registrationNumber}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter registration number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Organization Type <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="organizationType"
-                      value={formData.organizationType}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                    >
-                      <option value="">Select Organization Type</option>
-                      <option value="Cooperative">Cooperative</option>
-                      <option value="Company">Company</option>
-                      <option value="Sole Proprietorship">Sole Proprietorship</option>
-                      <option value="Limited Liability Partnership">Limited Liability Partnership</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Year Established <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="yearEstablished"
-                      value={formData.yearEstablished}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter year established"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Industry <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="industry"
-                      value={formData.industry}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                    >
-                      <option value="">Select Industry</option>
-                      <option value="Agriculture">Agriculture</option>
-                      <option value="Food Processing">Food Processing</option>
-                      <option value="Manufacturing">Manufacturing</option>
-                      <option value="Retail">Retail</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Mission Statement <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      name="missionStatement"
-                      value={formData.missionStatement}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter mission statement"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Address & Contact Info */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Address & Contact Info</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Headquarters Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="headquartersAddress"
-                      value={formData.headquartersAddress}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter headquarters address"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      City <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="hqCity"
-                      value={formData.hqCity}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter city"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      State <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="hqState"
-                      value={formData.hqState}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter state"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Country <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="hqCountry"
-                      value={formData.hqCountry}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter country"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Office Phone <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      name="officePhone"
-                      value={formData.officePhone}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter office phone"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Official Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      name="officialEmail"
-                      value={formData.officialEmail}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter official email"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Website (Optional)
-                    </label>
-                    <input
-                      type="url"
-                      name="website"
-                      value={formData.website}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter website URL"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Facebook (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      name="facebook"
-                      value={formData.facebook}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter Facebook URL"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      LinkedIn (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      name="linkedin"
-                      value={formData.linkedin}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter LinkedIn URL"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Twitter (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      name="twitter"
-                      value={formData.twitter}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter Twitter URL"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Instagram (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      name="instagram"
-                      value={formData.instagram}
-                      onChange={handleInputChange}
-                      className="input-field"
-                      placeholder="Enter Instagram URL"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Operations & Documentation */}
-              <div className="card">
-                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Operations & Documentation</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Number of Employees <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="numEmployees"
-                      value={formData.numEmployees}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter number of employees"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Areas of Operation <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="areasOfOperation"
-                      value={formData.areasOfOperation}
-                      onChange={handleInputChange}
-                      required
-                      className="input-field"
-                      placeholder="Enter areas of operation (comma-separated)"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Organization Logo (Optional)
+                      Upload Farm Images (Optional)
                     </label>
                     <input
                       type="file"
-                      name="organizationLogo"
+                      name="farmImages"
                       onChange={handleFileChange}
+                      accept=".jpg,.jpeg,.png"
+                      multiple
                       className="input-field"
                     />
-                    {formData.organizationLogo && (
-                      <p className="text-xs text-gray-400 mt-1">{formData.organizationLogo}</p>
+                    {formData.farmImages && (
+                      <p className="text-sm text-gray-400 font-serif mt-2">Current: {formData.farmImages}</p>
                     )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Certificate of Incorporation (Optional)
+                      Upload Any Certification (Optional)
                     </label>
                     <input
                       type="file"
-                      name="certificateOfIncorporation"
+                      name="certification"
                       onChange={handleFileChange}
+                      accept=".pdf,.jpg,.jpeg,.png"
                       className="input-field"
                     />
-                    {formData.certificateOfIncorporation && (
-                      <p className="text-xs text-gray-400 mt-1">{formData.certificateOfIncorporation}</p>
+                    {formData.certification && (
+                      <p className="text-sm text-gray-400 font-serif mt-2">Current: {formData.certification}</p>
                     )}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'banking' && (
+              <div className="card">
+                <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Banking & Payment Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Has Partnership <span className="text-red-500">*</span>
+                      Preferred Payment Method <span className="text-red-500">*</span>
                     </label>
                     <select
-                      name="hasPartnership"
-                      value={formData.hasPartnership}
+                      name="preferredPaymentMethod"
+                      value={formData.preferredPaymentMethod}
                       onChange={handleInputChange}
                       required
                       className="input-field"
                     >
-                      <option value="">Select Yes/No</option>
-                      <option value="Yes">Yes</option>
-                      <option value="No">No</option>
+                      <option value="">Select Payment Method</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Mobile Money">Mobile Money</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Partnership Details (Optional)
+                      Bank Name <span className="text-red-500">*</span>
                     </label>
-                    <textarea
-                      name="partnershipDetails"
-                      value={formData.partnershipDetails}
+                    <input
+                      type="text"
+                      name="bankName"
+                      value={formData.bankName}
                       onChange={handleInputChange}
+                      required
                       className="input-field"
-                      placeholder="Enter partnership details"
+                      placeholder="Enter bank name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Account Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="accountName"
+                      value={formData.accountName}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter account name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Account Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="accountNumber"
+                      value={formData.accountNumber}
+                      onChange={handleInputChange}
+                      required
+                      className="input-field"
+                      placeholder="Enter account number"
                     />
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* Security & Terms */}
+            {activeSection === 'security' && (
               <div className="card">
                 <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Security & Terms</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
-                      Password <span className="text-red-500">*</span>
+                      Create Password <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
@@ -792,25 +1006,31 @@ const Settings: React.FC = () => {
                       placeholder="Confirm password"
                     />
                   </div>
-                  <div className="col-span-full">
-                    <label className="flex items-center">
+                  <div className="md:col-span-2">
+                    <div className="flex items-start">
                       <input
                         type="checkbox"
+                        id="agreeToTerms"
                         name="agreeToTerms"
                         checked={formData.agreeToTerms}
                         onChange={handleInputChange}
-                        className="mr-2"
+                        required
+                        className="mt-1 mr-2"
                       />
-                      <span className="text-sm text-gray-300">
-                        I agree to the terms and conditions <span className="text-red-500">*</span>
-                      </span>
-                    </label>
+                      <label htmlFor="agreeToTerms" className="text-sm text-gray-300 font-serif">
+                        I agree to the Terms & Conditions <span className="text-red-500">*</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
-            </>
-          )}
+            )}
+          </fieldset>
         </form>
+        
+        <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
+          Powered by Mc. George
+        </div>
       </div>
     </PortalLayout>
   );

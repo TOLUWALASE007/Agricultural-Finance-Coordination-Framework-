@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import PortalLayout from '../../components/PortalLayout';
 import { generateReport, processAction, addNewRecord, viewDetails } from '../../utils/quickActions';
+import { getPFIStatusSnapshot, PFIStatus } from '../../utils/localDatabase';
 
 const PFIPortal: React.FC = () => {
   const sidebarItems = [
@@ -8,6 +10,21 @@ const PFIPortal: React.FC = () => {
     { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/pfi/scheme-application' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/pfi/settings' }
   ];
+
+  const [status, setStatus] = useState<PFIStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [recordLoaded, setRecordLoaded] = useState(false);
+ 
+  useEffect(() => {
+    const snapshot = getPFIStatusSnapshot();
+    if (snapshot) {
+      setStatus(snapshot.status);
+      setRejectionReason(snapshot.rejectionReason);
+    }
+    setRecordLoaded(true);
+  }, []);
+ 
+  const isVerified = status === 'verified';
 
   const stats = [
     { title: 'Active Producers', value: '2,847', change: '+45', icon: '🌾' },
@@ -89,6 +106,44 @@ const PFIPortal: React.FC = () => {
   const currentPastPage = Math.min(pastPage, totalPastPages);
   const pastStartIndex = (currentPastPage - 1) * pastPageSize;
   const paginatedPastSchemes = filteredPastSchemes.slice(pastStartIndex, pastStartIndex + pastPageSize);
+
+  if (!recordLoaded) {
+    return (
+      <PortalLayout role="Participating Bank (PFI)" roleIcon="🏦" sidebarItems={sidebarItems}>
+        <div className="card">
+          <h1 className="text-lg font-semibold font-sans text-gray-100">Loading Dashboard</h1>
+          <p className="text-sm text-gray-300 font-serif mt-2">Fetching your PFI details...</p>
+        </div>
+      </PortalLayout>
+    );
+  }
+ 
+  if (!isVerified) {
+    return (
+      <PortalLayout role="Participating Bank (PFI)" roleIcon="🏦" sidebarItems={sidebarItems}>
+        <div className="space-y-4">
+          <div className="card">
+            <h1 className="text-xl font-bold font-sans text-gray-100 mb-2">Awaiting Verification</h1>
+            <p className="text-sm text-gray-300 font-serif">
+              Your PFI account is pending approval from the Coordinating Agency. You can update and resubmit your details from the Settings page while you wait.
+            </p>
+            <Link
+              to="/portal/pfi/settings"
+              className="inline-flex items-center mt-4 px-4 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium"
+            >
+              Go to Settings
+            </Link>
+          </div>
+          {rejectionReason && (
+            <div className="card">
+              <h2 className="text-lg font-semibold font-sans text-gray-100 mb-2">Most Recent Feedback</h2>
+              <p className="text-sm text-red-400 font-serif">{rejectionReason}</p>
+            </div>
+          )}
+        </div>
+      </PortalLayout>
+    );
+  }
 
   return (
     <PortalLayout role="Participating Bank (PFI)" roleIcon="🏦" sidebarItems={sidebarItems}>
@@ -268,30 +323,18 @@ const PFIPortal: React.FC = () => {
         {/* Quick Actions */}
         <div className="card">
           <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button 
-              className="btn-primary"
-              onClick={() => processAction('Loan Application Processing')}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              to="/portal/pfi/scheme-application"
+              className="btn-primary text-center"
             >
-              📋 Process Applications
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => processAction('Risk Assessment')}
-            >
-              📊 Risk Assessment
-            </button>
-            <button 
-              className="btn-secondary"
-              onClick={() => addNewRecord('Producer Registration')}
-            >
-              🌾 Add Producer
-            </button>
+              📝 Apply to Schemes
+            </Link>
             <button 
               className="btn-secondary"
               onClick={() => generateReport('PFI Performance Report', 'PDF')}
             >
-              📈 Generate Report
+              📊 Generate Reports
             </button>
           </div>
         </div>

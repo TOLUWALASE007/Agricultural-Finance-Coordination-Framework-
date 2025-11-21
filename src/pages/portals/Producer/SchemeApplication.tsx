@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import PortalLayout from '../../../components/PortalLayout';
 import { schemeAPI } from '../../../utils/api';
 import { useNotifications } from '../../../context/NotificationContext';
+import { getProducerStatusSnapshot, ProducerStatus, getActiveProducerRecord } from '../../../utils/localDatabase';
 
 const SchemeApplication: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -20,27 +22,47 @@ const SchemeApplication: React.FC = () => {
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/producer/settings' }
   ];
 
+  const [status, setStatus] = useState<ProducerStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [recordLoaded, setRecordLoaded] = useState(false);
+
+  useEffect(() => {
+    const snapshot = getProducerStatusSnapshot();
+    if (snapshot) {
+      setStatus(snapshot.status);
+      setRejectionReason(snapshot.rejectionReason);
+    }
+    setRecordLoaded(true);
+  }, []);
+
+  const isVerified = status === 'verified';
+
   const { addNotification } = useNotifications();
+  const activeProducer = useMemo(() => getActiveProducerRecord(), []);
 
   const [formData, setFormData] = useState({
     // Step 1: Contact Information
-    fullName: '',
-    email: '',
-    phoneNumber: '',
-    farmLocation: '',
+    nameOfAccount: '',
+    accountWebsite: '',
+    contactPersonName: '',
+    contactPersonEmail: '',
+    contactPersonPhone: '',
     discussPreviousProjects: '',
     
     // Step 2: Account Profile
-    farmSize: '',
-    primaryCrops: '',
+    profileType: '',
+    maximumAmountExpected: '',
     targetAudience: '',
+    averageFundingMarket: '',
     geographicFocus: [] as string[],
     descriptionOfServices: '',
+    fundingProgramsPreviousBenefit: '',
     
     // Step 3: Financial Products and Terms
     financialProductsOffered: [] as string[],
     termsOfReferenceAFCF: '',
     termsOfReferencePFI: '',
+    termsOfReferenceInsurance: '',
     termsOfReferenceBeneficiaries: '',
     
     // Step 4: Reporting and Transparency
@@ -65,23 +87,19 @@ const SchemeApplication: React.FC = () => {
     'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
   ];
 
-  const primaryCrops = [
-    'Rice',
-    'Maize',
-    'Cassava',
-    'Wheat',
-    'Soybean',
-    'Groundnut',
-    'Yam',
-    'Potato',
-    'Tomato',
-    'Pepper',
-    'Mixed',
+  const profileTypes = [
+    'Government Agency',
+    'Private Fund',
+    'Development Organization',
+    'Impact Investment Fund',
+    'Commercial Bank',
+    'Microfinance Institution',
+    'Non-Governmental Organization (NGO)',
     'Other'
   ];
 
   const targetAudienceOptions = [
-    'Producers/Farmers',
+    'Anchors/Lead Firms',
     'Cooperative Groups'
   ];
 
@@ -89,6 +107,14 @@ const SchemeApplication: React.FC = () => {
     'Loans',
     'Grant',
     'Equity Investment'
+  ];
+
+  const fundingMarkets = [
+    'Enterprise',
+    'Livestock',
+    'Arable',
+    'SMEs',
+    'Agribusiness'
   ];
 
   // Available Schemes Data
@@ -114,7 +140,7 @@ const SchemeApplication: React.FC = () => {
                 title: scheme.name || scheme.title || 'Untitled Scheme',
                 description: scheme.description || `Fund scheme: ${scheme.name || scheme.title || 'Untitled'}`,
                 amount: scheme.amount || 'N/A',
-                deadline: scheme.applicationDeadline || scheme.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                deadline: scheme.applicationDeadline || scheme.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default to 30 days from now
                 category: 'Fund Scheme',
                 state: scheme.state || 'Multi-State',
                 status: scheme.status || 'Active' // Include status for filtering
@@ -136,7 +162,7 @@ const SchemeApplication: React.FC = () => {
         
         if (response.success && response.data) {
           // Transform API data to match the component's expected format
-          // Filter out any schemes with status 'Completed' or 'Inactive'
+          // Filter out any schemes with status 'Past' or 'Inactive'
           const transformedSchemes = response.data
             .filter((scheme: any) => scheme.status === 'Active')
             .map((scheme: any) => ({
@@ -151,12 +177,12 @@ const SchemeApplication: React.FC = () => {
             }));
           setAvailableSchemes(transformedSchemes);
         } else {
-          // Do not display schemes if response is not successful
+          // If response is not successful, do not display schemes
           setAvailableSchemes([]);
         }
       } catch (err: any) {
         console.error('Error fetching schemes:', err);
-        // Do not display schemes on error
+        // Do not display schemes on error - clear array
         setAvailableSchemes([]);
       } finally {
         setSchemesLoading(false);
@@ -170,7 +196,7 @@ const SchemeApplication: React.FC = () => {
   // Also exclude any schemes with status 'Completed' (double-check)
   const filteredSchemes = useMemo(() => {
     let filtered = availableSchemes.filter((scheme: any) => {
-      // Additional check: only show Active schemes (shouldn't happen if filtering worked above, but double-check)
+      // Additional check: exclude if status is 'Completed' (shouldn't happen if filtering worked above, but double-check)
       return scheme.status === 'Active';
     });
     
@@ -214,6 +240,19 @@ const SchemeApplication: React.FC = () => {
     }));
   };
 
+  const handleCheckboxChange = (name: string, value: string) => {
+    setFormData(prev => {
+      const currentArray = prev[name as keyof typeof prev] as string[];
+      const newArray = currentArray.includes(value)
+        ? currentArray.filter(item => item !== value)
+        : [...currentArray, value];
+      return {
+        ...prev,
+        [name]: newArray
+      };
+    });
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
     const file = e.target.files?.[0] || null;
@@ -222,6 +261,7 @@ const SchemeApplication: React.FC = () => {
       [name]: file
     }));
   };
+
 
   const validateStep = (step: number): boolean => {
     // Allow navigation without validation for now
@@ -245,23 +285,27 @@ const SchemeApplication: React.FC = () => {
       // Prepare application data
       const applicationData = {
         step1: {
-          fullName: formData.fullName,
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          farmLocation: formData.farmLocation,
+          nameOfAccount: formData.nameOfAccount,
+          accountWebsite: formData.accountWebsite,
+          contactPersonName: formData.contactPersonName,
+          contactPersonEmail: formData.contactPersonEmail,
+          contactPersonPhone: formData.contactPersonPhone,
           discussPreviousProjects: formData.discussPreviousProjects
         },
         step2: {
-          farmSize: formData.farmSize,
-          primaryCrops: formData.primaryCrops,
+          profileType: formData.profileType,
+          maximumAmountExpected: formData.maximumAmountExpected,
           targetAudience: formData.targetAudience,
+          averageFundingMarket: formData.averageFundingMarket,
           geographicFocus: formData.geographicFocus,
-          descriptionOfServices: formData.descriptionOfServices
+          descriptionOfServices: formData.descriptionOfServices,
+          fundingProgramsPreviousBenefit: formData.fundingProgramsPreviousBenefit
         },
         step3: {
           financialProductsOffered: formData.financialProductsOffered,
           termsOfReferenceAFCF: formData.termsOfReferenceAFCF,
           termsOfReferencePFI: formData.termsOfReferencePFI,
+          termsOfReferenceInsurance: formData.termsOfReferenceInsurance,
           termsOfReferenceBeneficiaries: formData.termsOfReferenceBeneficiaries
         },
         step4: {
@@ -285,18 +329,23 @@ const SchemeApplication: React.FC = () => {
       addNotification({
         role: '🌾 Producer/Farmer',
         targetRole: 'coordinating-agency',
-        message: `New scheme application from ${formData.fullName} for scheme "${selectedSchemeData?.title || 'Unknown Scheme'}".`,
-        applicantName: formData.fullName,
+        message: `New scheme application from ${formData.nameOfAccount || formData.contactPersonName} for scheme "${selectedSchemeData?.title || 'Unknown Scheme'}".`,
+        applicantName: formData.contactPersonName,
         applicantType: 'Individual',
-        contactPersonName: formData.fullName,
-        contactPersonEmail: formData.email,
-        contactPersonPhone: formData.phoneNumber,
-        companyEmail: formData.email,
+        companyName: formData.nameOfAccount,
+        contactPersonName: formData.contactPersonName,
+        contactPersonEmail: formData.contactPersonEmail,
+        contactPersonPhone: formData.contactPersonPhone,
+        companyEmail: formData.contactPersonEmail,
         schemeId: selectedScheme || '',
         schemeName: selectedSchemeData?.title || '',
         applicationId: applicationId,
         applicationData: applicationData,
-        applicationStatus: 'pending'
+        applicationStatus: 'pending',
+        metadata: {
+          type: 'producerSchemeApplication',
+          producerId: activeProducer?.id,
+        },
       });
 
       // Simulate API call
@@ -322,18 +371,78 @@ const SchemeApplication: React.FC = () => {
     setCurrentStep(1);
   };
 
+  if (!recordLoaded) {
+    return (
+      <PortalLayout role="Producer/Farmer" roleIcon="🌾" sidebarItems={sidebarItems}>
+        <div className="card">
+          <h1 className="text-lg font-semibold font-sans text-gray-100">Loading Schemes</h1>
+          <p className="text-sm text-gray-300 font-serif mt-2">Preparing the list of available schemes...</p>
+        </div>
+      </PortalLayout>
+    );
+  }
+
+  if (!isVerified) {
+    return (
+      <PortalLayout role="Producer/Farmer" roleIcon="🌾" sidebarItems={sidebarItems}>
+        <div className="space-y-4">
+          <div className="card">
+            <h1 className="text-xl font-bold font-sans text-gray-100 mb-2">Access Restricted</h1>
+            <p className="text-sm text-gray-300 font-serif">
+              Scheme applications are available only after your Producer/Farmer registration is verified by the Coordinating Agency. Review and update your registration details from the Settings page, then await approval.
+            </p>
+            <Link
+              to="/portal/producer/settings"
+              className="inline-flex items-center mt-4 px-4 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium"
+            >
+              Review Registration Details
+            </Link>
+          </div>
+          {rejectionReason && (
+            <div className="card">
+              <h2 className="text-lg font-semibold font-sans text-gray-100 mb-2">Most Recent Feedback</h2>
+              <p className="text-sm text-red-400 font-serif">{rejectionReason}</p>
+            </div>
+          )}
+        </div>
+      </PortalLayout>
+    );
+  }
+
   const renderStep1 = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Contact Information</h3>
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Full Name *</label>
+        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Name of Account *</label>
         <input
           type="text"
-          name="fullName"
-          value={formData.fullName}
+          name="nameOfAccount"
+          value={formData.nameOfAccount}
           onChange={handleInputChange}
           className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-          placeholder="Enter your full name"
+          placeholder="Enter account name"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Account Website *</label>
+        <input
+          type="url"
+          name="accountWebsite"
+          value={formData.accountWebsite}
+          onChange={handleInputChange}
+          className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+          placeholder="https://example.com"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Contact Person's Name *</label>
+        <input
+          type="text"
+          name="contactPersonName"
+          value={formData.contactPersonName}
+          onChange={handleInputChange}
+          className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+          placeholder="Enter contact person full name"
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -341,8 +450,8 @@ const SchemeApplication: React.FC = () => {
           <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Email Address *</label>
           <input
             type="email"
-            name="email"
-            value={formData.email}
+            name="contactPersonEmail"
+            value={formData.contactPersonEmail}
             onChange={handleInputChange}
             className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
             placeholder="email@example.com"
@@ -352,24 +461,13 @@ const SchemeApplication: React.FC = () => {
           <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Phone Number *</label>
           <input
             type="tel"
-            name="phoneNumber"
-            value={formData.phoneNumber}
+            name="contactPersonPhone"
+            value={formData.contactPersonPhone}
             onChange={handleInputChange}
             className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
             placeholder="+234 XXX XXX XXXX"
           />
         </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Farm Location *</label>
-        <input
-          type="text"
-          name="farmLocation"
-          value={formData.farmLocation}
-          onChange={handleInputChange}
-          className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-          placeholder="Enter your farm location"
-        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Discuss about previous projects *</label>
@@ -379,7 +477,7 @@ const SchemeApplication: React.FC = () => {
           onChange={handleInputChange}
           rows={4}
           className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-          placeholder="Describe your previous farming projects, experience, and achievements..."
+          placeholder="Describe your previous projects, experience, and achievements..."
         />
       </div>
     </div>
@@ -389,29 +487,29 @@ const SchemeApplication: React.FC = () => {
     <div className="space-y-4">
       <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Account Profile</h3>
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Farm Size (Hectares) *</label>
-        <input
-          type="text"
-          name="farmSize"
-          value={formData.farmSize}
-          onChange={handleInputChange}
-          className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-          placeholder="e.g., 5.5 hectares"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Primary Crops *</label>
+        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Profile Type *</label>
         <select
-          name="primaryCrops"
-          value={formData.primaryCrops}
+          name="profileType"
+          value={formData.profileType}
           onChange={handleInputChange}
           className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
         >
-          <option value="">Select Primary Crop</option>
-          {primaryCrops.map(crop => (
-            <option key={crop} value={crop}>{crop}</option>
+          <option value="">Select Profile Type</option>
+          {profileTypes.map(type => (
+            <option key={type} value={type}>{type}</option>
           ))}
         </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Enter Maximum Amount Expected *</label>
+        <input
+          type="text"
+          name="maximumAmountExpected"
+          value={formData.maximumAmountExpected}
+          onChange={handleInputChange}
+          className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+          placeholder="e.g., ₦500M"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Target Audience *</label>
@@ -428,6 +526,20 @@ const SchemeApplication: React.FC = () => {
         </select>
       </div>
       <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Average Funding Market *</label>
+        <select
+          name="averageFundingMarket"
+          value={formData.averageFundingMarket}
+          onChange={handleInputChange}
+          className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+        >
+          <option value="">Select Funding Market</option>
+          {fundingMarkets.map(market => (
+            <option key={market} value={market}>{market}</option>
+          ))}
+        </select>
+      </div>
+      <div>
         <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Geographic Focus (Select States) *</label>
         <div className="max-h-48 overflow-y-auto border border-primary-600 rounded-md p-3 bg-primary-800">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -436,12 +548,7 @@ const SchemeApplication: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={formData.geographicFocus.includes(state)}
-                  onChange={() => {
-                    const newFocus = formData.geographicFocus.includes(state)
-                      ? formData.geographicFocus.filter(s => s !== state)
-                      : [...formData.geographicFocus, state];
-                    setFormData(prev => ({ ...prev, geographicFocus: newFocus }));
-                  }}
+                  onChange={() => handleCheckboxChange('geographicFocus', state)}
                   className="w-4 h-4 accent-accent-500"
                 />
                 <span className="text-sm text-gray-300 font-serif">{state}</span>
@@ -456,14 +563,25 @@ const SchemeApplication: React.FC = () => {
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Description of Services and Farming Programs *</label>
+        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Description of Services and Funding Programs Previous Benefit *</label>
         <textarea
           name="descriptionOfServices"
           value={formData.descriptionOfServices}
           onChange={handleInputChange}
           rows={4}
           className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-          placeholder="Describe your services, farming programs, and previous benefits..."
+          placeholder="Describe your services, funding programs, and previous benefits..."
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Funding Programs Previous Benefit *</label>
+        <textarea
+          name="fundingProgramsPreviousBenefit"
+          value={formData.fundingProgramsPreviousBenefit}
+          onChange={handleInputChange}
+          rows={4}
+          className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+          placeholder="Describe previous benefits from funding programs..."
         />
       </div>
     </div>
@@ -519,6 +637,17 @@ const SchemeApplication: React.FC = () => {
         />
       </div>
       <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Terms of Reference to Insurance Companies *</label>
+        <textarea
+          name="termsOfReferenceInsurance"
+          value={formData.termsOfReferenceInsurance}
+          onChange={handleInputChange}
+          rows={4}
+          className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+          placeholder="Enter terms of reference to Insurance Companies..."
+        />
+      </div>
+      <div>
         <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">Terms of Reference to Beneficiaries *</label>
         <textarea
           name="termsOfReferenceBeneficiaries"
@@ -559,7 +688,7 @@ const SchemeApplication: React.FC = () => {
           onChange={handleInputChange}
           rows={4}
           className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-          placeholder="Describe how you will report on farming activities, what metrics you will track, and the reporting formats you will use..."
+          placeholder="Describe how you will report on scheme progress, what metrics you will track, and the reporting formats you will use..."
         />
       </div>
       <div>
@@ -598,7 +727,7 @@ const SchemeApplication: React.FC = () => {
           onChange={handleInputChange}
           rows={4}
           className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-          placeholder="Describe your regulatory compliance status, including licenses, permits, certifications, and adherence to agricultural regulations..."
+          placeholder="Describe your organization's regulatory compliance status, licenses held, adherence to financial regulations, and any regulatory requirements you meet..."
         />
       </div>
       <div>
@@ -851,6 +980,7 @@ const SchemeApplication: React.FC = () => {
                   setShowForm(false);
                   setSelectedScheme(null);
                   setCurrentStep(1);
+                  // Reset form if needed
                 }}
                 className="px-6 py-2 rounded-md bg-accent-500 text-white hover:bg-accent-600 font-medium"
               >

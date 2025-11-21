@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useNotifications, type NotificationItem } from '../context/NotificationContext';
-import { updateFundProviderStatus, getActiveFundProviderRecord } from '../utils/localDatabase';
+import { updateFundProviderStatus, getActiveFundProviderRecord, updateInsuranceCompanyStatus, getActiveInsuranceCompanyRecord, updateCooperativeGroupStatus, getActiveCooperativeGroupRecord, updateExtensionOrganizationStatus, getActiveExtensionOrganizationRecord, updatePFIStatus, getActivePFIRecord, updateAnchorStatus, getActiveAnchorRecord, updateLeadFirmStatus, getActiveLeadFirmRecord, updateProducerStatus, getActiveProducerRecord, updateResearcherStatus, getActiveResearcherRecord } from '../utils/localDatabase';
 
 interface PortalLayoutProps {
   role: string;
@@ -43,6 +43,8 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
   const [approvalRemarks, setApprovalRemarks] = useState('');
   const [showFullApplication, setShowFullApplication] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread' | 'viewed'>('all');
+  const [showApprovalConfirmation, setShowApprovalConfirmation] = useState(false);
+  const [showRejectionConfirmation, setShowRejectionConfirmation] = useState(false);
   const [documentModal, setDocumentModal] = useState<{
     title: string;
     documents: { label: string; name: string; type: string }[];
@@ -148,18 +150,26 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
 
   const isCoordinatingAgencyRoute = location.pathname.startsWith('/portal/coordinating-agency');
   const isFundProviderRoute = location.pathname.startsWith('/portal/fund-provider');
+  const isInsuranceRoute = location.pathname.startsWith('/portal/insurance');
+  const isCooperativeRoute = location.pathname.startsWith('/portal/cooperative');
+  const isExtensionRoute = location.pathname.startsWith('/portal/extension');
   const isAnchorRoute = location.pathname.startsWith('/portal/anchor');
   const isProducerRoute = location.pathname.startsWith('/portal/producer');
+  const isResearcherRoute = location.pathname.startsWith('/portal/researcher');
   const isPFIRoute = location.pathname.startsWith('/portal/pfi');
   const isLeadFirmRoute = location.pathname.startsWith('/portal/lead-firm');
-  const shouldShowNotifications = isCoordinatingAgencyRoute || isFundProviderRoute || isAnchorRoute || isProducerRoute || isPFIRoute || isLeadFirmRoute;
+  const shouldShowNotifications = isCoordinatingAgencyRoute || isFundProviderRoute || isInsuranceRoute || isCooperativeRoute || isExtensionRoute || isAnchorRoute || isProducerRoute || isResearcherRoute || isPFIRoute || isLeadFirmRoute;
 
   // Determine current user role from route
-  const getCurrentUserRole = (): 'coordinating-agency' | 'fund-provider' | 'anchor' | 'producer' | 'pfi' | 'lead-firm' | null => {
+  const getCurrentUserRole = (): 'coordinating-agency' | 'fund-provider' | 'insurance' | 'cooperative' | 'extension' | 'anchor' | 'producer' | 'researcher' | 'pfi' | 'lead-firm' | null => {
     if (isCoordinatingAgencyRoute) return 'coordinating-agency';
     if (isFundProviderRoute) return 'fund-provider';
+    if (isInsuranceRoute) return 'insurance';
+    if (isCooperativeRoute) return 'cooperative';
+    if (isExtensionRoute) return 'extension';
     if (isAnchorRoute) return 'anchor';
     if (isProducerRoute) return 'producer';
+    if (isResearcherRoute) return 'researcher';
     if (isPFIRoute) return 'pfi';
     if (isLeadFirmRoute) return 'lead-firm';
     return null;
@@ -182,6 +192,46 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     return getActiveFundProviderRecord();
   }, [currentUserRole]);
 
+  const activeInsuranceCompanyRecord = useMemo(() => {
+    if (currentUserRole !== 'insurance') return null;
+    return getActiveInsuranceCompanyRecord();
+  }, [currentUserRole]);
+
+  const activeCooperativeGroupRecord = useMemo(() => {
+    if (currentUserRole !== 'cooperative') return null;
+    return getActiveCooperativeGroupRecord();
+  }, [currentUserRole]);
+
+  const activeExtensionOrganizationRecord = useMemo(() => {
+    if (currentUserRole !== 'extension') return null;
+    return getActiveExtensionOrganizationRecord();
+  }, [currentUserRole]);
+
+  const activePFIRecord = useMemo(() => {
+    if (currentUserRole !== 'pfi') return null;
+    return getActivePFIRecord();
+  }, [currentUserRole]);
+
+  const activeAnchorRecord = useMemo(() => {
+    if (currentUserRole !== 'anchor') return null;
+    return getActiveAnchorRecord();
+  }, [currentUserRole]);
+
+  const activeLeadFirmRecord = useMemo(() => {
+    if (currentUserRole !== 'lead-firm') return null;
+    return getActiveLeadFirmRecord();
+  }, [currentUserRole]);
+
+  const activeProducerRecord = useMemo(() => {
+    if (currentUserRole !== 'producer') return null;
+    return getActiveProducerRecord();
+  }, [currentUserRole]);
+
+  const activeResearcherRecord = useMemo(() => {
+    if (currentUserRole !== 'researcher') return null;
+    return getActiveResearcherRecord();
+  }, [currentUserRole]);
+
   const notifications = useMemo<NotificationItem[]>(() => {
     if (!currentUserRole) return [];
     if (currentUserRole === 'coordinating-agency') {
@@ -194,8 +244,64 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
         (notif) => notif.metadata?.fundProviderId === fundProviderId
       );
     }
+    if (currentUserRole === 'insurance') {
+      const insuranceCompanyId = activeInsuranceCompanyRecord?.id;
+      if (!insuranceCompanyId) return [];
+      return getNotificationsByRole('insurance').filter(
+        (notif) => notif.metadata?.insuranceCompanyId === insuranceCompanyId
+      );
+    }
+    if (currentUserRole === 'cooperative') {
+      const cooperativeGroupId = activeCooperativeGroupRecord?.id;
+      if (!cooperativeGroupId) return [];
+      return getNotificationsByRole('cooperative').filter(
+        (notif) => notif.metadata?.cooperativeGroupId === cooperativeGroupId
+      );
+    }
+    if (currentUserRole === 'extension') {
+      const extensionOrganizationId = activeExtensionOrganizationRecord?.id;
+      if (!extensionOrganizationId) return [];
+      return getNotificationsByRole('extension').filter(
+        (notif) => notif.metadata?.extensionOrganizationId === extensionOrganizationId
+      );
+    }
+    if (currentUserRole === 'pfi') {
+      const pfiId = activePFIRecord?.id;
+      if (!pfiId) return [];
+      return getNotificationsByRole('pfi').filter(
+        (notif) => notif.metadata?.pfiId === pfiId
+      );
+    }
+    if (currentUserRole === 'anchor') {
+      const anchorId = activeAnchorRecord?.id;
+      if (!anchorId) return [];
+      return getNotificationsByRole('anchor').filter(
+        (notif) => notif.metadata?.anchorId === anchorId
+      );
+    }
+    if (currentUserRole === 'lead-firm') {
+      const leadFirmId = activeLeadFirmRecord?.id;
+      if (!leadFirmId) return [];
+      return getNotificationsByRole('lead-firm').filter(
+        (notif) => notif.metadata?.leadFirmId === leadFirmId
+      );
+    }
+    if (currentUserRole === 'producer') {
+      const producerId = activeProducerRecord?.id;
+      if (!producerId) return [];
+      return getNotificationsByRole('producer').filter(
+        (notif) => notif.metadata?.producerId === producerId
+      );
+    }
+    if (currentUserRole === 'researcher') {
+      const researcherId = activeResearcherRecord?.id;
+      if (!researcherId) return [];
+      return getNotificationsByRole('researcher').filter(
+        (notif) => notif.metadata?.researcherId === researcherId
+      );
+    }
     return getNotificationsByRole(currentUserRole);
-  }, [currentUserRole, getNotificationsByRole, activeFundProviderRecord]);
+  }, [currentUserRole, getNotificationsByRole, activeFundProviderRecord, activeInsuranceCompanyRecord, activeCooperativeGroupRecord, activeExtensionOrganizationRecord, activePFIRecord, activeAnchorRecord, activeLeadFirmRecord, activeProducerRecord, activeResearcherRecord]);
 
   const sortedNotifications = useMemo(() => {
     const sorted = [...notifications].sort((a, b) => {
@@ -274,7 +380,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
           <p className={`mt-1 text-sm font-sans ${notification.isViewed ? 'text-gray-300' : 'text-gray-100 font-semibold'}`}>
             {notification.message}
           </p>
-          {notification.metadata?.type === 'fundProviderRegistration' && (
+          {(notification.metadata?.type === 'fundProviderRegistration' || notification.metadata?.type === 'insuranceCompanyRegistration' || notification.metadata?.type === 'cooperativeGroupRegistration' || notification.metadata?.type === 'extensionOrganizationRegistration' || notification.metadata?.type === 'pfiRegistration' || notification.metadata?.type === 'anchorRegistration' || notification.metadata?.type === 'leadFirmRegistration' || notification.metadata?.type === 'producerRegistration' || notification.metadata?.type === 'researcherRegistration') && (
             <p className="mt-1 text-[11px] text-gray-400 font-serif">
               Registration update awaiting your review.
             </p>
@@ -284,8 +390,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     </div>
   );
 
-  const handleApprovalSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const processApproval = () => {
     if (!showApprovalModal || !approvalDecision) return;
 
     const notification = notifications.find(n => n.id === showApprovalModal);
@@ -325,6 +430,294 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
             metadata: {
               type: 'fundProviderRegistrationResponse',
               fundProviderId,
+              relatedNotificationId: notification.id,
+            },
+          });
+        }
+      }
+      // Handle Insurance Company registration approvals/rejections
+      else if (notification.metadata?.type === 'insuranceCompanyRegistration') {
+        const isApproved = approvalDecision === 'approve';
+        const insuranceCompanyId = notification.metadata?.insuranceCompanyId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this Insurance Company.');
+          return;
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        if (insuranceCompanyId) {
+          updateInsuranceCompanyStatus(insuranceCompanyId, isApproved ? 'verified' : 'unverified', {
+            rejectionReason: isApproved ? undefined : trimmedRemarks,
+            pendingNotificationId: null,
+          });
+        }
+
+        if (insuranceCompanyId) {
+          const message = isApproved
+            ? 'Your registration has been approved. You now have full access.'
+            : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole: 'insurance',
+            message,
+            metadata: {
+              type: 'insuranceCompanyRegistrationResponse',
+              insuranceCompanyId,
+              relatedNotificationId: notification.id,
+            },
+          });
+        }
+      }
+      // Handle Cooperative Group registration approvals/rejections
+      else if (notification.metadata?.type === 'cooperativeGroupRegistration') {
+        const isApproved = approvalDecision === 'approve';
+        const cooperativeGroupId = notification.metadata?.cooperativeGroupId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this Cooperative Group.');
+          return;
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        if (cooperativeGroupId) {
+          updateCooperativeGroupStatus(cooperativeGroupId, isApproved ? 'verified' : 'unverified', {
+            rejectionReason: isApproved ? undefined : trimmedRemarks,
+            pendingNotificationId: null,
+          });
+        }
+
+        if (cooperativeGroupId) {
+          const message = isApproved
+            ? 'Your registration has been approved. You now have full access.'
+            : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole: 'cooperative',
+            message,
+            metadata: {
+              type: 'cooperativeGroupRegistrationResponse',
+              cooperativeGroupId,
+              relatedNotificationId: notification.id,
+            },
+          });
+        }
+      }
+      // Handle PFI registration approvals/rejections
+      else if (notification.metadata?.type === 'pfiRegistration') {
+        const isApproved = approvalDecision === 'approve';
+        const pfiId = notification.metadata?.pfiId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this PFI.');
+          return;
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        if (pfiId) {
+          updatePFIStatus(pfiId, isApproved ? 'verified' : 'unverified', {
+            rejectionReason: isApproved ? undefined : trimmedRemarks,
+            pendingNotificationId: null,
+          });
+        }
+
+        if (pfiId) {
+          const message = isApproved
+            ? 'Your registration has been approved. You now have full access.'
+            : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole: 'pfi',
+            message,
+            metadata: {
+              type: 'pfiRegistrationResponse',
+              pfiId,
+              relatedNotificationId: notification.id,
+            },
+          });
+        }
+      }
+      // Handle Anchor registration approvals/rejections
+      else if (notification.metadata?.type === 'anchorRegistration') {
+        const isApproved = approvalDecision === 'approve';
+        const anchorId = notification.metadata?.anchorId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this Anchor.');
+          return;
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        if (anchorId) {
+          updateAnchorStatus(anchorId, isApproved ? 'verified' : 'unverified', {
+            rejectionReason: isApproved ? undefined : trimmedRemarks,
+            pendingNotificationId: null,
+          });
+        }
+
+        if (anchorId) {
+          const message = isApproved
+            ? 'Your registration has been approved. You now have full access.'
+            : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole: 'anchor',
+            message,
+            metadata: {
+              type: 'anchorRegistrationResponse',
+              anchorId,
+              relatedNotificationId: notification.id,
+            },
+          });
+        }
+      }
+      // Handle Lead Firm registration approvals/rejections
+      else if (notification.metadata?.type === 'leadFirmRegistration') {
+        const isApproved = approvalDecision === 'approve';
+        const leadFirmId = notification.metadata?.leadFirmId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this Lead Firm.');
+          return;
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        if (leadFirmId) {
+          updateLeadFirmStatus(leadFirmId, isApproved ? 'verified' : 'unverified', {
+            rejectionReason: isApproved ? undefined : trimmedRemarks,
+            pendingNotificationId: null,
+          });
+        }
+
+        if (leadFirmId) {
+          const message = isApproved
+            ? 'Your registration has been approved. You now have full access.'
+            : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole: 'lead-firm',
+            message,
+            metadata: {
+              type: 'leadFirmRegistrationResponse',
+              leadFirmId,
+              relatedNotificationId: notification.id,
+            },
+          });
+        }
+      }
+      // Handle Producer/Farmer registration approvals/rejections
+      else if (notification.metadata?.type === 'producerRegistration') {
+        const isApproved = approvalDecision === 'approve';
+        const producerId = notification.metadata?.producerId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this Producer/Farmer.');
+          return;
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        if (producerId) {
+          updateProducerStatus(producerId, isApproved ? 'verified' : 'unverified', {
+            rejectionReason: isApproved ? undefined : trimmedRemarks,
+            pendingNotificationId: null,
+          });
+        }
+
+        if (producerId) {
+          const message = isApproved
+            ? 'Your registration has been approved. You now have full access.'
+            : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole: 'producer',
+            message,
+            metadata: {
+              type: 'producerRegistrationResponse',
+              producerId,
+              relatedNotificationId: notification.id,
+            },
+          });
+        }
+      }
+      // Handle Researcher/Student registration approvals/rejections
+      else if (notification.metadata?.type === 'researcherRegistration') {
+        const isApproved = approvalDecision === 'approve';
+        const researcherId = notification.metadata?.researcherId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this Researcher/Student.');
+          return;
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        if (researcherId) {
+          updateResearcherStatus(researcherId, isApproved ? 'verified' : 'unverified', {
+            rejectionReason: isApproved ? undefined : trimmedRemarks,
+            pendingNotificationId: null,
+          });
+        }
+
+        if (researcherId) {
+          const message = isApproved
+            ? 'Your registration has been approved. You now have full access.'
+            : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole: 'researcher',
+            message,
+            metadata: {
+              type: 'researcherRegistrationResponse',
+              researcherId,
+              relatedNotificationId: notification.id,
+            },
+          });
+        }
+      }
+      // Handle Extension Organization registration approvals/rejections
+      else if (notification.metadata?.type === 'extensionOrganizationRegistration') {
+        const isApproved = approvalDecision === 'approve';
+        const extensionOrganizationId = notification.metadata?.extensionOrganizationId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this Extension Organization.');
+          return;
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        if (extensionOrganizationId) {
+          updateExtensionOrganizationStatus(extensionOrganizationId, isApproved ? 'verified' : 'unverified', {
+            rejectionReason: isApproved ? undefined : trimmedRemarks,
+            pendingNotificationId: null,
+          });
+        }
+
+        if (extensionOrganizationId) {
+          const message = isApproved
+            ? 'Your registration has been approved. You now have full access.'
+            : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole: 'extension',
+            message,
+            metadata: {
+              type: 'extensionOrganizationRegistrationResponse',
+              extensionOrganizationId,
               relatedNotificationId: notification.id,
             },
           });
@@ -403,6 +796,48 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     setApprovalDecision('');
     setApprovalRemarks('');
     setShowFullApplication(false);
+    setShowApprovalConfirmation(false);
+    setShowRejectionConfirmation(false);
+  };
+
+  const handleApprovalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!showApprovalModal || !approvalDecision) return;
+
+    // Show confirmation dialog for approval actions
+    if (approvalDecision === 'approve' && !showApprovalConfirmation) {
+      setShowApprovalConfirmation(true);
+      return;
+    }
+
+    // Show confirmation dialog for rejection actions
+    if (approvalDecision === 'reject' && !showRejectionConfirmation) {
+      setShowRejectionConfirmation(true);
+      return;
+    }
+
+    // If confirmation was shown and user confirmed, process the approval/rejection
+    processApproval();
+  };
+
+  const handleConfirmApproval = () => {
+    setShowApprovalConfirmation(false);
+    processApproval();
+  };
+
+  const handleConfirmRejection = () => {
+    setShowRejectionConfirmation(false);
+    processApproval();
+  };
+
+  const handleCancelApproval = () => {
+    setShowApprovalConfirmation(false);
+    setApprovalDecision('');
+  };
+
+  const handleCancelRejection = () => {
+    setShowRejectionConfirmation(false);
+    setApprovalDecision('');
   };
 
   return (
@@ -730,7 +1165,9 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                 </div>
 
                 {/* Application Details Section */}
-                {notification.applicantName && (
+                {notification.applicantName && 
+                 notification.metadata?.type !== 'researcherRegistration' && 
+                 notification.metadata?.type !== 'producerRegistration' && (
                   <div className="space-y-4 mb-6">
                     <div className="bg-primary-800 rounded-md p-4">
                       <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">
@@ -775,7 +1212,9 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                     </div>
 
                     {/* Contact Person Information */}
-                    {(notification.contactPersonName || notification.contactPersonEmail || notification.contactPersonPhone) && (
+                    {(notification.contactPersonName || notification.contactPersonEmail || notification.contactPersonPhone) && 
+                     notification.metadata?.type !== 'researcherRegistration' && 
+                     notification.metadata?.type !== 'producerRegistration' && (
                       <div className="bg-primary-800 rounded-md p-4">
                         <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -866,11 +1305,11 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
 
                     {showFullApplication && (() => {
                       const applicationData = notification.applicationData;
-                      const step1 = applicationData.step1 ?? {};
-                      const step2 = applicationData.step2 ?? {};
-                      const step3 = applicationData.step3 ?? {};
-                      const step4 = applicationData.step4 ?? {};
-                      const step5 = applicationData.step5 ?? {};
+                      const notificationType = notification.metadata?.type;
+                      
+                      // Check if this is a Researcher/Student or Producer/Farmer registration
+                      const isResearcherRegistration = notificationType === 'researcherRegistration';
+                      const isProducerRegistration = notificationType === 'producerRegistration';
 
                       const buildEntries = (source: Record<string, any>, labels: Record<string, string>) =>
                         Object.entries(labels)
@@ -883,6 +1322,272 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                             return { label, value: trimmed };
                           })
                           .filter(Boolean) as { label: string; value: string }[];
+
+                      const deriveDocumentType = (fileName: string) => {
+                        if (!fileName) return 'Unknown';
+                        const extension = fileName.split('.').pop();
+                        return extension ? extension.toUpperCase() : 'Unknown';
+                      };
+
+                      const openDocuments = (title: string, docs: { label: string; name: string }[]) => {
+                        if (!docs.length) return;
+                        setDocumentModal({
+                          title,
+                          documents: docs.map((doc) => ({
+                            ...doc,
+                            type: deriveDocumentType(doc.name),
+                          })),
+                        });
+                      };
+
+                      const renderGroup = (
+                        title: string,
+                        entries: { label: string; value: string }[],
+                        action?: React.ReactNode
+                      ) => (
+                        <div key={title} className="bg-primary-900/60 rounded-md border border-primary-700 p-4 space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <h6 className="text-sm font-semibold text-accent-300 font-sans">{title}</h6>
+                            {action}
+                          </div>
+                          {entries.length > 0 ? (
+                            <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                              {entries.map(({ label, value }) => (
+                                <div key={label}>
+                                  <dt className="text-xs uppercase tracking-wide text-gray-400 font-serif">{label}</dt>
+                                  <dd className="text-sm text-gray-100 font-sans mt-1 whitespace-pre-line break-words">{value}</dd>
+                                </div>
+                              ))}
+                            </dl>
+                          ) : (
+                            <p className="text-xs text-gray-500 font-serif">No data provided.</p>
+                          )}
+                        </div>
+                      );
+
+                      // Render Researcher/Student specific application data
+                      if (isResearcherRegistration) {
+                        const step1 = applicationData.step1 ?? {};
+                        const step2 = applicationData.step2 ?? {};
+
+                        const personalDetailsEntries = buildEntries(step1, {
+                          fullName: 'Full Name',
+                          gender: 'Gender',
+                          birthDate: 'Date of Birth',
+                          nationality: 'Nationality',
+                        });
+
+                        const contactDetailsEntries = buildEntries(step1, {
+                          email: 'Email',
+                          phone: 'Phone',
+                          whatsapp: 'WhatsApp (Optional)',
+                          address: 'Residential Address',
+                          city: 'City',
+                          state: 'State/Province',
+                          country: 'Country',
+                        });
+
+                        const identityVerificationEntries = buildEntries(step1, {
+                          idType: 'ID Type',
+                          idNumber: 'ID Number',
+                          idDocumentName: 'ID Document',
+                        });
+
+                        const academicProfileEntries = buildEntries(step2, {
+                          institutionName: 'Institution',
+                          faculty: 'Faculty',
+                          currentLevel: 'Current Level',
+                          studentResearcherId: 'Student/Researcher ID',
+                          yearOfEntry: 'Year of Entry',
+                          expectedCompletionYear: 'Expected Completion Year',
+                        });
+
+                        const researchInformationEntries = buildEntries(step2, {
+                          areaOfStudy: 'Area of Study',
+                          researchTopic: 'Research Topic (Optional)',
+                          supervisorName: 'Supervisor Name (Optional)',
+                          supervisorEmail: 'Supervisor Email (Optional)',
+                          supportingDocumentName: 'Supporting Document (Optional)',
+                        });
+
+                        const professionalLinksEntries = buildEntries(step2, {
+                          googleScholar: 'Google Scholar Profile (Optional)',
+                          researchGate: 'ResearchGate Profile (Optional)',
+                          linkedinProfile: 'LinkedIn Profile (Optional)',
+                        });
+
+                        const verificationDocuments = step1?.idDocumentName && step1.idDocumentName !== 'Not provided'
+                          ? [{ label: 'ID Document', name: String(step1.idDocumentName) }]
+                          : [];
+
+                        const supportingDocuments = step2?.supportingDocumentName && step2.supportingDocumentName !== 'Not provided'
+                          ? [{ label: 'Supporting Document', name: String(step2.supportingDocumentName) }]
+                          : [];
+
+                        return (
+                          <div className="mt-4 space-y-6 bg-primary-800 rounded-md p-4">
+                            <div className="space-y-4">
+                              <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Step 1: Contact Information</h5>
+                              {renderGroup('Personal Details', personalDetailsEntries)}
+                              {renderGroup('Contact Details', contactDetailsEntries)}
+                              {renderGroup(
+                                'Identity Verification',
+                                identityVerificationEntries,
+                                verificationDocuments.length > 0 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => openDocuments('Identity Verification Documents', verificationDocuments)}
+                                    className="text-xs text-accent-400 hover:text-accent-300 font-semibold transition-colors"
+                                  >
+                                    View Documents
+                                  </button>
+                                ) : undefined
+                              )}
+                            </div>
+                            <div className="space-y-4">
+                              <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Step 2: Academic / Research Information</h5>
+                              {renderGroup('Academic Profile', academicProfileEntries)}
+                              {renderGroup('Research Information', researchInformationEntries)}
+                              {renderGroup('Professional Links', professionalLinksEntries)}
+                              {supportingDocuments.length > 0 && (
+                                <div className="bg-primary-900/60 rounded-md border border-primary-700 p-4">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <h6 className="text-sm font-semibold text-accent-300 font-sans">Supporting Documents</h6>
+                                    <button
+                                      type="button"
+                                      onClick={() => openDocuments('Supporting Documents', supportingDocuments)}
+                                      className="text-xs text-accent-400 hover:text-accent-300 font-semibold transition-colors"
+                                    >
+                                      View Documents
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Render Producer/Farmer specific application data
+                      if (isProducerRegistration) {
+                        const step1 = applicationData.step1 ?? {};
+                        const step2 = applicationData.step2 ?? {};
+                        const step3 = applicationData.step3 ?? {};
+                        const step4 = applicationData.step4 ?? {};
+                        const step5 = applicationData.step5 ?? {};
+                        const step6 = applicationData.step6 ?? {};
+
+                        const personalInfoEntries = buildEntries(step1, {
+                          fullName: 'Full Name',
+                          gender: 'Gender',
+                          birthDate: 'Date of Birth',
+                          phone: 'Phone Number',
+                          email: 'Email (Optional)',
+                          address: 'Residential Address',
+                          city: 'City',
+                          state: 'State',
+                          country: 'Country',
+                        });
+
+                        const farmBusinessEntries = buildEntries(step2, {
+                          farmBusinessName: 'Farm/Business Name',
+                          typeOfFarmer: 'Type of Farmer',
+                          farmAddress: 'Farm Address',
+                          farmSize: 'Farm Size (hectares)',
+                          yearsOfExperience: 'Years of Experience',
+                          primarySourceOfIncome: 'Primary Source of Income',
+                          farmerAssociation: 'Farmer Association/Cooperative (Optional)',
+                        });
+
+                        const produceEntries = buildEntries(step3, {
+                          crops: 'Crops',
+                          livestock: 'Livestock',
+                          hasProcessingValueAddition: 'Processing/Value Addition',
+                          processingValueAdditionDetails: 'Processing/Value Addition Details',
+                        });
+
+                        const marketEntries = buildEntries(step4, {
+                          totalAnnualProduction: 'Total Annual Production',
+                          primaryMarket: 'Primary Market',
+                          majorBuyers: 'Major Buyers (Optional)',
+                          challengesFaced: 'Challenges Faced (Optional)',
+                        });
+
+                        const verificationEntries = buildEntries(step5, {
+                          idType: 'ID Type',
+                          idNumber: 'ID Number',
+                          idDocumentName: 'ID Document',
+                          farmImagesName: 'Farm Images (Optional)',
+                          certificationName: 'Certification (Optional)',
+                        });
+
+                        const bankingEntries = buildEntries(step6, {
+                          preferredPaymentMethod: 'Preferred Payment Method',
+                          bankName: 'Bank Name',
+                          accountName: 'Account Name',
+                          accountNumber: 'Account Number',
+                        });
+
+                        const verificationDocuments = [
+                          step5?.idDocumentName && step5.idDocumentName !== 'Not provided'
+                            ? { label: 'ID Document', name: String(step5.idDocumentName) }
+                            : null,
+                          step5?.farmImagesName && step5.farmImagesName !== 'Not provided'
+                            ? { label: 'Farm Images', name: String(step5.farmImagesName) }
+                            : null,
+                          step5?.certificationName && step5.certificationName !== 'Not provided'
+                            ? { label: 'Certification', name: String(step5.certificationName) }
+                            : null,
+                        ].filter(Boolean) as { label: string; name: string }[];
+
+                        return (
+                          <div className="mt-4 space-y-6 bg-primary-800 rounded-md p-4">
+                            <div className="space-y-4">
+                              <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Step 1: Personal Information</h5>
+                              {renderGroup('Personal Information', personalInfoEntries)}
+                            </div>
+                            <div className="space-y-4">
+                              <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Step 2: Farm / Business Details</h5>
+                              {renderGroup('Farm / Business Details', farmBusinessEntries)}
+                            </div>
+                            <div className="space-y-4">
+                              <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Step 3: Type of Produce</h5>
+                              {renderGroup('Type of Produce', produceEntries)}
+                            </div>
+                            <div className="space-y-4">
+                              <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Step 4: Production Capacity & Market</h5>
+                              {renderGroup('Production Capacity & Market', marketEntries)}
+                            </div>
+                            <div className="space-y-4">
+                              <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Step 5: Verification & Documents</h5>
+                              {renderGroup(
+                                'Verification & Documents',
+                                verificationEntries,
+                                verificationDocuments.length > 0 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => openDocuments('Verification & Documents', verificationDocuments)}
+                                    className="text-xs text-accent-400 hover:text-accent-300 font-semibold transition-colors"
+                                  >
+                                    View Documents
+                                  </button>
+                                ) : undefined
+                              )}
+                            </div>
+                            <div className="space-y-4">
+                              <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Step 6: Banking & Payment Details</h5>
+                              {renderGroup('Banking & Payment Details', bankingEntries)}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Default rendering for other roles (organizational structure)
+                      const step1 = applicationData.step1 ?? {};
+                      const step2 = applicationData.step2 ?? {};
+                      const step3 = applicationData.step3 ?? {};
+                      const step4 = applicationData.step4 ?? {};
+                      const step5 = applicationData.step5 ?? {};
 
                       const personalDetailsEntries = buildEntries(step1, {
                         fullName: 'Full Name',
@@ -948,23 +1653,6 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                         }
                       );
 
-                      const deriveDocumentType = (fileName: string) => {
-                        if (!fileName) return 'Unknown';
-                        const extension = fileName.split('.').pop();
-                        return extension ? extension.toUpperCase() : 'Unknown';
-                      };
-
-                      const openDocuments = (title: string, docs: { label: string; name: string }[]) => {
-                        if (!docs.length) return;
-                        setDocumentModal({
-                          title,
-                          documents: docs.map((doc) => ({
-                            ...doc,
-                            type: deriveDocumentType(doc.name),
-                          })),
-                        });
-                      };
-
                       const verificationDocuments =
                         step3?.idDocument && step3.idDocument !== 'Not provided'
                           ? [{ label: 'Government-issued ID', name: String(step3.idDocument) }]
@@ -981,31 +1669,6 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                             }
                           : null,
                       ].filter(Boolean) as { label: string; name: string }[];
-
-                      const renderGroup = (
-                        title: string,
-                        entries: { label: string; value: string }[],
-                        action?: React.ReactNode
-                      ) => (
-                        <div key={title} className="bg-primary-900/60 rounded-md border border-primary-700 p-4 space-y-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <h6 className="text-sm font-semibold text-accent-300 font-sans">{title}</h6>
-                            {action}
-                          </div>
-                          {entries.length > 0 ? (
-                            <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-                              {entries.map(({ label, value }) => (
-                                <div key={label}>
-                                  <dt className="text-xs uppercase tracking-wide text-gray-400 font-serif">{label}</dt>
-                                  <dd className="text-sm text-gray-100 font-sans mt-1 whitespace-pre-line break-words">{value}</dd>
-                                </div>
-                              ))}
-                            </dl>
-                          ) : (
-                            <p className="text-xs text-gray-500 font-serif">No data provided.</p>
-                          )}
-                        </div>
-                      );
 
                       return (
                         <div className="mt-4 space-y-6 bg-primary-800 rounded-md p-4">
@@ -1070,7 +1733,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                     </div>
                     <div>
                       <label className="block text-sm text-gray-300 font-serif mb-1">
-                        {notification.metadata?.type === 'fundProviderRegistration' && approvalDecision === 'reject'
+                        {((notification.metadata?.type === 'fundProviderRegistration' || notification.metadata?.type === 'insuranceCompanyRegistration' || notification.metadata?.type === 'cooperativeGroupRegistration' || notification.metadata?.type === 'extensionOrganizationRegistration' || notification.metadata?.type === 'pfiRegistration' || notification.metadata?.type === 'anchorRegistration' || notification.metadata?.type === 'leadFirmRegistration' || notification.metadata?.type === 'producerRegistration' || notification.metadata?.type === 'researcherRegistration') && approvalDecision === 'reject')
                           ? 'Reason for Rejection'
                           : 'Remarks'}
                       </label>
@@ -1079,10 +1742,10 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                         onChange={(e) => setApprovalRemarks(e.target.value)} 
                         rows={3} 
                         className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600" 
-                        placeholder={notification.metadata?.type === 'fundProviderRegistration' && approvalDecision === 'reject'
+                        placeholder={((notification.metadata?.type === 'fundProviderRegistration' || notification.metadata?.type === 'insuranceCompanyRegistration' || notification.metadata?.type === 'cooperativeGroupRegistration' || notification.metadata?.type === 'extensionOrganizationRegistration' || notification.metadata?.type === 'pfiRegistration' || notification.metadata?.type === 'anchorRegistration' || notification.metadata?.type === 'leadFirmRegistration' || notification.metadata?.type === 'producerRegistration' || notification.metadata?.type === 'researcherRegistration') && approvalDecision === 'reject')
                           ? 'Provide the reason for rejection'
                           : 'Add remarks (optional)'} 
-                        required={notification.metadata?.type === 'fundProviderRegistration' && approvalDecision === 'reject'}
+                        required={((notification.metadata?.type === 'fundProviderRegistration' || notification.metadata?.type === 'insuranceCompanyRegistration' || notification.metadata?.type === 'cooperativeGroupRegistration' || notification.metadata?.type === 'extensionOrganizationRegistration' || notification.metadata?.type === 'pfiRegistration' || notification.metadata?.type === 'anchorRegistration' || notification.metadata?.type === 'leadFirmRegistration' || notification.metadata?.type === 'producerRegistration' || notification.metadata?.type === 'researcherRegistration') && approvalDecision === 'reject')}
                       />
                     </div>
                     <div className="flex justify-end gap-2">
@@ -1115,6 +1778,94 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
           </div>
         ) : null;
       })()}
+
+      {/* Approval Confirmation Dialog */}
+      {showApprovalConfirmation && showApprovalModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"
+          onClick={handleCancelApproval}
+        >
+          <div
+            className="w-full max-w-md bg-primary-900 border border-primary-700 rounded-lg p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-100 font-sans">Confirm Approval</h3>
+                <p className="text-sm text-gray-300 font-serif mt-2">
+                  Are you sure you want to approve this registration? This action will grant the user full access to the portal.
+                </p>
+              </div>
+              <button
+                className="text-gray-400 hover:text-gray-200 transition-colors"
+                onClick={handleCancelApproval}
+              >
+                ✖
+              </button>
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-primary-700">
+              <button
+                type="button"
+                onClick={handleCancelApproval}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmApproval}
+                className="btn-primary"
+              >
+                Confirm Approval
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Confirmation Dialog */}
+      {showRejectionConfirmation && showApprovalModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"
+          onClick={handleCancelRejection}
+        >
+          <div
+            className="w-full max-w-md bg-primary-900 border border-primary-700 rounded-lg p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-100 font-sans">Confirm Rejection</h3>
+                <p className="text-sm text-gray-300 font-serif mt-2">
+                  Are you sure you want to reject this registration? This action will deny the user access to the portal and they will need to update their details and resubmit.
+                </p>
+              </div>
+              <button
+                className="text-gray-400 hover:text-gray-200 transition-colors"
+                onClick={handleCancelRejection}
+              >
+                ✖
+              </button>
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-primary-700">
+              <button
+                type="button"
+                onClick={handleCancelRejection}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRejection}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Document Viewer Modal */}
       {documentModal && (

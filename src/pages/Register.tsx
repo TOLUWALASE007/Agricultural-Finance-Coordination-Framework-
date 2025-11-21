@@ -7,6 +7,39 @@ import {
   updateFundProviderRecord,
   FundProviderFormData,
   buildFundProviderApplicationData,
+  findFundProviderByEmail,
+  registerInsuranceCompany,
+  updateInsuranceCompanyRecord,
+  InsuranceCompanyFormData,
+  buildInsuranceCompanyApplicationData,
+  registerCooperativeGroup,
+  updateCooperativeGroupRecord,
+  CooperativeGroupFormData,
+  buildCooperativeGroupApplicationData,
+  registerExtensionOrganization,
+  updateExtensionOrganizationRecord,
+  ExtensionOrganizationFormData,
+  buildExtensionOrganizationApplicationData,
+  registerPFI,
+  updatePFIRecord,
+  PFIFormData,
+  buildPFIApplicationData,
+  registerAnchor,
+  updateAnchorRecord,
+  AnchorFormData,
+  buildAnchorApplicationData,
+  registerLeadFirm,
+  updateLeadFirmRecord,
+  LeadFirmFormData,
+  buildLeadFirmApplicationData,
+  registerProducer,
+  updateProducerRecord,
+  ProducerFormData,
+  buildProducerApplicationData,
+  registerResearcher,
+  updateResearcherRecord,
+  ResearcherFormData,
+  buildResearcherApplicationData,
 } from '../utils/localDatabase';
 
 const Register: React.FC = () => {
@@ -17,7 +50,8 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
   const { addNotification } = useNotifications();
 
-  const [formData, setFormData] = useState({
+  // Initial form data state - used for resetting form when switching roles
+  const getInitialFormData = () => ({
     // Contact Info - Personal Details
     fullName: '',
     position: '',
@@ -75,8 +109,67 @@ const Register: React.FC = () => {
     // Security
     password: '',
     confirmPassword: '',
-    agreeToTerms: false
+    agreeToTerms: false,
+    
+    // Student/Researcher specific fields
+    // Step 1: Contact Information
+    nationality: '',
+    
+    // Step 2: Academic / Research Information
+    institutionName: '',
+    faculty: '',
+    currentLevel: '',
+    studentResearcherId: '',
+    yearOfEntry: '',
+    expectedCompletionYear: '',
+    areaOfStudy: '',
+    researchTopic: '',
+    supervisorName: '',
+    supervisorEmail: '',
+    supportingDocument: null as File | null,
+    googleScholar: '',
+    researchGate: '',
+    linkedinProfile: '',
+    agreeToDataSharing: false,
+    agreeToAccuracy: false,
+    
+    // Producer/Farmer specific fields
+    // Step 1: Personal Information
+    // (uses existing: fullName, gender, birthDate, phone, email, address, city, state, country)
+    
+    // Step 2: Farm / Business Details
+    farmBusinessName: '',
+    typeOfFarmer: [] as string[],
+    farmAddress: '',
+    farmSize: '',
+    yearsOfExperience: '',
+    primarySourceOfIncome: '',
+    farmerAssociation: '',
+    
+    // Step 3: Type of Produce
+    crops: [] as string[],
+    livestock: [] as string[],
+    hasProcessingValueAddition: '',
+    processingValueAdditionDetails: '',
+    
+    // Step 4: Production Capacity & Market
+    totalAnnualProduction: '',
+    primaryMarket: '',
+    majorBuyers: '',
+    challengesFaced: '',
+    
+    // Step 5: Verification & Documents
+    farmImages: null as File | null,
+    certification: null as File | null,
+    
+    // Step 6: Banking & Payment Details
+    preferredPaymentMethod: '',
+    bankName: '',
+    accountName: '',
+    accountNumber: ''
   });
+
+  const [formData, setFormData] = useState(getInitialFormData());
 
   const roles = [
     {
@@ -154,10 +247,21 @@ const Register: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData(prev => {
+      const newValue = type === 'checkbox' ? checked : (value ?? '');
+      return {
+        ...prev,
+        [name]: newValue
+      };
+    });
+  };
+
+  // Helper to ensure input values are always strings (never undefined)
+  const getInputValue = (fieldName: keyof typeof formData): string => {
+    const value = formData[fieldName];
+    if (typeof value === 'string') return value;
+    if (value === null || value === undefined) return '';
+    return String(value);
   };
 
   const handleAreaToggle = (stateName: string) => {
@@ -207,6 +311,18 @@ const Register: React.FC = () => {
   };
 
   const getTotalSteps = () => {
+    const currentRole = getCurrentRole();
+    
+    // Student/Researcher: 3 steps
+    if (currentRole.id === 'researcher') {
+      return 3;
+    }
+    
+    // Producer/Farmer: 7 steps
+    if (currentRole.id === 'producer') {
+      return 7;
+    }
+    
     // Contact Info tab has 3 steps (no Security & Terms)
     // Organization Info tab has 4 steps (includes Security & Terms)
     return activeTypeTab === 'individual' ? 3 : 4;
@@ -217,8 +333,41 @@ const Register: React.FC = () => {
     if (isSubmitting) return;
 
     const currentRole = getCurrentRole();
+    
+    // CRITICAL: Early role validation to prevent cross-role registration
+    // Verify the role is correctly identified before proceeding
+    if (!currentRole || !currentRole.id) {
+      alert('Registration error: Unable to determine selected role. Please refresh and try again.');
+      return;
+    }
+
+    // Prevent any registration if role state is ambiguous
+    const cooperativeGroupIndex = roles.findIndex(r => r.id === 'cooperative');
+    const fundProviderIndex = roles.findIndex(r => r.id === 'fund-provider');
+    
+    if (currentRole.id === 'cooperative' && activeTab !== cooperativeGroupIndex) {
+      console.error('CRITICAL: Cooperative Group role mismatch', { 
+        currentRoleId: currentRole.id, 
+        activeTab, 
+        expectedIndex: cooperativeGroupIndex 
+      });
+      alert('Registration error: Role selection mismatch detected. Please select Cooperative Group tab and try again.');
+      return;
+    }
+
+    if (currentRole.id === 'fund-provider' && activeTab !== fundProviderIndex) {
+      console.error('CRITICAL: Fund Provider role mismatch', { 
+        currentRoleId: currentRole.id, 
+        activeTab, 
+        expectedIndex: fundProviderIndex 
+      });
+      alert('Registration error: Role selection mismatch detected. Please select Fund Provider tab and try again.');
+      return;
+    }
+
     setIsSubmitting(true);
 
+    // Explicit role validation to prevent cross-role registration
     if (currentRole.id === 'fund-provider') {
       if (formData.password !== formData.confirmPassword) {
         alert('Passwords do not match.');
@@ -331,6 +480,1003 @@ const Register: React.FC = () => {
       return;
     }
 
+    if (currentRole.id === 'insurance') {
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        const registrationType: 'individual' | 'company' = activeTypeTab;
+        if (formData.areasOfOperation.length === 0) {
+          alert('Select at least one area of operation / coverage.');
+          setIsSubmitting(false);
+          return;
+        }
+        const contactEmail = formData.email.trim();
+        const officialEmail = formData.officialEmail.trim();
+
+        if (!officialEmail) {
+          alert('Official company email is required for portal access.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const storedFormData: InsuranceCompanyFormData = {
+          fullName: formData.fullName.trim(),
+          position: formData.position.trim(),
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          email: contactEmail,
+          phone: formData.phone.trim(),
+          whatsapp: formData.whatsapp?.trim() || undefined,
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          country: formData.country.trim(),
+          idType: formData.idType,
+          idNumber: formData.idNumber.trim(),
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
+          emergencyContactName: formData.emergencyContactName.trim(),
+          emergencyContactPhone: formData.emergencyContactPhone.trim(),
+          emergencyRelationship: formData.emergencyRelationship.trim(),
+          organizationName: formData.organizationName.trim(),
+          registrationNumber: formData.registrationNumber.trim(),
+          organizationType: formData.organizationType,
+          yearEstablished: formData.yearEstablished.trim(),
+          industry: formData.industry.trim(),
+          missionStatement: formData.missionStatement.trim(),
+          headquartersAddress: formData.headquartersAddress.trim(),
+          hqCity: formData.hqCity.trim(),
+          hqState: formData.hqState.trim(),
+          hqCountry: formData.hqCountry.trim(),
+          officePhone: formData.officePhone.trim(),
+          officialEmail,
+          website: formData.website.trim(),
+          facebook: formData.facebook?.trim() || undefined,
+          linkedin: formData.linkedin?.trim() || undefined,
+          twitter: formData.twitter?.trim() || undefined,
+          instagram: formData.instagram?.trim() || undefined,
+          numEmployees: formData.numEmployees.trim(),
+          areasOfOperation: [...formData.areasOfOperation],
+          organizationLogoName: formData.organizationLogo ? formData.organizationLogo.name : undefined,
+          certificateOfIncorporationName: formData.certificateOfIncorporation ? formData.certificateOfIncorporation.name : undefined,
+          hasPartnership: formData.hasPartnership,
+          partnershipDetails: formData.partnershipDetails.trim(),
+          password: '',
+        };
+
+        const applicationData = buildInsuranceCompanyApplicationData(storedFormData);
+
+        const record = registerInsuranceCompany({
+          email: officialEmail,
+          password: formData.password,
+          registrationType,
+          formData: storedFormData,
+        });
+
+        const notificationId = addNotification({
+          role: '🛡️ Insurance Company',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.organizationName || storedFormData.fullName} submitted a new Insurance Company registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Company',
+          companyName: storedFormData.organizationName,
+          companyId: storedFormData.registrationNumber,
+          organization: storedFormData.organizationName,
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'insuranceCompanyRegistration',
+            insuranceCompanyId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateInsuranceCompanyRecord(record.id, { pendingNotificationId: notificationId });
+
+        alert('Registration submitted successfully! Please sign in to track your verification status.');
+        navigate('/login');
+      } catch (error) {
+        console.error('Insurance Company registration failed:', error);
+        const message = error instanceof Error ? error.message : 'Unable to complete registration. Please try again.';
+        alert(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (currentRole.id === 'cooperative') {
+      // CRITICAL: Final validation before Cooperative Group registration
+      // Ensure we're absolutely certain this is Cooperative Group registration
+      if (currentRole.id !== 'cooperative' || currentRole.name !== 'Cooperative Group') {
+        console.error('CRITICAL: Cooperative Group registration blocked - role validation failed', { 
+          currentRole, 
+          activeTab 
+        });
+        alert('Registration error: Invalid role detected. Cannot proceed with Cooperative Group registration.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Double-check activeTab matches Cooperative Group index
+      const cooperativeGroupIndex = roles.findIndex(r => r.id === 'cooperative');
+      if (activeTab !== cooperativeGroupIndex) {
+        console.error('CRITICAL: Cooperative Group registration blocked - activeTab mismatch', { 
+          activeTab, 
+          expectedIndex: cooperativeGroupIndex 
+        });
+        alert('Registration error: Tab selection mismatch. Please ensure Cooperative Group is selected.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        const registrationType: 'individual' | 'company' = activeTypeTab;
+        if (formData.areasOfOperation.length === 0) {
+          alert('Select at least one area of operation / coverage.');
+          setIsSubmitting(false);
+          return;
+        }
+        const contactEmail = formData.email.trim();
+        const officialEmail = formData.officialEmail.trim();
+
+        if (!officialEmail) {
+          alert('Official company email is required for portal access.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const storedFormData: CooperativeGroupFormData = {
+          fullName: formData.fullName.trim(),
+          position: formData.position.trim(),
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          email: contactEmail,
+          phone: formData.phone.trim(),
+          whatsapp: formData.whatsapp?.trim() || undefined,
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          country: formData.country.trim(),
+          idType: formData.idType,
+          idNumber: formData.idNumber.trim(),
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
+          emergencyContactName: formData.emergencyContactName.trim(),
+          emergencyContactPhone: formData.emergencyContactPhone.trim(),
+          emergencyRelationship: formData.emergencyRelationship.trim(),
+          organizationName: formData.organizationName.trim(),
+          registrationNumber: formData.registrationNumber.trim(),
+          organizationType: formData.organizationType,
+          yearEstablished: formData.yearEstablished.trim(),
+          industry: formData.industry.trim(),
+          missionStatement: formData.missionStatement.trim(),
+          headquartersAddress: formData.headquartersAddress.trim(),
+          hqCity: formData.hqCity.trim(),
+          hqState: formData.hqState.trim(),
+          hqCountry: formData.hqCountry.trim(),
+          officePhone: formData.officePhone.trim(),
+          officialEmail,
+          website: formData.website.trim(),
+          facebook: formData.facebook?.trim() || undefined,
+          linkedin: formData.linkedin?.trim() || undefined,
+          twitter: formData.twitter?.trim() || undefined,
+          instagram: formData.instagram?.trim() || undefined,
+          numEmployees: formData.numEmployees.trim(),
+          areasOfOperation: [...formData.areasOfOperation],
+          organizationLogoName: formData.organizationLogo ? formData.organizationLogo.name : undefined,
+          certificateOfIncorporationName: formData.certificateOfIncorporation ? formData.certificateOfIncorporation.name : undefined,
+          hasPartnership: formData.hasPartnership,
+          partnershipDetails: formData.partnershipDetails.trim(),
+          password: '',
+        };
+
+        const applicationData = buildCooperativeGroupApplicationData(storedFormData);
+
+        // CRITICAL: Final validation before calling registration function
+        // Ensure we NEVER call registerFundProvider for Cooperative Group registration
+        if (currentRole.id !== 'cooperative' || currentRole.name !== 'Cooperative Group') {
+          console.error('CRITICAL: Blocked Cooperative Group registration - role validation failed', { 
+            currentRole, 
+            activeTab 
+          });
+          alert('Registration error: Role validation failed. Cannot proceed.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // CRITICAL: Only call registerCooperativeGroup, NEVER registerFundProvider
+        const record = registerCooperativeGroup({
+          email: officialEmail,
+          password: formData.password,
+          registrationType,
+          formData: storedFormData,
+        });
+
+        // CRITICAL: Verify the record was created as Cooperative Group (ID must start with 'cg_')
+        // If it starts with 'fp_', it means a Fund Provider record was created incorrectly
+        if (!record || !record.id) {
+          console.error('CRITICAL: Cooperative Group record creation returned invalid record', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (!record.id.startsWith('cg_')) {
+          console.error('CRITICAL: Wrong record type created! Expected Cooperative Group (cg_), got:', record.id);
+          alert('Registration error: Incorrect record type created. Please contact support.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Verify no Fund Provider record exists with the same email
+        const existingFP = findFundProviderByEmail(officialEmail);
+        if (existingFP) {
+          console.error('CRITICAL: Fund Provider record already exists with this email!', { 
+            email: officialEmail, 
+            fpRecordId: existingFP.id,
+            cgRecordId: record.id 
+          });
+          alert('Registration error: Email conflict detected. Please contact support.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // CRITICAL: Ensure notification role is Cooperative Group, NOT Fund Provider
+        const notificationRole = '🤝 Cooperative Group';
+        const notificationMessage = `${storedFormData.organizationName || storedFormData.fullName} submitted a new Cooperative Group registration for approval.`;
+        
+        // Final validation: ensure notification role matches Cooperative Group
+        if (notificationRole !== '🤝 Cooperative Group') {
+          console.error('CRITICAL: Notification role mismatch!', { notificationRole });
+          alert('Registration error: Notification configuration error. Please contact support.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: notificationRole,
+          targetRole: 'coordinating-agency',
+          message: notificationMessage,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Company',
+          companyName: storedFormData.organizationName,
+          companyId: storedFormData.registrationNumber,
+          organization: storedFormData.organizationName,
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'cooperativeGroupRegistration',
+            cooperativeGroupId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateCooperativeGroupRecord(record.id, { pendingNotificationId: notificationId });
+
+        alert('Registration submitted successfully! Please sign in to track your verification status.');
+        navigate('/login');
+      } catch (error) {
+        console.error('Cooperative Group registration failed:', error);
+        const message = error instanceof Error ? error.message : 'Unable to complete registration. Please try again.';
+        alert(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (currentRole.id === 'extension') {
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        const registrationType: 'individual' | 'company' = activeTypeTab;
+        if (formData.areasOfOperation.length === 0) {
+          alert('Select at least one area of operation / coverage.');
+          setIsSubmitting(false);
+          return;
+        }
+        const contactEmail = formData.email.trim();
+        const officialEmail = formData.officialEmail.trim();
+
+        if (!officialEmail) {
+          alert('Official company email is required for portal access.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const storedFormData: ExtensionOrganizationFormData = {
+          fullName: formData.fullName.trim(),
+          position: formData.position.trim(),
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          email: contactEmail,
+          phone: formData.phone.trim(),
+          whatsapp: formData.whatsapp?.trim() || undefined,
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          country: formData.country.trim(),
+          idType: formData.idType,
+          idNumber: formData.idNumber.trim(),
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
+          emergencyContactName: formData.emergencyContactName.trim(),
+          emergencyContactPhone: formData.emergencyContactPhone.trim(),
+          emergencyRelationship: formData.emergencyRelationship.trim(),
+          organizationName: formData.organizationName.trim(),
+          registrationNumber: formData.registrationNumber.trim(),
+          organizationType: formData.organizationType,
+          yearEstablished: formData.yearEstablished.trim(),
+          industry: formData.industry.trim(),
+          missionStatement: formData.missionStatement.trim(),
+          headquartersAddress: formData.headquartersAddress.trim(),
+          hqCity: formData.hqCity.trim(),
+          hqState: formData.hqState.trim(),
+          hqCountry: formData.hqCountry.trim(),
+          officePhone: formData.officePhone.trim(),
+          officialEmail,
+          website: formData.website.trim(),
+          facebook: formData.facebook?.trim() || undefined,
+          linkedin: formData.linkedin?.trim() || undefined,
+          twitter: formData.twitter?.trim() || undefined,
+          instagram: formData.instagram?.trim() || undefined,
+          numEmployees: formData.numEmployees.trim(),
+          areasOfOperation: [...formData.areasOfOperation],
+          organizationLogoName: formData.organizationLogo ? formData.organizationLogo.name : undefined,
+          certificateOfIncorporationName: formData.certificateOfIncorporation ? formData.certificateOfIncorporation.name : undefined,
+          hasPartnership: formData.hasPartnership,
+          partnershipDetails: formData.partnershipDetails.trim(),
+          password: '',
+        };
+
+        const applicationData = buildExtensionOrganizationApplicationData(storedFormData);
+
+        const record = registerExtensionOrganization({
+          email: officialEmail,
+          password: formData.password,
+          registrationType,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('eo_')) {
+          console.error('CRITICAL: Extension Organization record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '🌱 Extension Organization',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.organizationName || storedFormData.fullName} submitted a new Extension Organization registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Company',
+          companyName: storedFormData.organizationName,
+          companyId: storedFormData.registrationNumber,
+          organization: storedFormData.organizationName,
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'extensionOrganizationRegistration',
+            extensionOrganizationId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateExtensionOrganizationRecord(record.id, { pendingNotificationId: notificationId });
+
+        alert('Registration submitted successfully! Please sign in to track your verification status.');
+        navigate('/login');
+      } catch (error) {
+        console.error('Extension Organization registration failed:', error);
+        const message = error instanceof Error ? error.message : 'Unable to complete registration. Please try again.';
+        alert(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (currentRole.id === 'pfi') {
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        const registrationType: 'individual' | 'company' = activeTypeTab;
+        if (formData.areasOfOperation.length === 0) {
+          alert('Select at least one area of operation / coverage.');
+          setIsSubmitting(false);
+          return;
+        }
+        const contactEmail = formData.email.trim();
+        const officialEmail = formData.officialEmail.trim();
+
+        if (!officialEmail) {
+          alert('Official company email is required for portal access.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const storedFormData: PFIFormData = {
+          fullName: formData.fullName.trim(),
+          position: formData.position.trim(),
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          email: contactEmail,
+          phone: formData.phone.trim(),
+          whatsapp: formData.whatsapp?.trim() || undefined,
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          country: formData.country.trim(),
+          idType: formData.idType,
+          idNumber: formData.idNumber.trim(),
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
+          emergencyContactName: formData.emergencyContactName.trim(),
+          emergencyContactPhone: formData.emergencyContactPhone.trim(),
+          emergencyRelationship: formData.emergencyRelationship.trim(),
+          organizationName: formData.organizationName.trim(),
+          registrationNumber: formData.registrationNumber.trim(),
+          organizationType: formData.organizationType,
+          yearEstablished: formData.yearEstablished.trim(),
+          industry: formData.industry.trim(),
+          missionStatement: formData.missionStatement.trim(),
+          headquartersAddress: formData.headquartersAddress.trim(),
+          hqCity: formData.hqCity.trim(),
+          hqState: formData.hqState.trim(),
+          hqCountry: formData.hqCountry.trim(),
+          officePhone: formData.officePhone.trim(),
+          officialEmail,
+          website: formData.website.trim(),
+          facebook: formData.facebook?.trim() || undefined,
+          linkedin: formData.linkedin?.trim() || undefined,
+          twitter: formData.twitter?.trim() || undefined,
+          instagram: formData.instagram?.trim() || undefined,
+          numEmployees: formData.numEmployees.trim(),
+          areasOfOperation: [...formData.areasOfOperation],
+          organizationLogoName: formData.organizationLogo ? formData.organizationLogo.name : undefined,
+          certificateOfIncorporationName: formData.certificateOfIncorporation ? formData.certificateOfIncorporation.name : undefined,
+          hasPartnership: formData.hasPartnership,
+          partnershipDetails: formData.partnershipDetails.trim(),
+          password: '',
+        };
+
+        const applicationData = buildPFIApplicationData(storedFormData);
+
+        const record = registerPFI({
+          email: officialEmail,
+          password: formData.password,
+          registrationType,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('pfi_')) {
+          console.error('CRITICAL: PFI record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '🏦 PFI',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.organizationName || storedFormData.fullName} submitted a new PFI registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Company',
+          companyName: storedFormData.organizationName,
+          companyId: storedFormData.registrationNumber,
+          organization: storedFormData.organizationName,
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'pfiRegistration',
+            pfiId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updatePFIRecord(record.id, { pendingNotificationId: notificationId });
+
+        alert('Registration submitted successfully! Please sign in to track your verification status.');
+        navigate('/login');
+      } catch (error) {
+        console.error('PFI registration failed:', error);
+        const message = error instanceof Error ? error.message : 'Unable to complete registration. Please try again.';
+        alert(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (currentRole.id === 'anchor') {
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        const registrationType: 'individual' | 'company' = activeTypeTab;
+        if (formData.areasOfOperation.length === 0) {
+          alert('Select at least one area of operation / coverage.');
+          setIsSubmitting(false);
+          return;
+        }
+        const contactEmail = formData.email.trim();
+        const officialEmail = formData.officialEmail.trim();
+
+        if (!officialEmail) {
+          alert('Official company email is required for portal access.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const storedFormData: AnchorFormData = {
+          fullName: formData.fullName.trim(),
+          position: formData.position.trim(),
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          email: contactEmail,
+          phone: formData.phone.trim(),
+          whatsapp: formData.whatsapp?.trim() || undefined,
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          country: formData.country.trim(),
+          idType: formData.idType,
+          idNumber: formData.idNumber.trim(),
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
+          emergencyContactName: formData.emergencyContactName.trim(),
+          emergencyContactPhone: formData.emergencyContactPhone.trim(),
+          emergencyRelationship: formData.emergencyRelationship.trim(),
+          organizationName: formData.organizationName.trim(),
+          registrationNumber: formData.registrationNumber.trim(),
+          organizationType: formData.organizationType,
+          yearEstablished: formData.yearEstablished.trim(),
+          industry: formData.industry.trim(),
+          missionStatement: formData.missionStatement.trim(),
+          headquartersAddress: formData.headquartersAddress.trim(),
+          hqCity: formData.hqCity.trim(),
+          hqState: formData.hqState.trim(),
+          hqCountry: formData.hqCountry.trim(),
+          officePhone: formData.officePhone.trim(),
+          officialEmail,
+          website: formData.website.trim(),
+          facebook: formData.facebook?.trim() || undefined,
+          linkedin: formData.linkedin?.trim() || undefined,
+          twitter: formData.twitter?.trim() || undefined,
+          instagram: formData.instagram?.trim() || undefined,
+          numEmployees: formData.numEmployees.trim(),
+          areasOfOperation: [...formData.areasOfOperation],
+          organizationLogoName: formData.organizationLogo ? formData.organizationLogo.name : undefined,
+          certificateOfIncorporationName: formData.certificateOfIncorporation ? formData.certificateOfIncorporation.name : undefined,
+          hasPartnership: formData.hasPartnership,
+          partnershipDetails: formData.partnershipDetails.trim(),
+          password: '',
+        };
+
+        const applicationData = buildAnchorApplicationData(storedFormData);
+
+        const record = registerAnchor({
+          email: officialEmail,
+          password: formData.password,
+          registrationType,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('anchor_')) {
+          console.error('CRITICAL: Anchor record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '⚓ Anchor',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.organizationName || storedFormData.fullName} submitted a new Anchor registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Company',
+          companyName: storedFormData.organizationName,
+          companyId: storedFormData.registrationNumber,
+          organization: storedFormData.organizationName,
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'anchorRegistration',
+            anchorId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateAnchorRecord(record.id, { pendingNotificationId: notificationId });
+
+        alert('Registration submitted successfully! Please sign in to track your verification status.');
+        navigate('/login');
+      } catch (error) {
+        console.error('Anchor registration failed:', error);
+        const message = error instanceof Error ? error.message : 'Unable to complete registration. Please try again.';
+        alert(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (currentRole.id === 'lead-firm') {
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        const registrationType: 'individual' | 'company' = activeTypeTab;
+        if (formData.areasOfOperation.length === 0) {
+          alert('Select at least one area of operation / coverage.');
+          setIsSubmitting(false);
+          return;
+        }
+        const contactEmail = formData.email.trim();
+        const officialEmail = formData.officialEmail.trim();
+
+        if (!officialEmail) {
+          alert('Official company email is required for portal access.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const storedFormData: LeadFirmFormData = {
+          fullName: formData.fullName.trim(),
+          position: formData.position.trim(),
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          email: contactEmail,
+          phone: formData.phone.trim(),
+          whatsapp: formData.whatsapp?.trim() || undefined,
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          country: formData.country.trim(),
+          idType: formData.idType,
+          idNumber: formData.idNumber.trim(),
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
+          emergencyContactName: formData.emergencyContactName.trim(),
+          emergencyContactPhone: formData.emergencyContactPhone.trim(),
+          emergencyRelationship: formData.emergencyRelationship.trim(),
+          organizationName: formData.organizationName.trim(),
+          registrationNumber: formData.registrationNumber.trim(),
+          organizationType: formData.organizationType,
+          yearEstablished: formData.yearEstablished.trim(),
+          industry: formData.industry.trim(),
+          missionStatement: formData.missionStatement.trim(),
+          headquartersAddress: formData.headquartersAddress.trim(),
+          hqCity: formData.hqCity.trim(),
+          hqState: formData.hqState.trim(),
+          hqCountry: formData.hqCountry.trim(),
+          officePhone: formData.officePhone.trim(),
+          officialEmail,
+          website: formData.website.trim(),
+          facebook: formData.facebook?.trim() || undefined,
+          linkedin: formData.linkedin?.trim() || undefined,
+          twitter: formData.twitter?.trim() || undefined,
+          instagram: formData.instagram?.trim() || undefined,
+          numEmployees: formData.numEmployees.trim(),
+          areasOfOperation: [...formData.areasOfOperation],
+          organizationLogoName: formData.organizationLogo ? formData.organizationLogo.name : undefined,
+          certificateOfIncorporationName: formData.certificateOfIncorporation ? formData.certificateOfIncorporation.name : undefined,
+          hasPartnership: formData.hasPartnership,
+          partnershipDetails: formData.partnershipDetails.trim(),
+          password: '',
+        };
+
+        const applicationData = buildLeadFirmApplicationData(storedFormData);
+
+        const record = registerLeadFirm({
+          email: officialEmail,
+          password: formData.password,
+          registrationType,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('lf_')) {
+          console.error('CRITICAL: Lead Firm record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '🌱 Lead Firm',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.organizationName || storedFormData.fullName} submitted a new Lead Firm registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Company',
+          companyName: storedFormData.organizationName,
+          companyId: storedFormData.registrationNumber,
+          organization: storedFormData.organizationName,
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'leadFirmRegistration',
+            leadFirmId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateLeadFirmRecord(record.id, { pendingNotificationId: notificationId });
+
+        alert('Registration submitted successfully! Please sign in to track your verification status.');
+        navigate('/login');
+      } catch (error) {
+        console.error('Lead Firm registration failed:', error);
+        const message = error instanceof Error ? error.message : 'Unable to complete registration. Please try again.';
+        alert(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (currentRole.id === 'producer') {
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!formData.agreeToTerms) {
+        alert('You must agree to the Terms & Conditions to register.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (formData.typeOfFarmer.length === 0) {
+        alert('Select at least one type of farmer.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (formData.hasProcessingValueAddition === 'Yes' && !formData.processingValueAdditionDetails) {
+        alert('Please specify processing/value addition activities.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        const email = formData.email.trim() || formData.phone.trim();
+        if (!email) {
+          alert('Either email or phone number is required for registration.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const storedFormData: ProducerFormData = {
+          fullName: formData.fullName.trim(),
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          phone: formData.phone.trim(),
+          email: formData.email.trim() || undefined,
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          country: formData.country.trim(),
+          farmBusinessName: formData.farmBusinessName.trim(),
+          typeOfFarmer: [...formData.typeOfFarmer],
+          farmAddress: formData.farmAddress.trim(),
+          farmSize: formData.farmSize.trim(),
+          yearsOfExperience: formData.yearsOfExperience.trim(),
+          primarySourceOfIncome: formData.primarySourceOfIncome,
+          farmerAssociation: formData.farmerAssociation.trim() || undefined,
+          crops: [...formData.crops],
+          livestock: [...formData.livestock],
+          hasProcessingValueAddition: formData.hasProcessingValueAddition,
+          processingValueAdditionDetails: formData.processingValueAdditionDetails.trim() || undefined,
+          totalAnnualProduction: formData.totalAnnualProduction.trim(),
+          primaryMarket: formData.primaryMarket,
+          majorBuyers: formData.majorBuyers.trim() || undefined,
+          challengesFaced: formData.challengesFaced.trim() || undefined,
+          idType: formData.idType,
+          idNumber: formData.idNumber.trim(),
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
+          farmImagesName: formData.farmImages ? formData.farmImages.name : undefined,
+          certificationName: formData.certification ? formData.certification.name : undefined,
+          preferredPaymentMethod: formData.preferredPaymentMethod,
+          bankName: formData.bankName.trim(),
+          accountName: formData.accountName.trim(),
+          accountNumber: formData.accountNumber.trim(),
+          password: formData.password,
+        };
+
+        const applicationData = buildProducerApplicationData(storedFormData);
+
+        const record = registerProducer({
+          email: email,
+          password: formData.password,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('producer_')) {
+          console.error('CRITICAL: Producer record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '🌾 Producer/Farmer',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.fullName} submitted a new Producer/Farmer registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Individual',
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email || storedFormData.phone,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'producerRegistration',
+            producerId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateProducerRecord(record.id, { pendingNotificationId: notificationId });
+
+        alert('Registration submitted successfully! Please sign in to track your verification status.');
+        navigate('/login');
+      } catch (error) {
+        console.error('Producer registration failed:', error);
+        const message = error instanceof Error ? error.message : 'Unable to complete registration. Please try again.';
+        alert(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (currentRole.id === 'researcher') {
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!formData.agreeToTerms || !formData.agreeToAccuracy) {
+        alert('You must agree to both the Terms & Conditions and confirm the accuracy of your information.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        const email = formData.email.trim();
+        if (!email) {
+          alert('Email is required for registration.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const storedFormData: ResearcherFormData = {
+          fullName: formData.fullName.trim(),
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          nationality: formData.nationality.trim(),
+          email: email,
+          phone: formData.phone.trim(),
+          whatsapp: formData.whatsapp.trim() || undefined,
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          country: formData.country.trim(),
+          idType: formData.idType,
+          idNumber: formData.idNumber.trim(),
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
+          institutionName: formData.institutionName.trim(),
+          faculty: formData.faculty.trim(),
+          currentLevel: formData.currentLevel,
+          studentResearcherId: formData.studentResearcherId.trim(),
+          yearOfEntry: formData.yearOfEntry.trim(),
+          expectedCompletionYear: formData.expectedCompletionYear.trim(),
+          areaOfStudy: formData.areaOfStudy.trim(),
+          researchTopic: formData.researchTopic.trim() || undefined,
+          supervisorName: formData.supervisorName.trim() || undefined,
+          supervisorEmail: formData.supervisorEmail.trim() || undefined,
+          supportingDocumentName: formData.supportingDocument ? formData.supportingDocument.name : undefined,
+          googleScholar: formData.googleScholar.trim() || undefined,
+          researchGate: formData.researchGate.trim() || undefined,
+          linkedinProfile: formData.linkedinProfile.trim() || undefined,
+          password: formData.password,
+        };
+
+        const applicationData = buildResearcherApplicationData(storedFormData);
+
+        const record = registerResearcher({
+          email: email,
+          password: formData.password,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('researcher_')) {
+          console.error('CRITICAL: Researcher record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '🎓 Researcher/Student',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.fullName} submitted a new Researcher/Student registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Individual',
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'researcherRegistration',
+            researcherId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateResearcherRecord(record.id, { pendingNotificationId: notificationId });
+
+        alert('Registration submitted successfully! Please sign in to track your verification status.');
+        navigate('/login');
+      } catch (error) {
+        console.error('Researcher registration failed:', error);
+        const message = error instanceof Error ? error.message : 'Unable to complete registration. Please try again.';
+        alert(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     // Default behaviour for other roles (placeholder)
     await new Promise(resolve => setTimeout(resolve, 2000));
     setIsSubmitting(false);
@@ -339,6 +1485,1294 @@ const Register: React.FC = () => {
 
   // Render form step content
   const renderStepContent = () => {
+    const currentRole = getCurrentRole();
+    
+    // Student/Researcher Registration Form (3 steps)
+    if (currentRole.id === 'researcher') {
+      switch (currentStep) {
+        case 1: // Contact Information
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Contact Information</h3>
+              
+              {/* Personal Details */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold font-sans text-gray-200">Personal Details</h4>
+                
+                <div>
+                  <label htmlFor="fullName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    required
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="gender" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Gender *
+                    </label>
+                    <select
+                      id="gender"
+                      name="gender"
+                      required
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      className="input-field"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="birthDate" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Date of Birth *
+                    </label>
+                    <input
+                      type="date"
+                      id="birthDate"
+                      name="birthDate"
+                      required
+                      value={formData.birthDate}
+                      onChange={handleInputChange}
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="nationality" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Nationality *
+                  </label>
+                  <input
+                    type="text"
+                    id="nationality"
+                    name="nationality"
+                    required
+                    value={formData.nationality}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter your nationality"
+                  />
+                </div>
+              </div>
+
+              {/* Contact Details */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold font-sans text-gray-200">Contact Details</h4>
+                
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter your email address"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Phone *
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      required
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="whatsapp" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      WhatsApp (Optional)
+                    </label>
+                    <input
+                      type="tel"
+                      id="whatsapp"
+                      name="whatsapp"
+                      value={formData.whatsapp}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter WhatsApp number"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="address" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Residential Address *
+                  </label>
+                  <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    required
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter your residential address"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label htmlFor="city" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      City *
+                    </label>
+                    <input
+                      type="text"
+                      id="city"
+                      name="city"
+                      required
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter city"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="state" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      State/Province *
+                    </label>
+                    <input
+                      type="text"
+                      id="state"
+                      name="state"
+                      required
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter state/province"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="country" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Country *
+                    </label>
+                    <input
+                      type="text"
+                      id="country"
+                      name="country"
+                      required
+                      value={formData.country}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter country"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Identity Verification */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold font-sans text-gray-200">Identity Verification</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="idType" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      ID Type *
+                    </label>
+                    <select
+                      id="idType"
+                      name="idType"
+                      required
+                      value={formData.idType}
+                      onChange={handleInputChange}
+                      className="input-field"
+                    >
+                      <option value="">Select ID Type</option>
+                      <option value="National ID">National ID</option>
+                      <option value="Passport">Passport</option>
+                      <option value="Driver's License">Driver's License</option>
+                      <option value="Student ID">Student ID</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="idNumber" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      ID Number *
+                    </label>
+                    <input
+                      type="text"
+                      id="idNumber"
+                      name="idNumber"
+                      required
+                      value={formData.idNumber}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter ID number"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="idDocument" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Upload ID Document *
+                  </label>
+                  <input
+                    type="file"
+                    id="idDocument"
+                    name="idDocument"
+                    required
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="input-field"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+
+        case 2: // Academic / Research Information
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Academic / Research Information</h3>
+              
+              {/* Academic Profile */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold font-sans text-gray-200">Academic Profile</h4>
+                
+                <div>
+                  <label htmlFor="institutionName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Institution *
+                  </label>
+                  <input
+                    type="text"
+                    id="institutionName"
+                    name="institutionName"
+                    required
+                    value={formData.institutionName}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter institution name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="faculty" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Faculty *
+                  </label>
+                  <input
+                    type="text"
+                    id="faculty"
+                    name="faculty"
+                    required
+                    value={formData.faculty}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter faculty/department"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="currentLevel" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Current Level *
+                  </label>
+                  <select
+                    id="currentLevel"
+                    name="currentLevel"
+                    required
+                    value={formData.currentLevel}
+                    onChange={handleInputChange}
+                    className="input-field"
+                  >
+                    <option value="">Select Current Level</option>
+                    <option value="Undergraduate">Undergraduate</option>
+                    <option value="Postgraduate (Masters)">Postgraduate (Masters)</option>
+                    <option value="Postgraduate (PhD)">Postgraduate (PhD)</option>
+                    <option value="Researcher">Researcher</option>
+                    <option value="Lecturer">Lecturer</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="studentResearcherId" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Student/Researcher ID *
+                    </label>
+                    <input
+                      type="text"
+                      id="studentResearcherId"
+                      name="studentResearcherId"
+                      required
+                      value={formData.studentResearcherId}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter student/researcher ID"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="yearOfEntry" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Year of Entry *
+                    </label>
+                    <input
+                      type="number"
+                      id="yearOfEntry"
+                      name="yearOfEntry"
+                      required
+                      value={formData.yearOfEntry}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="YYYY"
+                      min="1900"
+                      max="2100"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="expectedCompletionYear" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Expected Completion Year *
+                  </label>
+                  <input
+                    type="number"
+                    id="expectedCompletionYear"
+                    name="expectedCompletionYear"
+                    required
+                    value={formData.expectedCompletionYear}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="YYYY"
+                    min="1900"
+                    max="2100"
+                  />
+                </div>
+              </div>
+
+              {/* Research Information */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold font-sans text-gray-200">Research Information</h4>
+                
+                <div>
+                  <label htmlFor="areaOfStudy" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Area of Study *
+                  </label>
+                  <input
+                    type="text"
+                    id="areaOfStudy"
+                    name="areaOfStudy"
+                    required
+                    value={formData.areaOfStudy}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter area of study"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="researchTopic" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Research Topic (Optional)
+                  </label>
+                  <textarea
+                    id="researchTopic"
+                    name="researchTopic"
+                    value={formData.researchTopic}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    rows={3}
+                    placeholder="Enter research topic (optional)"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="supervisorName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Supervisor Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      id="supervisorName"
+                      name="supervisorName"
+                      value={formData.supervisorName}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter supervisor name"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="supervisorEmail" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                      Supervisor Email (Optional)
+                    </label>
+                    <input
+                      type="email"
+                      id="supervisorEmail"
+                      name="supervisorEmail"
+                      value={formData.supervisorEmail}
+                      onChange={handleInputChange}
+                      className="input-field"
+                      placeholder="Enter supervisor email"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="supportingDocument" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Supporting Document (Optional)
+                  </label>
+                  <input
+                    type="file"
+                    id="supportingDocument"
+                    name="supportingDocument"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    className="input-field"
+                  />
+                </div>
+              </div>
+
+              {/* Optional Professional Links */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold font-sans text-gray-200">Optional Professional Links</h4>
+                
+                <div>
+                  <label htmlFor="googleScholar" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Google Scholar Profile (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    id="googleScholar"
+                    name="googleScholar"
+                    value={formData.googleScholar}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter Google Scholar profile URL"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="researchGate" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    ResearchGate Profile (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    id="researchGate"
+                    name="researchGate"
+                    value={formData.researchGate}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter ResearchGate profile URL"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="linkedinProfile" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    LinkedIn Profile (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    id="linkedinProfile"
+                    name="linkedinProfile"
+                    value={formData.linkedinProfile}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter LinkedIn profile URL"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+
+        case 3: // Security & Terms
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Security & Terms</h3>
+              
+              {/* Account Security */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold font-sans text-gray-200">Account Security</h4>
+                
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Password *
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter password"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Confirm Password *
+                  </label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Confirm password"
+                  />
+                </div>
+              </div>
+
+              {/* Terms & Confirmation */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold font-sans text-gray-200">Terms & Confirmation</h4>
+                
+                <div className="flex items-start">
+                  <input
+                    type="checkbox"
+                    id="agreeToTerms"
+                    name="agreeToTerms"
+                    required
+                    checked={formData.agreeToTerms}
+                    onChange={handleInputChange}
+                    className="mt-1 mr-2"
+                  />
+                  <label htmlFor="agreeToTerms" className="text-sm text-gray-300 font-serif">
+                    I agree to the Terms and Conditions *
+                  </label>
+                </div>
+
+                <div className="flex items-start">
+                  <input
+                    type="checkbox"
+                    id="agreeToAccuracy"
+                    name="agreeToAccuracy"
+                    required
+                    checked={formData.agreeToAccuracy}
+                    onChange={handleInputChange}
+                    className="mt-1 mr-2"
+                  />
+                  <label htmlFor="agreeToAccuracy" className="text-sm text-gray-300 font-serif">
+                    I confirm that all information provided is accurate *
+                  </label>
+                </div>
+              </div>
+            </div>
+          );
+
+        default:
+          return null;
+      }
+    }
+
+    // Producer/Farmer Registration Form (7 steps)
+    if (currentRole.id === 'producer') {
+      switch (currentStep) {
+        case 1: // Personal Information
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Personal Information</h3>
+              
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  id="fullName"
+                  name="fullName"
+                  required
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter your full name"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="gender" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Gender *
+                  </label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    required
+                    value={formData.gender}
+                    onChange={handleInputChange}
+                    className="input-field"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="birthDate" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Date of Birth *
+                  </label>
+                  <input
+                    type="date"
+                    id="birthDate"
+                    name="birthDate"
+                    required
+                    value={formData.birthDate}
+                    onChange={handleInputChange}
+                    className="input-field"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  required
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter phone number"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Email (Optional)
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter email address (optional)"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="address" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Residential Address *
+                </label>
+                <input
+                  type="text"
+                  id="address"
+                  name="address"
+                  required
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter residential address"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="city" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    required
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter city"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="state" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    State *
+                  </label>
+                  <input
+                    type="text"
+                    id="state"
+                    name="state"
+                    required
+                    value={formData.state}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter state"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="country" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Country *
+                  </label>
+                  <input
+                    type="text"
+                    id="country"
+                    name="country"
+                    required
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter country"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+
+        case 2: // Farm / Business Details
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Farm / Business Details</h3>
+              
+              <div>
+                <label htmlFor="farmBusinessName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Farm/Business Name *
+                </label>
+                <input
+                  type="text"
+                  id="farmBusinessName"
+                  name="farmBusinessName"
+                  required
+                  value={formData.farmBusinessName}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter farm/business name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Type of Farmer * (Select all that apply)
+                </label>
+                <div className="space-y-2">
+                  {['Crop', 'Livestock', 'Mixed'].map((type) => (
+                    <div key={type} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`typeOfFarmer-${type}`}
+                        checked={formData.typeOfFarmer.includes(type)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setFormData(prev => ({
+                            ...prev,
+                            typeOfFarmer: checked
+                              ? [...prev.typeOfFarmer, type]
+                              : prev.typeOfFarmer.filter(t => t !== type)
+                          }));
+                        }}
+                        className="mr-2"
+                      />
+                      <label htmlFor={`typeOfFarmer-${type}`} className="text-sm text-gray-300 font-serif">
+                        {type}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="farmAddress" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Farm Address *
+                </label>
+                <input
+                  type="text"
+                  id="farmAddress"
+                  name="farmAddress"
+                  required
+                  value={formData.farmAddress}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter farm address"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="farmSize" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Farm Size (in hectares) *
+                  </label>
+                  <input
+                    type="number"
+                    id="farmSize"
+                    name="farmSize"
+                    required
+                    value={formData.farmSize}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter farm size"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="yearsOfExperience" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Years of Experience *
+                  </label>
+                  <input
+                    type="number"
+                    id="yearsOfExperience"
+                    name="yearsOfExperience"
+                    required
+                    value={formData.yearsOfExperience}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter years of experience"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="primarySourceOfIncome" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Is farming your primary source of income? *
+                </label>
+                <select
+                  id="primarySourceOfIncome"
+                  name="primarySourceOfIncome"
+                  required
+                  value={formData.primarySourceOfIncome}
+                  onChange={handleInputChange}
+                  className="input-field"
+                >
+                  <option value="">Select</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="farmerAssociation" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Farmer Association/Cooperative (Optional)
+                </label>
+                <input
+                  type="text"
+                  id="farmerAssociation"
+                  name="farmerAssociation"
+                  value={formData.farmerAssociation}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter association/cooperative name (optional)"
+                />
+              </div>
+            </div>
+          );
+
+        case 3: // Type of Produce
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Type of Produce</h3>
+              
+              <div>
+                <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Crops (Select all that apply)
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {['Maize', 'Rice', 'Wheat', 'Cassava', 'Yam', 'Potato', 'Tomato', 'Pepper', 'Onion', 'Beans', 'Groundnut', 'Soybean', 'Cotton', 'Cocoa', 'Coffee', 'Other'].map((crop) => (
+                    <div key={crop} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`crop-${crop}`}
+                        checked={formData.crops.includes(crop)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setFormData(prev => ({
+                            ...prev,
+                            crops: checked
+                              ? [...prev.crops, crop]
+                              : prev.crops.filter(c => c !== crop)
+                          }));
+                        }}
+                        className="mr-2"
+                      />
+                      <label htmlFor={`crop-${crop}`} className="text-sm text-gray-300 font-serif">
+                        {crop}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Livestock (Select all that apply)
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {['Cattle', 'Goat', 'Sheep', 'Poultry', 'Pig', 'Fish', 'Rabbit', 'Other'].map((animal) => (
+                    <div key={animal} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`livestock-${animal}`}
+                        checked={formData.livestock.includes(animal)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setFormData(prev => ({
+                            ...prev,
+                            livestock: checked
+                              ? [...prev.livestock, animal]
+                              : prev.livestock.filter(l => l !== animal)
+                          }));
+                        }}
+                        className="mr-2"
+                      />
+                      <label htmlFor={`livestock-${animal}`} className="text-sm text-gray-300 font-serif">
+                        {animal}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="hasProcessingValueAddition" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Do you engage in Processing/Value Addition? *
+                </label>
+                <select
+                  id="hasProcessingValueAddition"
+                  name="hasProcessingValueAddition"
+                  required
+                  value={formData.hasProcessingValueAddition}
+                  onChange={handleInputChange}
+                  className="input-field"
+                >
+                  <option value="">Select</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+
+              {formData.hasProcessingValueAddition === 'Yes' && (
+                <div>
+                  <label htmlFor="processingValueAdditionDetails" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    Specify Processing/Value Addition Activities *
+                  </label>
+                  <textarea
+                    id="processingValueAdditionDetails"
+                    name="processingValueAdditionDetails"
+                    required
+                    value={formData.processingValueAdditionDetails}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    rows={3}
+                    placeholder="Describe your processing/value addition activities"
+                  />
+                </div>
+              )}
+            </div>
+          );
+
+        case 4: // Production Capacity & Market
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Production Capacity & Market</h3>
+              
+              <div>
+                <label htmlFor="totalAnnualProduction" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Total Annual Production *
+                </label>
+                <input
+                  type="text"
+                  id="totalAnnualProduction"
+                  name="totalAnnualProduction"
+                  required
+                  value={formData.totalAnnualProduction}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="e.g., 500 tons, 1000 bags, etc."
+                />
+              </div>
+
+              <div>
+                <label htmlFor="primaryMarket" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Primary Market *
+                </label>
+                <select
+                  id="primaryMarket"
+                  name="primaryMarket"
+                  required
+                  value={formData.primaryMarket}
+                  onChange={handleInputChange}
+                  className="input-field"
+                >
+                  <option value="">Select Primary Market</option>
+                  <option value="Local">Local</option>
+                  <option value="Regional">Regional</option>
+                  <option value="National">National</option>
+                  <option value="Export">Export</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="majorBuyers" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Major Buyers (Optional)
+                </label>
+                <textarea
+                  id="majorBuyers"
+                  name="majorBuyers"
+                  value={formData.majorBuyers}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  rows={3}
+                  placeholder="List your major buyers (optional)"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="challengesFaced" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Challenges Faced (Optional)
+                </label>
+                <textarea
+                  id="challengesFaced"
+                  name="challengesFaced"
+                  value={formData.challengesFaced}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  rows={3}
+                  placeholder="Describe challenges you face (optional)"
+                />
+              </div>
+            </div>
+          );
+
+        case 5: // Verification & Documents
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Verification & Documents</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="idType" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    ID Type *
+                  </label>
+                  <select
+                    id="idType"
+                    name="idType"
+                    required
+                    value={formData.idType}
+                    onChange={handleInputChange}
+                    className="input-field"
+                  >
+                    <option value="">Select ID Type</option>
+                    <option value="National ID">National ID</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Driver's License">Driver's License</option>
+                    <option value="Voter's Card">Voter's Card</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="idNumber" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                    ID Number *
+                  </label>
+                  <input
+                    type="text"
+                    id="idNumber"
+                    name="idNumber"
+                    required
+                    value={formData.idNumber}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Enter ID number"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="idDocument" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Upload ID Document *
+                </label>
+                <input
+                  type="file"
+                  id="idDocument"
+                  name="idDocument"
+                  required
+                  onChange={handleFileChange}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="farmImages" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Upload Farm Images (Optional)
+                </label>
+                <input
+                  type="file"
+                  id="farmImages"
+                  name="farmImages"
+                  onChange={handleFileChange}
+                  accept=".jpg,.jpeg,.png"
+                  multiple
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="certification" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Upload Any Certification (Optional)
+                </label>
+                <input
+                  type="file"
+                  id="certification"
+                  name="certification"
+                  onChange={handleFileChange}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="input-field"
+                />
+              </div>
+            </div>
+          );
+
+        case 6: // Banking & Payment Details
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Banking & Payment Details</h3>
+              
+              <div>
+                <label htmlFor="preferredPaymentMethod" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Preferred Payment Method *
+                </label>
+                <select
+                  id="preferredPaymentMethod"
+                  name="preferredPaymentMethod"
+                  required
+                  value={formData.preferredPaymentMethod}
+                  onChange={handleInputChange}
+                  className="input-field"
+                >
+                  <option value="">Select Payment Method</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Mobile Money">Mobile Money</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="bankName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Bank Name *
+                </label>
+                <input
+                  type="text"
+                  id="bankName"
+                  name="bankName"
+                  required
+                  value={formData.bankName}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter bank name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="accountName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Account Name *
+                </label>
+                <input
+                  type="text"
+                  id="accountName"
+                  name="accountName"
+                  required
+                  value={formData.accountName}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter account name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="accountNumber" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Account Number *
+                </label>
+                <input
+                  type="text"
+                  id="accountNumber"
+                  name="accountNumber"
+                  required
+                  value={formData.accountNumber}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter account number"
+                />
+              </div>
+            </div>
+          );
+
+        case 7: // Security & Terms
+          return (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Security & Terms</h3>
+              
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Create Password *
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  required
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter password"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium font-sans text-gray-300 mb-2">
+                  Confirm Password *
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Confirm password"
+                />
+              </div>
+
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  id="agreeToTerms"
+                  name="agreeToTerms"
+                  required
+                  checked={formData.agreeToTerms}
+                  onChange={handleInputChange}
+                  className="mt-1 mr-2"
+                />
+                <label htmlFor="agreeToTerms" className="text-sm text-gray-300 font-serif">
+                  I agree to the Terms & Conditions *
+                </label>
+              </div>
+            </div>
+          );
+
+        default:
+          return null;
+      }
+    }
+
+    // Default form rendering for other roles
     if (activeTypeTab === 'individual') {
       // Contact Info tab
       switch (currentStep) {
@@ -1173,7 +3607,11 @@ const Register: React.FC = () => {
                     setCurrentStep(1);
                     if (role.registrationTypes.length === 1) {
                       setActiveTypeTab(role.registrationTypes[0] as 'individual' | 'company');
+                    } else {
+                      setActiveTypeTab('individual');
                     }
+                    // Reset form data when switching roles to ensure data isolation
+                    setFormData(getInitialFormData());
                   }}
                   className={`p-3 rounded-lg text-left transition-all duration-200 ${
                     activeTab === index
@@ -1257,33 +3695,49 @@ const Register: React.FC = () => {
                 </button>
                 
                 <div className="flex space-x-4">
-                  {(currentStep < getTotalSteps() || (activeTypeTab === 'individual' && currentStep === 3)) ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // If on step 3 of Contact Info tab, switch to Organization Info tab
-                        if (activeTypeTab === 'individual' && currentStep === 3) {
-                          setActiveTypeTab('company');
-                          setCurrentStep(1);
-                        } else {
-                          nextStep();
-                        }
-                      }}
-                      className="btn-primary"
-                    >
-                      {activeTypeTab === 'individual' && currentStep === 3 
-                        ? 'Proceed to Organization Info' 
-                        : 'Next'}
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className={`btn-primary ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {isSubmitting ? 'Creating Account...' : `Register as ${getCurrentRole().name}`}
-                    </button>
-                  )}
+                  {(() => {
+                    const currentRole = getCurrentRole();
+                    const isLastStepOfIndividualTab = hasMultipleRegistrationTypes() && activeTypeTab === 'individual' && currentStep === 3 && currentRole.id !== 'researcher' && currentRole.id !== 'producer';
+                    const shouldShowProceedButton = isLastStepOfIndividualTab;
+                    const shouldShowSubmitButton = currentStep >= getTotalSteps() && !shouldShowProceedButton;
+                    
+                    if (shouldShowProceedButton) {
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTypeTab('company');
+                            setCurrentStep(1);
+                          }}
+                          className="btn-primary"
+                        >
+                          Proceed to Organization Info
+                        </button>
+                      );
+                    }
+                    
+                    if (shouldShowSubmitButton) {
+                      return (
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className={`btn-primary ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {isSubmitting ? 'Creating Account...' : `Register as ${getCurrentRole().name}`}
+                        </button>
+                      );
+                    }
+                    
+                    return (
+                      <button
+                        type="button"
+                        onClick={nextStep}
+                        className="btn-primary"
+                      >
+                        Next
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             </form>

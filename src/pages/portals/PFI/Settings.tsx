@@ -1,68 +1,87 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PortalLayout from '../../../components/PortalLayout';
 import { showNotification } from '../../../utils/quickActions';
+import { useNotifications } from '../../../context/NotificationContext';
+import {
+  findPFIById,
+  PFIFormData,
+  PFIStatus,
+  buildPFIApplicationData,
+  updatePFIRecord,
+  PFIRecord,
+} from '../../../utils/localDatabase';
+import { NIGERIAN_STATES } from '../../../constants/nigeriaStates';
 
 const Settings: React.FC = () => {
   const [activeSection, setActiveSection] = useState<'contact' | 'organization'>('contact');
 
   const [formData, setFormData] = useState({
     // Contact Info - Personal Details
-    fullName: 'Mr. John Adebayo',
-    position: 'Loan Disbursement Manager',
-    gender: 'Male',
-    birthDate: '1980-03-20',
-
+    fullName: '',
+    position: '',
+    gender: '',
+    birthDate: '',
+    
     // Contact Info - Contact Information
-    email: 'john.adebayo@firstbank.com',
-    phone: '+234-801-234-5678',
-    whatsapp: '+234-801-234-5678',
-    address: '123 Banking Street',
-    city: 'Lagos',
-    state: 'Lagos State',
-    country: 'Nigeria',
-
+    email: '',
+    phone: '',
+    whatsapp: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    
     // Contact Info - Verification & Emergency
-    idType: 'National ID',
-    idNumber: 'NG987654321',
+    idType: '',
+    idNumber: '',
     idDocument: '',
-    emergencyContactName: 'Mary Adebayo',
-    emergencyContactPhone: '+234-802-345-6789',
-    emergencyRelationship: 'Spouse',
-
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    emergencyRelationship: '',
+    
     // Organization Info - Basic Information
-    organizationName: 'First Bank of Nigeria',
-    registrationNumber: 'RC-123456',
-    organizationType: 'Company',
-    yearEstablished: '1894',
-    industry: 'Banking & Financial Services',
-    missionStatement: 'To provide excellent banking and financial services.',
-
+    organizationName: '',
+    registrationNumber: '',
+    organizationType: '',
+    yearEstablished: '',
+    industry: '',
+    missionStatement: '',
+    
     // Organization Info - Address & Contact Info
-    headquartersAddress: '123 Banking Street, Lagos',
-    hqCity: 'Lagos',
-    hqState: 'Lagos State',
-    hqCountry: 'Nigeria',
-    officePhone: '+234-801-234-5678',
-    officialEmail: 'info@firstbank.com',
-    website: 'https://firstbank.com',
-    facebook: 'FirstBankNG',
-    linkedin: 'first-bank-nigeria',
-    twitter: '@FirstBankNG',
-    instagram: 'firstbankng',
-
+    headquartersAddress: '',
+    hqCity: '',
+    hqState: '',
+    hqCountry: '',
+    officePhone: '',
+    officialEmail: '',
+    website: '',
+    facebook: '',
+    linkedin: '',
+    twitter: '',
+    instagram: '',
+    
     // Organization Info - Operations & Documentation
-    numEmployees: '10000',
-    areasOfOperation: 'All States in Nigeria',
+    numEmployees: '',
+    areasOfOperation: [] as string[],
     organizationLogo: '',
     certificateOfIncorporation: '',
-    hasPartnership: 'Yes',
-    partnershipDetails: 'Partnership with the Central Bank of Nigeria.',
-
+    hasPartnership: 'No',
+    partnershipDetails: '',
+    
     // Organization Info - Security & Terms
     password: '',
     confirmPassword: '',
     agreeToTerms: true
   });
+
+  const [recordId, setRecordId] = useState<string | null>(null);
+  const [status, setStatus] = useState<PFIStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [isLoadingRecord, setIsLoadingRecord] = useState(true);
+  const { addNotification } = useNotifications();
+
+  const isVerified = status === 'verified';
+  const awaitingApproval = status === 'unverified' && !rejectionReason;
 
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/pfi' },
@@ -81,21 +100,287 @@ const Settings: React.FC = () => {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const field = (e.target as HTMLInputElement).name;
-      setFormData(prev => ({ ...prev, [field]: file.name }));
-    }
+    const { name } = e.target;
+    const file = e.target.files?.[0] || null;
+    setFormData(prev => ({
+      ...prev,
+      [name]: file
+    }));
   };
+
+  const handleAreaToggle = (stateName: string) => {
+    setFormData(prev => {
+      const exists = prev.areasOfOperation.includes(stateName);
+      const updatedAreas = exists
+        ? prev.areasOfOperation.filter(area => area !== stateName)
+        : [...prev.areasOfOperation, stateName];
+      return {
+        ...prev,
+        areasOfOperation: updatedAreas,
+      };
+    });
+  };
+
+  const handleSelectAllAreas = () => {
+    setFormData(prev => ({
+      ...prev,
+      areasOfOperation:
+        prev.areasOfOperation.length === NIGERIAN_STATES.length ? [] : [...NIGERIAN_STATES],
+    }));
+  };
+
+  const populateFormFromRecord = (record: PFIRecord) => {
+    const data = record.formData;
+    setFormData(prev => ({
+      ...prev,
+      fullName: data.fullName || '',
+      position: data.position || '',
+      gender: data.gender || '',
+      birthDate: data.birthDate || '',
+      email: data.email || '',
+      phone: data.phone || '',
+      whatsapp: data.whatsapp || '',
+      address: data.address || '',
+      city: data.city || '',
+      state: data.state || '',
+      country: data.country || '',
+      idType: data.idType || '',
+      idNumber: data.idNumber || '',
+      idDocument: data.idDocumentName || '',
+      emergencyContactName: data.emergencyContactName || '',
+      emergencyContactPhone: data.emergencyContactPhone || '',
+      emergencyRelationship: data.emergencyRelationship || '',
+      organizationName: data.organizationName || '',
+      registrationNumber: data.registrationNumber || '',
+      organizationType: data.organizationType || '',
+      yearEstablished: data.yearEstablished || '',
+      industry: data.industry || '',
+      missionStatement: data.missionStatement || '',
+      headquartersAddress: data.headquartersAddress || '',
+      hqCity: data.hqCity || '',
+      hqState: data.hqState || '',
+      hqCountry: data.hqCountry || '',
+      officePhone: data.officePhone || '',
+      officialEmail: data.officialEmail || '',
+      website: data.website || '',
+      facebook: data.facebook || '',
+      linkedin: data.linkedin || '',
+      twitter: data.twitter || '',
+      instagram: data.instagram || '',
+      numEmployees: data.numEmployees || '',
+      areasOfOperation: (() => {
+        const rawAreas = (data as any)?.areasOfOperation;
+        if (Array.isArray(rawAreas)) {
+          return rawAreas;
+        }
+        if (typeof rawAreas === 'string') {
+          return rawAreas
+            .split(',')
+            .map((state: string) => state.trim())
+            .filter(Boolean);
+        }
+        return [];
+      })(),
+      organizationLogo: data.organizationLogoName || '',
+      certificateOfIncorporation: data.certificateOfIncorporationName || '',
+      hasPartnership: data.hasPartnership || 'No',
+      partnershipDetails: data.partnershipDetails || '',
+      password: '',
+      confirmPassword: '',
+      agreeToTerms: true,
+    }));
+  };
+
+  useEffect(() => {
+    const loadRecord = () => {
+      const rawSession = localStorage.getItem('user');
+      if (!rawSession) {
+        setIsLoadingRecord(false);
+        return;
+      }
+
+      try {
+        const session = JSON.parse(rawSession);
+        if (!session || session.role !== 'Participating Bank (PFI)') {
+          setIsLoadingRecord(false);
+          return;
+        }
+
+        if (!session.id) {
+          setIsLoadingRecord(false);
+          return;
+        }
+
+        if (session.status) {
+          setStatus(session.status as PFIStatus);
+        }
+
+        const record = findPFIById(session.id);
+        if (record) {
+          setRecordId(record.id);
+          setStatus(record.status);
+          setRejectionReason(record.rejectionReason || null);
+          populateFormFromRecord(record);
+        } else {
+          setRecordId(null);
+        }
+      } catch (error) {
+        console.error('Failed to load PFI registration', error);
+      } finally {
+        setIsLoadingRecord(false);
+      }
+    };
+
+    loadRecord();
+  }, []);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    showNotification('Settings saved successfully!', 'success');
+
+    if (isVerified) {
+      showNotification('Your registration is already verified and cannot be modified.', 'info');
+      return;
+    }
+
+    if (!recordId) {
+      showNotification('No registration record found. Please complete the PFI registration first.', 'error');
+      return;
+    }
+
+    if (formData.areasOfOperation.length === 0) {
+      showNotification('Select at least one area of operation / coverage before submitting.', 'error');
+      return;
+    }
+
+    const storedFormData: PFIFormData = {
+      fullName: formData.fullName.trim(),
+      position: formData.position.trim(),
+      gender: formData.gender,
+      birthDate: formData.birthDate,
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      whatsapp: formData.whatsapp?.trim() || undefined,
+      address: formData.address.trim(),
+      city: formData.city.trim(),
+      state: formData.state.trim(),
+      country: formData.country.trim(),
+      idType: formData.idType,
+      idNumber: formData.idNumber.trim(),
+      idDocumentName: formData.idDocument ? (formData.idDocument as any).name : undefined,
+      emergencyContactName: formData.emergencyContactName.trim(),
+      emergencyContactPhone: formData.emergencyContactPhone.trim(),
+      emergencyRelationship: formData.emergencyRelationship.trim(),
+      organizationName: formData.organizationName.trim(),
+      registrationNumber: formData.registrationNumber.trim(),
+      organizationType: formData.organizationType,
+      yearEstablished: formData.yearEstablished.trim(),
+      industry: formData.industry.trim(),
+      missionStatement: formData.missionStatement.trim(),
+      headquartersAddress: formData.headquartersAddress.trim(),
+      hqCity: formData.hqCity.trim(),
+      hqState: formData.hqState.trim(),
+      hqCountry: formData.hqCountry.trim(),
+      officePhone: formData.officePhone.trim(),
+      officialEmail: formData.officialEmail.trim(),
+      website: formData.website.trim(),
+      facebook: formData.facebook?.trim() || undefined,
+      linkedin: formData.linkedin?.trim() || undefined,
+      twitter: formData.twitter?.trim() || undefined,
+      instagram: formData.instagram?.trim() || undefined,
+      numEmployees: formData.numEmployees.trim(),
+      areasOfOperation: [...formData.areasOfOperation],
+      organizationLogoName: formData.organizationLogo ? (formData.organizationLogo as any).name : undefined,
+      certificateOfIncorporationName: formData.certificateOfIncorporation ? (formData.certificateOfIncorporation as any).name : undefined,
+      hasPartnership: formData.hasPartnership,
+      partnershipDetails: formData.partnershipDetails.trim(),
+      password: '',
+    };
+
+    const applicationData = buildPFIApplicationData(storedFormData);
+
+    const notificationId = addNotification({
+      role: '🏦 PFI',
+      targetRole: 'coordinating-agency',
+      message: `${storedFormData.organizationName || storedFormData.fullName} updated their PFI details for review.`,
+      applicantName: storedFormData.fullName,
+      applicantType: 'Company',
+      companyName: storedFormData.organizationName,
+      companyId: storedFormData.registrationNumber,
+      organization: storedFormData.organizationName,
+      fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+      contactPersonName: storedFormData.fullName,
+      contactPersonEmail: storedFormData.email,
+      contactPersonPhone: storedFormData.phone,
+      applicationData,
+      metadata: {
+        type: 'pfiRegistration',
+        pfiId: recordId,
+        email: storedFormData.email,
+        requiresDecision: true,
+      },
+    });
+
+    const updatedRecord = updatePFIRecord(recordId, {
+      formData: storedFormData,
+      status: 'unverified',
+      rejectionReason: undefined,
+      lastSubmittedAt: new Date().toISOString(),
+      pendingNotificationId: notificationId,
+      email: storedFormData.officialEmail,
+    } as Partial<Omit<PFIRecord, 'id'>>);
+
+    setStatus('unverified');
+    setRejectionReason(null);
+
+    if (updatedRecord) {
+      populateFormFromRecord(updatedRecord);
+    }
+
+    showNotification('Your updates have been sent to the Coordinating Agency for approval.', 'success');
   };
 
+  if (isLoadingRecord) {
+    return (
+      <PortalLayout role="Participating Bank (PFI)" roleIcon="🏦" sidebarItems={sidebarItems}>
+        <div className="card">
+          <h1 className="text-lg font-semibold font-sans text-gray-100">Loading Settings</h1>
+          <p className="text-sm text-gray-300 font-serif mt-2">Fetching your PFI registration details...</p>
+        </div>
+      </PortalLayout>
+    );
+  }
+
   return (
-    <PortalLayout role="PFI" roleIcon="🏦" sidebarItems={sidebarItems}>
+    <PortalLayout role="Participating Bank (PFI)" roleIcon="🏦" sidebarItems={sidebarItems}>
       <div className="space-y-6">
+        <div className="bg-primary-800 border border-primary-700 rounded-lg p-4">
+          <p className="text-sm font-semibold font-sans text-gray-100">
+            {isVerified ? (
+              <span className="text-green-400">✓ Verified</span>
+            ) : awaitingApproval ? (
+              <span className="text-yellow-400">⏳ Awaiting approval from the Coordinating Agency.</span>
+            ) : rejectionReason ? (
+              <span className="text-red-400">✗ Registration Rejected</span>
+            ) : (
+              <span className="text-gray-400">Registration Status: Unverified</span>
+            )}
+          </p>
+          {rejectionReason && (
+            <p className="text-xs text-red-400 font-serif mt-2">
+              Rejection Reason: {rejectionReason}
+            </p>
+          )}
+          {awaitingApproval && (
+            <p className="text-xs text-yellow-400 font-serif mt-2">
+              Awaiting approval from the Coordinating Agency.
+            </p>
+          )}
+          {!recordId && (
+            <p className="text-xs text-yellow-400 font-serif mt-2">
+              No registration data found. Please complete your PFI registration.
+            </p>
+          )}
+        </div>
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>

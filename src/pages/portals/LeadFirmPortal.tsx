@@ -1,5 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import PortalLayout from '../../components/PortalLayout';
+import { getLeadFirmStatusSnapshot, LeadFirmStatus } from '../../utils/localDatabase';
 
 const LeadFirmPortal: React.FC = () => {
   const sidebarItems = [
@@ -7,6 +9,21 @@ const LeadFirmPortal: React.FC = () => {
     { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/lead-firm/scheme-application' },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/lead-firm/settings' }
   ];
+
+  const [status, setStatus] = useState<LeadFirmStatus>('unverified');
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [recordLoaded, setRecordLoaded] = useState(false);
+ 
+  useEffect(() => {
+    const snapshot = getLeadFirmStatusSnapshot();
+    if (snapshot) {
+      setStatus(snapshot.status);
+      setRejectionReason(snapshot.rejectionReason);
+    }
+    setRecordLoaded(true);
+  }, []);
+ 
+  const isVerified = status === 'verified';
 
   const stats = [
     { title: 'Product Lines', value: '45', change: '+3', icon: '🌱' },
@@ -88,6 +105,44 @@ const LeadFirmPortal: React.FC = () => {
   const currentPastPage = Math.min(pastPage, totalPastPages);
   const pastStartIndex = (currentPastPage - 1) * pastPageSize;
   const paginatedPastSchemes = filteredPastSchemes.slice(pastStartIndex, pastStartIndex + pastPageSize);
+
+  if (!recordLoaded) {
+    return (
+      <PortalLayout role="Lead Firm" roleIcon="🌱" sidebarItems={sidebarItems}>
+        <div className="card">
+          <h1 className="text-lg font-semibold font-sans text-gray-100">Loading Dashboard</h1>
+          <p className="text-sm text-gray-300 font-serif mt-2">Fetching your Lead Firm details...</p>
+        </div>
+      </PortalLayout>
+    );
+  }
+ 
+  if (!isVerified) {
+    return (
+      <PortalLayout role="Lead Firm" roleIcon="🌱" sidebarItems={sidebarItems}>
+        <div className="space-y-4">
+          <div className="card">
+            <h1 className="text-xl font-bold font-sans text-gray-100 mb-2">Awaiting Verification</h1>
+            <p className="text-sm text-gray-300 font-serif">
+              Your Lead Firm account is pending approval from the Coordinating Agency. You can update and resubmit your details from the Settings page while you wait.
+            </p>
+            <Link
+              to="/portal/lead-firm/settings"
+              className="inline-flex items-center mt-4 px-4 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium"
+            >
+              Go to Settings
+            </Link>
+          </div>
+          {rejectionReason && (
+            <div className="card">
+              <h2 className="text-lg font-semibold font-sans text-gray-100 mb-2">Most Recent Feedback</h2>
+              <p className="text-sm text-red-400 font-serif">{rejectionReason}</p>
+            </div>
+          )}
+        </div>
+      </PortalLayout>
+    );
+  }
 
   return (
     <PortalLayout role="Lead Firm" roleIcon="🌱" sidebarItems={sidebarItems}>
@@ -294,16 +349,13 @@ const LeadFirmPortal: React.FC = () => {
         {/* Quick Actions */}
         <div className="card">
           <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button className="btn-primary">
-              🌱 Add Product
-            </button>
-            <button className="btn-secondary">
-              📦 Process Order
-            </button>
-            <button className="btn-secondary">
-              💰 Credit Sales
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              to="/portal/lead-firm/scheme-application"
+              className="btn-primary text-center"
+            >
+              📝 Apply to Schemes
+            </Link>
             <button className="btn-secondary">
               📊 Sales Report
             </button>
