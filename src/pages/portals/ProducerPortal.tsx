@@ -8,13 +8,26 @@ const ProducerPortal: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/producer' },
     { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/producer/scheme-application' },
+    {
+      id: 'anchor-relationships',
+      name: 'Anchor Relationships',
+      icon: '⚓',
+      hasDropdown: true,
+      dropdownItems: [
+        { id: 'current-anchors', name: 'View Current Anchors', icon: '👁️', href: '/portal/producer/anchor-relationships/current' },
+        { id: 'invitations', name: 'Accept/Decline Invitations', icon: '📨', href: '/portal/producer/anchor-relationships/invitations' },
+        { id: 'leave-request', name: 'Request to Leave Anchor', icon: '🚪', href: '/portal/producer/anchor-relationships/leave' },
+        { id: 'communication', name: 'Anchor Communication', icon: '💬', href: '/portal/producer/anchor-relationships/communication' },
+        { id: 'history', name: 'Relationship History', icon: '📜', href: '/portal/producer/anchor-relationships/history' },
+      ]
+    },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/producer/settings' }
   ];
 
   const [status, setStatus] = useState<ProducerStatus>('unverified');
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [recordLoaded, setRecordLoaded] = useState(false);
- 
+
   useEffect(() => {
     const snapshot = getProducerStatusSnapshot();
     if (snapshot) {
@@ -23,7 +36,7 @@ const ProducerPortal: React.FC = () => {
     }
     setRecordLoaded(true);
   }, []);
- 
+
   const isVerified = status === 'verified';
 
   const stats = [
@@ -50,7 +63,7 @@ const ProducerPortal: React.FC = () => {
       </PortalLayout>
     );
   }
- 
+
   if (!isVerified) {
     return (
       <PortalLayout role="Producer/Farmer" roleIcon="🌾" sidebarItems={sidebarItems}>
@@ -118,11 +131,10 @@ const ProducerPortal: React.FC = () => {
                     <p className="text-sm text-gray-300 font-serif">{activity.description}</p>
                     <p className="text-xs text-gray-400 font-serif">{activity.time}</p>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    activity.status === 'completed' ? 'bg-green-500 text-white' :
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${activity.status === 'completed' ? 'bg-green-500 text-white' :
                     activity.status === 'pending' ? 'bg-yellow-500 text-white' :
-                    'bg-blue-500 text-white'
-                  }`}>
+                      'bg-blue-500 text-white'
+                    }`}>
                     {activity.status}
                   </span>
                 </div>
@@ -193,7 +205,7 @@ const ProducerPortal: React.FC = () => {
             >
               📝 Apply to Schemes
             </Link>
-            <button 
+            <button
               className="btn-secondary"
               onClick={() => generateReport('Producer Performance Report', 'PDF')}
             >

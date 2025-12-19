@@ -3,10 +3,10 @@ import PortalLayout from '../../../../components/PortalLayout';
 
 const Training: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -16,16 +16,16 @@ const Training: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'state-monitoring', 
-      name: 'State Monitoring Team', 
-      icon: '🗺️', 
+    {
+      id: 'me-team',
+      name: 'M&E Team',
+      icon: '📋',
       href: '/portal/coordinating-agency/monitoring/state'
     },
-    { 
-      id: 'representative-body', 
-      name: 'Representative Body', 
-      icon: '🏛️', 
+    {
+      id: 'representative-body',
+      name: 'Representative Body',
+      icon: '🏛️',
       href: '/portal/coordinating-agency/representative',
       hasDropdown: true,
       dropdownItems: [
@@ -34,20 +34,20 @@ const Training: React.FC = () => {
         { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
       ]
     },
-    { 
-      id: 'applicants', 
-      name: 'Applicants', 
-      icon: '📝', 
+    {
+      id: 'applicants',
+      name: 'Applicants',
+      icon: '📝',
       href: '/portal/coordinating-agency/applicants',
       hasDropdown: true,
       dropdownItems: [
         { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
         { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
         { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-        { 
-          id: 'fund-beneficiaries', 
-          name: 'Fund Beneficiaries', 
-          icon: '👥', 
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
           href: '/portal/coordinating-agency/fund-beneficiaries',
           hasDropdown: true,
           dropdownItems: [
@@ -59,10 +59,10 @@ const Training: React.FC = () => {
         }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Department', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Department',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -114,7 +114,7 @@ const Training: React.FC = () => {
   const filteredReports = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return reports;
-    return reports.filter(report => 
+    return reports.filter(report =>
       `${report.title} ${report.teamName} ${report.id}`.toLowerCase().includes(q)
     );
   }, [searchTerm]);
@@ -168,12 +168,12 @@ const Training: React.FC = () => {
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-          <h1 className="text-2xl sm:text-3xl font-bold font-sans text-gray-100 mb-2">
-            Training Department
-          </h1>
-          <p className="text-gray-400 font-serif">
-            Coordinate capacity building, professional development, and training programs for all agricultural finance stakeholders
-          </p>
+            <h1 className="text-2xl sm:text-3xl font-bold font-sans text-gray-100 mb-2">
+              Training Department
+            </h1>
+            <p className="text-gray-400 font-serif">
+              Coordinate capacity building, professional development, and training programs for all agricultural finance stakeholders
+            </p>
           </div>
           <div className="sm:pt-1">
             <button
@@ -236,7 +236,7 @@ const Training: React.FC = () => {
         {/* Main Content Card */}
         <div className="bg-primary-800 rounded-lg shadow-lg p-4 sm:p-6">
           <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">Training Provider Management</h2>
-          
+
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="relative flex-1">
@@ -264,13 +264,13 @@ const Training: React.FC = () => {
                 >
                   ⬇️ Download Selected
                 </button>
-            <button 
+                <button
                   onClick={openForwardModal}
                   className="btn-primary text-xs px-3 py-1"
-            >
+                >
                   ➡️ Forward Selected
-            </button>
-          </div>
+                </button>
+              </div>
             </div>
           )}
 
@@ -280,57 +280,57 @@ const Training: React.FC = () => {
               {paginatedReports.map((report) => (
                 <div key={report.id} className="p-3 bg-primary-700 rounded-lg border border-primary-600">
                   <div className="flex items-start gap-2 mb-2">
-                <input
-                  type="checkbox"
+                    <input
+                      type="checkbox"
                       checked={selectedReports.includes(report.id)}
                       onChange={() => toggleSelect(report.id)}
                       className="mt-1 w-4 h-4 accent-accent-500"
                     />
                     <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
                           <p className="text-sm font-medium text-gray-100 font-sans">{report.title}</p>
                           <p className="text-xs text-gray-400 font-serif">{report.id}</p>
-                    </div>
-                  </div>
+                        </div>
+                      </div>
                       <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-2">
-                    <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1">
                           <span>👥</span> {report.teamName}
-                    </span>
-                    <span className="flex items-center gap-1">
+                        </span>
+                        <span className="flex items-center gap-1">
                           <span>📅</span> {new Date(report.date).toLocaleDateString()}
-                    </span>
+                        </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => handleDownloadOne(report)} className="text-xs text-accent-400 hover:text-accent-300 font-medium">⬇️ Download</button>
                         <button onClick={() => { setSelectedReports(prev => prev.includes(report.id) ? prev : [...prev, report.id]); openForwardModal(); }} className="text-xs text-accent-400 hover:text-accent-300 font-medium">➡️ Forward</button>
                       </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
             {/* Pagination */}
             {filteredReports.length > itemsPerPage && (
               <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-              <button 
-                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))} 
-                disabled={currentPage === 1}
+                <button
+                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                  disabled={currentPage === 1}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ←
-              </button>
+                >
+                  ←
+                </button>
                 <span className="text-xs text-gray-400">{currentPage} of {totalPages}</span>
-              <button 
-                onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))} 
-                disabled={currentPage === totalPages}
+                <button
+                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                  disabled={currentPage === totalPages}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                →
-              </button>
-            </div>
-          )}
+                >
+                  →
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -422,3 +422,4 @@ const Training: React.FC = () => {
 };
 
 export default Training;
+

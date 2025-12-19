@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useNotifications, type NotificationItem } from '../context/NotificationContext';
 import { updateFundProviderStatus, getActiveFundProviderRecord, updateInsuranceCompanyStatus, getActiveInsuranceCompanyRecord, updateCooperativeGroupStatus, getActiveCooperativeGroupRecord, updateExtensionOrganizationStatus, getActiveExtensionOrganizationRecord, updatePFIStatus, getActivePFIRecord, updateAnchorStatus, getActiveAnchorRecord, updateLeadFirmStatus, getActiveLeadFirmRecord, updateProducerStatus, getActiveProducerRecord, updateResearcherStatus, getActiveResearcherRecord } from '../utils/localDatabase';
 
@@ -45,36 +45,39 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
   const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread' | 'viewed'>('all');
   const [showApprovalConfirmation, setShowApprovalConfirmation] = useState(false);
   const [showRejectionConfirmation, setShowRejectionConfirmation] = useState(false);
+  const [showStage2Confirmation, setShowStage2Confirmation] = useState(false);
+  const [pendingStage2Scheme, setPendingStage2Scheme] = useState<{ schemeId: string; schemeName: string } | null>(null);
   const [documentModal, setDocumentModal] = useState<{
     title: string;
     documents: { label: string; name: string; type: string }[];
   } | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Auto-open dropdowns that contain the active page
   const [openDropdowns, setOpenDropdowns] = useState<string[]>(() => {
     const initialOpenDropdowns: string[] = [];
-    
+
     const checkDropdowns = (items: any[], parentId?: string) => {
       items.forEach(item => {
         if (item.hasDropdown && item.dropdownItems) {
           const hasActiveSubItem = item.dropdownItems.some((subItem: any) => {
             if (subItem.href === location.pathname) return true;
             if (subItem.hasDropdown && subItem.dropdownItems) {
-              return subItem.dropdownItems.some((nestedItem: any) => 
+              return subItem.dropdownItems.some((nestedItem: any) =>
                 nestedItem.href === location.pathname
               );
             }
             return false;
           });
-          
+
           if (hasActiveSubItem) {
             initialOpenDropdowns.push(item.id);
             if (parentId) {
               initialOpenDropdowns.push(parentId);
             }
           }
-          
+
           // Check nested dropdowns
           if (item.hasDropdown && item.dropdownItems) {
             checkDropdowns(item.dropdownItems, item.id);
@@ -82,7 +85,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
         }
       });
     };
-    
+
     checkDropdowns(sidebarItems);
     return initialOpenDropdowns;
   });
@@ -90,27 +93,27 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
   // Update open dropdowns when location changes
   React.useEffect(() => {
     const newOpenDropdowns: string[] = [];
-    
+
     const checkDropdowns = (items: any[], parentId?: string) => {
       items.forEach(item => {
         if (item.hasDropdown && item.dropdownItems) {
           const hasActiveSubItem = item.dropdownItems.some((subItem: any) => {
             if (subItem.href === location.pathname) return true;
             if (subItem.hasDropdown && subItem.dropdownItems) {
-              return subItem.dropdownItems.some((nestedItem: any) => 
+              return subItem.dropdownItems.some((nestedItem: any) =>
                 nestedItem.href === location.pathname
               );
             }
             return false;
           });
-          
+
           if (hasActiveSubItem) {
             newOpenDropdowns.push(item.id);
             if (parentId) {
               newOpenDropdowns.push(parentId);
             }
           }
-          
+
           // Check nested dropdowns
           if (item.hasDropdown && item.dropdownItems) {
             checkDropdowns(item.dropdownItems, item.id);
@@ -118,9 +121,9 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
         }
       });
     };
-    
+
     checkDropdowns(sidebarItems);
-    
+
     if (newOpenDropdowns.length > 0) {
       setOpenDropdowns(prev => {
         // Merge with existing open dropdowns (keep manually opened ones)
@@ -268,29 +271,36 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     if (currentUserRole === 'pfi') {
       const pfiId = activePFIRecord?.id;
       if (!pfiId) return [];
-      return getNotificationsByRole('pfi').filter(
+      const allPfiNotifs = getNotificationsByRole('pfi');
+      console.log('[PortalLayout] PFI Notifications Check:');
+      console.log('- Current PFI ID:', pfiId);
+      console.log('- Total PFI Notifications:', allPfiNotifs.length);
+
+      const filtered = allPfiNotifs.filter(
         (notif) => notif.metadata?.pfiId === pfiId
       );
+      console.log('- Filtered Notifications:', filtered.length);
+      return filtered;
     }
     if (currentUserRole === 'anchor') {
       const anchorId = activeAnchorRecord?.id;
       if (!anchorId) return [];
       return getNotificationsByRole('anchor').filter(
-        (notif) => notif.metadata?.anchorId === anchorId
+        (notif) => notif.metadata?.broadcast || notif.metadata?.anchorId === anchorId
       );
     }
     if (currentUserRole === 'lead-firm') {
       const leadFirmId = activeLeadFirmRecord?.id;
       if (!leadFirmId) return [];
       return getNotificationsByRole('lead-firm').filter(
-        (notif) => notif.metadata?.leadFirmId === leadFirmId
+        (notif) => notif.metadata?.broadcast || notif.metadata?.leadFirmId === leadFirmId
       );
     }
     if (currentUserRole === 'producer') {
       const producerId = activeProducerRecord?.id;
       if (!producerId) return [];
       return getNotificationsByRole('producer').filter(
-        (notif) => notif.metadata?.producerId === producerId
+        (notif) => notif.metadata?.broadcast || notif.metadata?.producerId === producerId
       );
     }
     if (currentUserRole === 'researcher') {
@@ -342,6 +352,300 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
   ];
 
   const handleNotificationClick = (notificationId: string) => {
+    const notification = notifications.find(n => n.id === notificationId);
+
+    // For Insurance Company submissions, navigate to the Insurance Companies Applicants page
+    // to use the same modal as the Approval Rights section
+    if (notification?.metadata?.type === 'insuranceCompanySubmission' && currentUserRole === 'coordinating-agency') {
+      setNotificationDropdownOpen(false);
+      // Only mark as viewed, don't change status to 'read' - keep it as 'pending' so it remains in Approval Rights
+      setNotificationViewed(notificationId, true);
+      // Store notificationId in sessionStorage to indicate intentional click
+      sessionStorage.setItem('openInsuranceSubmissionModal', notificationId);
+      // Use React Router navigation to avoid page reload and logout
+      navigate('/portal/coordinating-agency/applicants/insurance-companies');
+      return;
+    }
+
+    // For Insurance Company submission responses (approval/rejection)
+    // If rejected and has schemeId, open scheme application modal to allow reapplication
+    // If approved or no schemeId, just show notification modal
+    if (notification?.metadata?.type === 'insuranceCompanySubmissionResponse' && currentUserRole === 'insurance') {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      updateNotificationStatus(notificationId, 'read');
+
+      // Check if this is a rejection (allows reapplication via scheme modal)
+      const isRejection = notification.message?.toLowerCase().includes('rejected');
+
+      if (isRejection && notification.schemeId) {
+        // Dispatch event to open scheme application modal
+        window.dispatchEvent(new CustomEvent('notification-scheme-click', {
+          detail: { schemeId: notification.schemeId }
+        }));
+
+        // Navigate to scheme application page if not already there
+        if (location.pathname !== '/portal/insurance/scheme-application') {
+          navigate(`/portal/insurance/scheme-application?schemeId=${notification.schemeId}`);
+        }
+      } else {
+        // No schemeId - just show the approval/rejection message in a modal
+        setShowApprovalModal(notificationId);
+        setApprovalDecision('');
+        setApprovalRemarks('');
+      }
+      return;
+    }
+
+    // For scheme open to beneficiaries notifications
+    if (notification?.metadata?.type === 'schemeOpenToBeneficiaries') {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      updateNotificationStatus(notificationId, 'read');
+
+      const schemeId = notification.schemeId || notification.metadata.schemeId;
+
+      // Dispatch event to open scheme application modal
+      window.dispatchEvent(new CustomEvent('notification-scheme-click', {
+        detail: { schemeId }
+      }));
+
+      // Navigate based on role
+      let targetPath = '';
+      if (currentUserRole === 'producer') {
+        targetPath = '/portal/producer/scheme-application';
+      } else if (currentUserRole === 'lead-firm') {
+        targetPath = '/portal/lead-firm/scheme-application';
+      } else if (currentUserRole === 'anchor') {
+        targetPath = '/portal/anchor/scheme-application';
+      }
+
+      if (targetPath && location.pathname !== targetPath) {
+        navigate(`${targetPath}?schemeId=${schemeId}`);
+      }
+      return;
+    }
+
+    // For scheme progression notifications, open the progression modal
+    if ((notification?.metadata?.type === 'schemeReadyForPFIs' || notification?.metadata?.type === 'schemeReadyForBeneficiaries') && currentUserRole === 'coordinating-agency') {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      updateNotificationStatus(notificationId, 'read');
+
+      // Dispatch event to open progression modal on FundSchemes page
+      window.dispatchEvent(new CustomEvent('scheme-progression-click', {
+        detail: {
+          schemeId: notification.schemeId,
+          progressionType: notification.metadata?.type === 'schemeReadyForPFIs' ? 'pfis' : 'beneficiaries'
+        }
+      }));
+
+      // Navigate to FundSchemes page if not already there
+      if (location.pathname !== '/portal/coordinating-agency/fund-schemes') {
+        navigate('/portal/coordinating-agency/fund-schemes');
+      }
+      return;
+    }
+
+    // For PFI scheme application notifications, open the scheme application modal
+    if (notification?.metadata?.actionType === 'pfi_submission_required' && currentUserRole === 'pfi' && notification.schemeId) {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      updateNotificationStatus(notificationId, 'read');
+
+      // Dispatch event to open scheme application modal
+      window.dispatchEvent(new CustomEvent('notification-scheme-click', {
+        detail: { schemeId: notification.schemeId }
+      }));
+
+      // Navigate to scheme application page if not already there
+      if (location.pathname !== '/portal/pfi/scheme-application') {
+        navigate(`/portal/pfi/scheme-application?schemeId=${notification.schemeId}`);
+      }
+      return;
+    }
+
+    // For Insurance Company scheme submission notifications, open the scheme application modal
+    if (notification?.metadata?.actionType === 'insurance_submission_required' && currentUserRole === 'insurance' && notification.schemeId) {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      updateNotificationStatus(notificationId, 'read');
+
+      // Dispatch event to open scheme application modal
+      window.dispatchEvent(new CustomEvent('notification-scheme-click', {
+        detail: { schemeId: notification.schemeId }
+      }));
+
+      // Navigate to scheme application page if not already there
+      if (location.pathname !== '/portal/insurance/scheme-application') {
+        navigate(`/portal/insurance/scheme-application?schemeId=${notification.schemeId}`);
+      }
+      return;
+    }
+
+    // For Beneficiary scheme application notifications (Anchor, Lead Firm, Producer)
+    if (notification?.metadata?.actionType === 'beneficiary_application_required' &&
+      (currentUserRole === 'anchor' || currentUserRole === 'lead-firm' || currentUserRole === 'producer') &&
+      notification.schemeId) {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      updateNotificationStatus(notificationId, 'read');
+
+      // Dispatch event to open scheme application modal
+      window.dispatchEvent(new CustomEvent('notification-scheme-click', {
+        detail: { schemeId: notification.schemeId }
+      }));
+
+      // Navigate to scheme application page if not already there
+      const schemeApplicationPath = currentUserRole === 'anchor' ? '/portal/anchor/scheme-application' :
+        currentUserRole === 'lead-firm' ? '/portal/lead-firm/scheme-application' :
+          '/portal/producer/scheme-application';
+
+      if (location.pathname !== schemeApplicationPath) {
+        navigate(`${schemeApplicationPath}?schemeId=${notification.schemeId}`);
+      }
+      return;
+    }
+
+    // For PFI scheme application response notifications
+    // Approvals: show notification modal with approval message
+    // Rejections: open scheme application modal for reapplication
+    if (notification?.metadata?.type === 'pfiSchemeApplicationResponse' && currentUserRole === 'pfi') {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      updateNotificationStatus(notificationId, 'read');
+
+      // Check if it's an approval or rejection based on notification status or message content
+      const isApproval = notification.status === 'approved' ||
+        (notification.message && notification.message.toLowerCase().includes('approved'));
+
+      if (isApproval) {
+        // For approvals, show notification modal with the approval message
+        setShowApprovalModal(notificationId);
+        setApprovalDecision('');
+        setApprovalRemarks('');
+        return;
+      } else {
+        // For rejections, open scheme application modal for reapplication
+        if (notification.schemeId) {
+          // Dispatch event to open scheme application modal
+          window.dispatchEvent(new CustomEvent('notification-scheme-click', {
+            detail: { schemeId: notification.schemeId }
+          }));
+
+          // Navigate to scheme application page if not already there
+          if (location.pathname !== '/portal/pfi/scheme-application') {
+            navigate(`/portal/pfi/scheme-application?schemeId=${notification.schemeId}`);
+          }
+        }
+        return;
+      }
+    }
+
+    // For PFI scheme application notifications (for CA), navigate to PFIs Applicants page
+    // to use the same modal as the Approval Rights section
+    if (notification?.metadata?.type === 'pfiSchemeApplication' && currentUserRole === 'coordinating-agency') {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      sessionStorage.setItem('openPFISubmissionModal', notificationId);
+      navigate('/portal/coordinating-agency/applicants/pfis'); // Use navigate
+      return;
+    }
+
+    // For Beneficiary scheme application submissions, navigate to the appropriate FundBeneficiaries page
+    // to use the same modal as the Approval Rights section
+    if (notification?.metadata?.type === 'beneficiarySchemeApplication' && currentUserRole === 'coordinating-agency') {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      const beneficiaryType = notification.metadata?.beneficiaryType as string;
+
+      // Route to the appropriate page based on beneficiary type
+      let targetPath = '';
+      let sessionKey = '';
+
+      if (beneficiaryType === 'Anchor') {
+        targetPath = '/portal/coordinating-agency/fund-beneficiaries/anchors';
+        sessionKey = 'openAnchorSubmissionModal';
+      } else if (beneficiaryType === 'Lead Firm') {
+        targetPath = '/portal/coordinating-agency/fund-beneficiaries/lead-firms';
+        sessionKey = 'openLeadFirmSubmissionModal';
+      } else if (beneficiaryType === 'Producer/Farmer') {
+        targetPath = '/portal/coordinating-agency/fund-beneficiaries/producers-farmers';
+        sessionKey = 'openProducerSubmissionModal';
+      }
+
+      if (targetPath && sessionKey) {
+        sessionStorage.setItem(sessionKey, notificationId);
+        navigate(targetPath);
+      }
+      return;
+    }
+
+    // For Beneficiary scheme application response notifications (rejections)
+    // Rejections: show rejection message modal (not scheme application modal)
+    // Approvals: show notification modal with approval message
+    if (notification?.metadata?.type === 'beneficiarySchemeApplicationResponse' &&
+      (currentUserRole === 'anchor' || currentUserRole === 'lead-firm' || currentUserRole === 'producer')) {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      updateNotificationStatus(notificationId, 'read');
+
+      // Check if it's an approval or rejection
+      const isApproval = notification.metadata?.isApproved === true ||
+        notification.status === 'approved' ||
+        (notification.message && notification.message.toLowerCase().includes('approved'));
+
+      if (isApproval) {
+        // For approvals, show notification modal with the approval message
+        setShowApprovalModal(notificationId);
+        setApprovalDecision('');
+        setApprovalRemarks('');
+        return;
+      } else {
+        // For rejections, show rejection message modal (not scheme application modal)
+        setShowApprovalModal(notificationId);
+        setApprovalDecision('');
+        setApprovalRemarks('');
+        return;
+      }
+    }
+
+    // For Producer Creation Request notifications (for CA), navigate to Producer Creation Requests page
+    if (notification?.metadata?.type === 'producer-creation-request' && currentUserRole === 'coordinating-agency') {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      // Store the creationRequestId to auto-open the details modal
+      if (notification.metadata?.creationRequestId) {
+        sessionStorage.setItem('openCreationRequestModal', notification.metadata.creationRequestId);
+      }
+      navigate('/portal/coordinating-agency/relationships/creation-requests');
+      return;
+    }
+
+    // For Producer Invitation Request notifications (for CA), navigate to Invitation Requests page
+    if (notification?.metadata?.type === 'producer-invitation-request' && currentUserRole === 'coordinating-agency') {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      // Store the relationshipId to auto-open the details modal
+      if (notification.metadata?.relationshipId) {
+        sessionStorage.setItem('openInvitationRequestModal', notification.metadata.relationshipId);
+      }
+      navigate('/portal/coordinating-agency/relationships/invitation-requests');
+      return;
+    }
+
+    // For Leave Request notifications (for CA), navigate to Leave Requests page
+    if (notification?.metadata?.type === 'producer-leave-request' && currentUserRole === 'coordinating-agency') {
+      setNotificationDropdownOpen(false);
+      setNotificationViewed(notificationId, true);
+      // Store the leaveRequestId to auto-open the details modal
+      if (notification.metadata?.leaveRequestId) {
+        sessionStorage.setItem('openLeaveRequestModal', notification.metadata.leaveRequestId);
+      }
+      navigate('/portal/coordinating-agency/relationships/leave-requests');
+      return;
+    }
+
     setNotificationDropdownOpen(false);
     setShowApprovalModal(notificationId);
     setApprovalDecision('');
@@ -354,18 +658,16 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     <div
       key={notification.id}
       onClick={() => handleNotificationClick(notification.id)}
-      className={`p-4 cursor-pointer transition-colors ${
-        notification.isViewed
-          ? 'text-gray-300 hover:bg-primary-800/60'
-          : 'bg-primary-800/60 hover:bg-primary-700 text-gray-100'
-      }`}
+      className={`p-4 cursor-pointer transition-colors ${notification.isViewed
+        ? 'text-gray-300 hover:bg-primary-800/60'
+        : 'bg-primary-800/60 hover:bg-primary-700 text-gray-100'
+        }`}
     >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 pt-1">
           <span
-            className={`inline-flex h-2.5 w-2.5 rounded-full ${
-              notification.isViewed ? 'bg-primary-500' : 'bg-accent-400'
-            }`}
+            className={`inline-flex h-2.5 w-2.5 rounded-full ${notification.isViewed ? 'bg-primary-500' : 'bg-accent-400'
+              }`}
           ></span>
         </div>
         <div className="flex-1 min-w-0">
@@ -723,6 +1025,270 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
           });
         }
       }
+      // Handle Insurance Company submission approvals/rejections (workflow)
+      else if (notification.metadata?.type === 'insuranceCompanySubmission') {
+        const isApproved = approvalDecision === 'approve';
+        const schemeId = notification.schemeId;
+        const insuranceCompanyId = notification.metadata?.insuranceCompanyId as string | undefined;
+        const submissionId = notification.metadata?.submissionId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this Insurance Company submission.');
+          return;
+        }
+
+        if (schemeId && insuranceCompanyId) {
+          // Update scheme in localStorage
+          const storedSchemes = localStorage.getItem('fundSchemes');
+          if (storedSchemes) {
+            const schemes = JSON.parse(storedSchemes);
+            const updatedSchemes = schemes.map((scheme: any) => {
+              if (scheme.id === schemeId) {
+                // Find the most recent pending submission for this IC to update
+                // If submittedAt matches, use that; otherwise find the most recent pending one
+                const notificationSubmittedAt = (notification.applicationData as any)?.submittedAt;
+                const updatedSubmissions = (scheme.insuranceCompanySubmissions || []).map((sub: any) => {
+                  const matchesSubmittedAt = notificationSubmittedAt && sub.submittedAt === notificationSubmittedAt;
+                  const isPendingForThisIC = sub.insuranceCompanyId === insuranceCompanyId && sub.status === 'pending';
+
+                  // Match by submittedAt if available, otherwise match most recent pending submission
+                  if (sub.insuranceCompanyId === insuranceCompanyId && (matchesSubmittedAt || (isPendingForThisIC && !notificationSubmittedAt))) {
+                    return {
+                      ...sub,
+                      status: isApproved ? 'approved' : 'rejected',
+                      reviewedAt: new Date().toISOString(),
+                      reviewNotes: trimmedRemarks || undefined
+                    };
+                  }
+                  return sub;
+                });
+
+                const updatedScheme: any = {
+                  ...scheme,
+                  insuranceCompanySubmissions: updatedSubmissions
+                };
+
+                // If approved, update workflow stage to stage1 and notify PFIs
+                if (isApproved) {
+                  updatedScheme.workflowStage = 'stage1';
+                  updatedScheme.approvedInsuranceCompanyId = insuranceCompanyId;
+
+                  // Notify all verified PFIs about the new scheme
+                  const { getPFIs } = require('../utils/localDatabase');
+                  const verifiedPFIs = getPFIs().filter((pfi: any) => pfi.status === 'verified');
+
+                  verifiedPFIs.forEach((pfi: any) => {
+                    addNotification({
+                      role: '🏛️ Coordinating Agency',
+                      targetRole: 'pfi',
+                      message: `New fund scheme "${scheme.name}" (${scheme.amount}) is now open for PFI applications. Insurance coverage has been secured. Please submit your proposed interest rate.`,
+                      applicantName: 'Coordinating Agency',
+                      applicantType: 'Company',
+                      companyName: 'Agricultural Finance Coordination Framework',
+                      schemeId: schemeId,
+                      schemeName: scheme.name,
+                      metadata: {
+                        actionType: 'pfi_application_required',
+                        schemeId: schemeId,
+                        pfiId: pfi.id // Include PFI ID so notification is visible to the specific PFI
+                      }
+                    });
+                  });
+                }
+
+                return updatedScheme;
+              }
+              return scheme;
+            });
+            localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
+          }
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        // Notify Insurance Company
+        const message = isApproved
+          ? `Your insurance submission for scheme "${notification.schemeName}" has been approved. The scheme will now proceed to PFI applications.`
+          : `Your insurance submission for scheme "${notification.schemeName}" has been rejected. ${trimmedRemarks ? `Reason: ${trimmedRemarks}` : ''}`;
+
+        addNotification({
+          role: '🏛️ Coordinating Agency',
+          targetRole: 'insurance',
+          message,
+          schemeId: notification.schemeId,
+          schemeName: notification.schemeName,
+          metadata: {
+            type: 'insuranceCompanySubmissionResponse',
+            insuranceCompanyId,
+            relatedNotificationId: notification.id,
+          },
+        });
+      }
+      // Handle PFI application approvals/rejections (workflow)
+      else if (notification.metadata?.type === 'pfiSchemeApplication') {
+        const isApproved = approvalDecision === 'approve';
+        const schemeId = notification.schemeId;
+        const pfiId = notification.metadata?.pfiId as string | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this PFI application.');
+          return;
+        }
+
+        if (schemeId && pfiId) {
+          // Update scheme in localStorage
+          const storedSchemes = localStorage.getItem('fundSchemes');
+          if (storedSchemes) {
+            const schemes = JSON.parse(storedSchemes);
+            const updatedSchemes = schemes.map((scheme: any) => {
+              if (scheme.id === schemeId) {
+                const updatedApplications = (scheme.pfiApplications || []).map((app: any) => {
+                  if (app.pfiId === pfiId && app.submittedAt === (notification.applicationData as any)?.submittedAt) {
+                    return {
+                      ...app,
+                      status: isApproved ? 'approved' : 'rejected',
+                      reviewedAt: new Date().toISOString(),
+                      reviewNotes: trimmedRemarks || undefined
+                    };
+                  }
+                  return app;
+                });
+
+                const updatedScheme: any = {
+                  ...scheme,
+                  pfiApplications: updatedApplications
+                };
+
+                // If approved, check if this is the first approved PFI (scheme becomes eligible for Beneficiaries)
+                if (isApproved) {
+                  // Check if this is the first approved PFI
+                  const approvedPFICount = updatedApplications.filter((app: any) => app.status === 'approved').length;
+                  const wasFirstApproval = approvedPFICount === 1;
+
+                  if (wasFirstApproval && scheme.workflowStage === 'stage1') {
+                    // Notify CA that scheme is ready to open for Beneficiaries
+                    addNotification({
+                      role: '🏛️ Coordinating Agency',
+                      targetRole: 'coordinating-agency',
+                      message: `A scheme is now ready to open for Beneficiary applications.`,
+                      schemeId: schemeId,
+                      schemeName: scheme.name,
+                      metadata: {
+                        type: 'schemeReadyForBeneficiaries',
+                        schemeId: schemeId,
+                        actionType: 'open_for_beneficiaries'
+                      }
+                    });
+                  }
+                }
+
+                // If approved, add to selectedPFIIds
+                if (isApproved) {
+                  updatedScheme.selectedPFIIds = [...(scheme.selectedPFIIds || []), pfiId];
+                }
+
+                return updatedScheme;
+              }
+              return scheme;
+            });
+            localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
+          }
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        // Notify PFI
+        const message = isApproved
+          ? `Your application for scheme "${notification.schemeName}" has been approved. Your proposed interest rate of ${(notification.applicationData as any)?.proposedInterestRate}% has been accepted.`
+          : `Your application for scheme "${notification.schemeName}" has been rejected. ${trimmedRemarks ? `Reason: ${trimmedRemarks}` : ''}`;
+
+        addNotification({
+          role: '🏛️ Coordinating Agency',
+          targetRole: 'pfi',
+          message,
+          schemeId: notification.schemeId,
+          schemeName: notification.schemeName,
+          metadata: {
+            type: 'pfiSchemeApplicationResponse',
+            pfiId,
+            relatedNotificationId: notification.id,
+          },
+        });
+      }
+      // Handle Beneficiary application approvals/rejections (workflow)
+      else if (notification.metadata?.type === 'beneficiarySchemeApplication') {
+        const isApproved = approvalDecision === 'approve';
+        const schemeId = notification.schemeId;
+        const beneficiaryId = notification.metadata?.beneficiaryId as string | undefined;
+        const beneficiaryType = notification.metadata?.beneficiaryType as 'Lead Firm' | 'Anchor' | 'Producer/Farmer' | undefined;
+
+        if (!isApproved && !trimmedRemarks) {
+          alert('Please provide a reason for rejecting this beneficiary application.');
+          return;
+        }
+
+        if (schemeId && beneficiaryId && beneficiaryType) {
+          // Update scheme in localStorage
+          const storedSchemes = localStorage.getItem('fundSchemes');
+          if (storedSchemes) {
+            const schemes = JSON.parse(storedSchemes);
+            const updatedSchemes = schemes.map((scheme: any) => {
+              if (scheme.id === schemeId) {
+                const updatedApplications = (scheme.beneficiaryApplications || []).map((app: any) => {
+                  if (app.beneficiaryId === beneficiaryId &&
+                    app.beneficiaryType === beneficiaryType &&
+                    app.submittedAt === (notification.applicationData as any)?.submittedAt) {
+                    return {
+                      ...app,
+                      status: isApproved ? 'approved' : 'rejected',
+                      reviewedAt: new Date().toISOString(),
+                      reviewNotes: trimmedRemarks || undefined
+                    };
+                  }
+                  return app;
+                });
+
+                return {
+                  ...scheme,
+                  beneficiaryApplications: updatedApplications
+                };
+              }
+              return scheme;
+            });
+            localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
+          }
+        }
+
+        updateNotificationStatus(showApprovalModal, isApproved ? 'approved' : 'rejected');
+
+        // Determine target role for notification
+        const roleMap: Record<string, 'lead-firm' | 'anchor' | 'producer'> = {
+          'Lead Firm': 'lead-firm',
+          'Anchor': 'anchor',
+          'Producer/Farmer': 'producer'
+        };
+        const targetRole = beneficiaryType ? roleMap[beneficiaryType] : undefined;
+
+        if (targetRole) {
+          const message = isApproved
+            ? `Your application for scheme "${notification.schemeName}" has been approved. You can now proceed with the scheme activities.`
+            : `Your application for scheme "${notification.schemeName}" has been rejected. ${trimmedRemarks ? `Reason: ${trimmedRemarks}` : ''}`;
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole,
+            message,
+            schemeId: notification.schemeId,
+            schemeName: notification.schemeName,
+            metadata: {
+              type: 'beneficiarySchemeApplicationResponse',
+              beneficiaryId,
+              beneficiaryType,
+              relatedNotificationId: notification.id,
+            },
+          });
+        }
+      }
       // Handle scheme application approvals/rejections
       else if (notification.applicationData) {
         const isApproved = approvalDecision === 'approve';
@@ -768,10 +1334,10 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
           const metadata =
             applicantRole === 'fund-provider'
               ? {
-                  type: 'fundProviderRegistrationResponse',
-                  fundProviderId: notification.metadata?.fundProviderId,
-                  relatedNotificationId: notification.id,
-                }
+                type: 'fundProviderRegistrationResponse',
+                fundProviderId: notification.metadata?.fundProviderId,
+                relatedNotificationId: notification.id,
+              }
               : undefined;
 
           addNotification({
@@ -840,15 +1406,110 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     setApprovalDecision('');
   };
 
+  const handleConfirmStage2 = () => {
+    if (!pendingStage2Scheme) return;
+
+    const { schemeId, schemeName } = pendingStage2Scheme;
+
+    // Update scheme to Stage 2
+    const storedSchemes = localStorage.getItem('fundSchemes');
+    if (storedSchemes) {
+      const schemes = JSON.parse(storedSchemes);
+      const updatedSchemes = schemes.map((scheme: any) => {
+        if (scheme.id === schemeId) {
+          const updatedScheme: any = {
+            ...scheme,
+            workflowStage: 'stage2'
+          };
+
+          // Notify all verified beneficiaries about the new scheme
+          const { getLeadFirms, getAnchors, getProducers } = require('../utils/localDatabase');
+          const verifiedLeadFirms = getLeadFirms().filter((lf: any) => lf.status === 'verified');
+          const verifiedAnchors = getAnchors().filter((a: any) => a.status === 'verified');
+          const verifiedProducers = getProducers().filter((p: any) => p.status === 'verified');
+
+          // Send notifications to Anchors
+          verifiedAnchors.forEach((anchor: any) => {
+            addNotification({
+              role: '🏛️ Coordinating Agency',
+              targetRole: 'anchor',
+              message: `A new scheme is now available for application.`,
+              applicantName: 'Coordinating Agency',
+              applicantType: 'Company',
+              companyName: 'Agricultural Finance Coordination Framework',
+              schemeId: schemeId,
+              schemeName: scheme.name,
+              metadata: {
+                actionType: 'beneficiary_application_required',
+                schemeId: schemeId,
+                anchorId: anchor.id // Include anchor ID so notification is visible to the specific anchor
+              }
+            });
+          });
+
+          // Send notifications to Lead Firms
+          verifiedLeadFirms.forEach((leadFirm: any) => {
+            addNotification({
+              role: '🏛️ Coordinating Agency',
+              targetRole: 'lead-firm',
+              message: `A new scheme is now available for application.`,
+              applicantName: 'Coordinating Agency',
+              applicantType: 'Company',
+              companyName: 'Agricultural Finance Coordination Framework',
+              schemeId: schemeId,
+              schemeName: scheme.name,
+              metadata: {
+                actionType: 'beneficiary_application_required',
+                schemeId: schemeId,
+                leadFirmId: leadFirm.id // Include lead firm ID so notification is visible to the specific lead firm
+              }
+            });
+          });
+
+          // Send notifications to Producers/Farmers
+          verifiedProducers.forEach((producer: any) => {
+            addNotification({
+              role: '🏛️ Coordinating Agency',
+              targetRole: 'producer',
+              message: `A new scheme is now available for application.`,
+              applicantName: 'Coordinating Agency',
+              applicantType: 'Company',
+              companyName: 'Agricultural Finance Coordination Framework',
+              schemeId: schemeId,
+              schemeName: scheme.name,
+              metadata: {
+                actionType: 'beneficiary_application_required',
+                schemeId: schemeId,
+                producerId: producer.id // Include producer ID so notification is visible to the specific producer
+              }
+            });
+          });
+
+          return updatedScheme;
+        }
+        return scheme;
+      });
+      localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
+    }
+
+    setShowStage2Confirmation(false);
+    setPendingStage2Scheme(null);
+  };
+
+  const handleCancelStage2 = () => {
+    setShowStage2Confirmation(false);
+    setPendingStage2Scheme(null);
+  };
+
   return (
     <div className="min-h-screen bg-primary-900 flex items-stretch">
       {/* Sidebar */}
       <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-primary-800 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 h-full lg:h-auto flex flex-col`}>
         <div className="sticky top-0 z-10 bg-primary-800 flex items-center justify-between h-16 px-4 border-b border-primary-700">
           <div className="flex items-center">
-            <img 
-              src={`${process.env.PUBLIC_URL}/images/logo/LOGO.svg`} 
-              alt="AFCF Logo" 
+            <img
+              src={`${process.env.PUBLIC_URL}/images/logo/LOGO.svg`}
+              alt="AFCF Logo"
               className="h-8 w-auto"
             />
           </div>
@@ -892,9 +1553,8 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                         <span className="font-sans font-semibold whitespace-normal break-words leading-tight text-left">{item.name}</span>
                       </div>
                       <svg
-                        className={`w-4 h-4 transition-transform duration-200 ${
-                          openDropdowns.includes(item.id) ? 'rotate-180' : ''
-                        }`}
+                        className={`w-4 h-4 transition-transform duration-200 ${openDropdowns.includes(item.id) ? 'rotate-180' : ''
+                          }`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -917,9 +1577,8 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                                     <span className="font-sans whitespace-normal break-words leading-tight text-left">{subItem.name}</span>
                                   </div>
                                   <svg
-                                    className={`w-3 h-3 transition-transform duration-200 ${
-                                      openDropdowns.includes(subItem.id) ? 'rotate-180' : ''
-                                    }`}
+                                    className={`w-3 h-3 transition-transform duration-200 ${openDropdowns.includes(subItem.id) ? 'rotate-180' : ''
+                                      }`}
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -933,11 +1592,10 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                                       <li key={nestedItem.id}>
                                         <Link
                                           to={nestedItem.href}
-                                          className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${
-                                            isActive(nestedItem.href)
-                                              ? 'bg-accent-600 text-white font-semibold'
-                                              : 'text-gray-400 hover:text-white hover:bg-primary-700'
-                                          }`}
+                                          className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${isActive(nestedItem.href)
+                                            ? 'bg-accent-600 text-white font-semibold'
+                                            : 'text-gray-400 hover:text-white hover:bg-primary-700'
+                                            }`}
                                         >
                                           <div className="flex items-start flex-1 min-w-0">
                                             <span className="text-sm mr-2">{nestedItem.icon}</span>
@@ -952,11 +1610,10 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                             ) : (
                               <Link
                                 to={subItem.href}
-                                className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${
-                                  isActive(subItem.href)
-                                    ? 'bg-accent-600 text-white font-semibold'
-                                    : 'text-gray-400 hover:text-white hover:bg-primary-700'
-                                }`}
+                                className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${isActive(subItem.href)
+                                  ? 'bg-accent-600 text-white font-semibold'
+                                  : 'text-gray-400 hover:text-white hover:bg-primary-700'
+                                  }`}
                               >
                                 <div className="flex items-start flex-1 min-w-0">
                                   <span className="text-base mr-2">{subItem.icon}</span>
@@ -972,11 +1629,10 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                 ) : item.href ? (
                   <Link
                     to={item.href}
-                    className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${
-                      isActive(item.href)
-                        ? 'bg-accent-600 text-white font-semibold'
-                        : 'text-gray-300 hover:text-white hover:bg-primary-700'
-                    }`}
+                    className={`flex items-center px-3 py-2 rounded-lg transition-colors duration-200 ${isActive(item.href)
+                      ? 'bg-accent-600 text-white font-semibold'
+                      : 'text-gray-300 hover:text-white hover:bg-primary-700'
+                      }`}
                   >
                     <span className="text-lg mr-3">{item.icon}</span>
                     <span className="font-sans">{item.name}</span>
@@ -1020,7 +1676,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            
+
             <div className="flex items-center gap-3 flex-1 ml-4">
               {/* Welcome back and Profile icon grouped together */}
               <div className="flex items-center gap-3">
@@ -1032,7 +1688,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                   <span className="text-sm font-bold text-white">{role.charAt(0)}</span>
                 </div>
               </div>
-              
+
               {/* Notification icon at the far right */}
               {shouldShowNotifications && currentUserRole && (
                 <div className="relative ml-auto">
@@ -1049,11 +1705,11 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                       </span>
                     )}
                   </button>
-                  
+
                   {notificationDropdownOpen && (
                     <>
-                      <div 
-                        className="fixed inset-0 z-40" 
+                      <div
+                        className="fixed inset-0 z-40"
                         onClick={() => setNotificationDropdownOpen(false)}
                       />
                       <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-primary-900 rounded-lg shadow-xl border border-primary-700 z-50 overflow-hidden">
@@ -1066,11 +1722,10 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                               key={tab.id}
                               type="button"
                               onClick={() => setNotificationFilter(tab.id)}
-                              className={`flex-1 px-3 py-2 rounded-md text-xs font-semibold transition-colors ${
-                                notificationFilter === tab.id
-                                  ? 'bg-accent-600 text-white'
-                                  : 'bg-primary-800 text-gray-300 hover:bg-primary-700 hover:text-white'
-                              }`}
+                              className={`flex-1 px-3 py-2 rounded-md text-xs font-semibold transition-colors ${notificationFilter === tab.id
+                                ? 'bg-accent-600 text-white'
+                                : 'bg-primary-800 text-gray-300 hover:bg-primary-700 hover:text-white'
+                                }`}
                             >
                               {tab.label}
                               <span className="ml-1 text-[10px] font-normal text-gray-300">
@@ -1164,129 +1819,199 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                   <button onClick={() => setShowApprovalModal(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                 </div>
 
-                {/* Application Details Section */}
-                {notification.applicantName && 
-                 notification.metadata?.type !== 'researcherRegistration' && 
-                 notification.metadata?.type !== 'producerRegistration' && (
+                {/* Insurance Company Submission Details - Show prominently */}
+                {notification.metadata?.type === 'insuranceCompanySubmission' && notification.applicationData && (
                   <div className="space-y-4 mb-6">
                     <div className="bg-primary-800 rounded-md p-4">
-                      <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">
-                        {notification.applicantType === 'Company' ? 'Company Details' : 'Applicant Details'}
-                      </h4>
+                      <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Scheme Information</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <p className="text-xs text-gray-400 font-serif mb-1">Applicant Name</p>
-                          <p className="text-sm text-gray-100 font-sans">{notification.applicantName}</p>
+                          <p className="text-xs text-gray-400 font-serif mb-1">Scheme Name</p>
+                          <p className="text-sm text-gray-100 font-sans">{notification.schemeName || 'N/A'}</p>
                         </div>
-                        {notification.companyName && (
+                        <div>
+                          <p className="text-xs text-gray-400 font-serif mb-1">Insurance Company</p>
+                          <p className="text-sm text-gray-100 font-sans">{notification.companyName || notification.applicantName || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-primary-800 rounded-md p-4">
+                      <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Submission Details</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {(notification.applicationData as any)?.premiumRate && (
                           <div>
-                            <p className="text-xs text-gray-400 font-serif mb-1">Company Name</p>
-                            <p className="text-sm text-gray-100 font-sans">{notification.companyName}</p>
+                            <p className="text-xs text-gray-400 font-serif mb-1">Premium Rate</p>
+                            <p className="text-sm text-gray-100 font-sans">{(notification.applicationData as any).premiumRate}%</p>
                           </div>
                         )}
-                        {notification.companyId && (
-                          <div>
-                            <p className="text-xs text-gray-400 font-serif mb-1">Company ID</p>
-                            <p className="text-sm text-gray-100 font-sans">{notification.companyId}</p>
-                          </div>
-                        )}
-                        {notification.organization && (
-                          <div>
-                            <p className="text-xs text-gray-400 font-serif mb-1">Organization</p>
-                            <p className="text-sm text-gray-100 font-sans">{notification.organization}</p>
-                          </div>
-                        )}
-                        {notification.fullAddress && (
+                        {(notification.applicationData as any)?.insurancePolicies && (
                           <div className="md:col-span-2">
-                            <p className="text-xs text-gray-400 font-serif mb-1">Address</p>
-                            <p className="text-sm text-gray-100 font-sans">{notification.fullAddress}</p>
+                            <p className="text-xs text-gray-400 font-serif mb-1">Insurance Policies</p>
+                            <p className="text-sm text-gray-100 font-sans whitespace-pre-wrap">{(notification.applicationData as any).insurancePolicies}</p>
                           </div>
                         )}
-                        {notification.organizationProfile && (
+                        {(notification.applicationData as any)?.documents && (notification.applicationData as any).documents.length > 0 && (
                           <div className="md:col-span-2">
-                            <p className="text-xs text-gray-400 font-serif mb-1">Organization Profile</p>
-                            <p className="text-sm text-gray-100 font-sans">{notification.organizationProfile}</p>
+                            <p className="text-xs text-gray-400 font-serif mb-1">Supporting Documents</p>
+                            <div className="space-y-1">
+                              {(notification.applicationData as any).documents.map((doc: any, idx: number) => (
+                                <p key={idx} className="text-sm text-gray-100 font-sans">• {doc.fileName} {doc.description ? `- ${doc.description}` : ''}</p>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
                     </div>
-
-                    {/* Contact Person Information */}
-                    {(notification.contactPersonName || notification.contactPersonEmail || notification.contactPersonPhone) && 
-                     notification.metadata?.type !== 'researcherRegistration' && 
-                     notification.metadata?.type !== 'producerRegistration' && (
-                      <div className="bg-primary-800 rounded-md p-4">
-                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {notification.contactPersonName && (
-                            <div>
-                              <p className="text-xs text-gray-400 font-serif mb-1">Name</p>
-                              <p className="text-sm text-gray-100 font-sans">{notification.contactPersonName}</p>
-                            </div>
-                          )}
-                          {notification.contactPersonEmail && (
-                            <div>
-                              <p className="text-xs text-gray-400 font-serif mb-1">Email</p>
-                              <p className="text-sm text-gray-100 font-sans">{notification.contactPersonEmail}</p>
-                            </div>
-                          )}
-                          {notification.contactPersonPhone && (
-                            <div>
-                              <p className="text-xs text-gray-400 font-serif mb-1">Phone</p>
-                              <p className="text-sm text-gray-100 font-sans">{notification.contactPersonPhone}</p>
-                            </div>
-                          )}
-                          {notification.companyEmail && (
-                            <div>
-                              <p className="text-xs text-gray-400 font-serif mb-1">Company Email</p>
-                              <p className="text-sm text-gray-100 font-sans">{notification.companyEmail}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Supporting Documents */}
-                    {notification.documentUrl && notification.documentUrl !== '#' && (
-                      <div className="bg-primary-800 rounded-md p-4">
-                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-2">Supporting Documents</h4>
-                        <a
-                          href={notification.documentUrl}
-                          download
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md text-sm font-sans transition-colors"
-                        >
-                          📄 Download Application Documents
-                        </a>
-                      </div>
-                    )}
-
-                    {/* Scheme Information */}
-                    {notification.schemeId && notification.schemeName && (
-                      <div className="bg-primary-800 rounded-md p-4">
-                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Scheme Information</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-xs text-gray-400 font-serif mb-1">Scheme ID</p>
-                            <p className="text-sm text-gray-100 font-sans">{notification.schemeId}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-400 font-serif mb-1">Scheme Name</p>
-                            <p className="text-sm text-gray-100 font-sans">{notification.schemeName}</p>
-                          </div>
-                        </div>
-                        <div className="mt-3">
-                          <Link
-                            to={currentUserRole ? `/portal/${currentUserRole}/scheme-application` : '#'}
-                            onClick={() => setShowApprovalModal(null)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md text-sm font-sans transition-colors"
-                          >
-                            📝 View Scheme & Apply
-                          </Link>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
+
+                {/* Application Details Section */}
+                {notification.applicantName &&
+                  notification.metadata?.type !== 'researcherRegistration' &&
+                  notification.metadata?.type !== 'producerRegistration' &&
+                  notification.metadata?.type !== 'insuranceCompanySubmission' && (
+                    <div className="space-y-4 mb-6">
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">
+                          {notification.applicantType === 'Company' ? 'Company Details' : 'Applicant Details'}
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-gray-400 font-serif mb-1">Applicant Name</p>
+                            <p className="text-sm text-gray-100 font-sans">{notification.applicantName}</p>
+                          </div>
+                          {notification.companyName && (
+                            <div>
+                              <p className="text-xs text-gray-400 font-serif mb-1">Company Name</p>
+                              <p className="text-sm text-gray-100 font-sans">{notification.companyName}</p>
+                            </div>
+                          )}
+                          {notification.companyId && (
+                            <div>
+                              <p className="text-xs text-gray-400 font-serif mb-1">Company ID</p>
+                              <p className="text-sm text-gray-100 font-sans">{notification.companyId}</p>
+                            </div>
+                          )}
+                          {notification.organization && (
+                            <div>
+                              <p className="text-xs text-gray-400 font-serif mb-1">Organization</p>
+                              <p className="text-sm text-gray-100 font-sans">{notification.organization}</p>
+                            </div>
+                          )}
+                          {notification.fullAddress && (
+                            <div className="md:col-span-2">
+                              <p className="text-xs text-gray-400 font-serif mb-1">Address</p>
+                              <p className="text-sm text-gray-100 font-sans">{notification.fullAddress}</p>
+                            </div>
+                          )}
+                          {notification.organizationProfile && (
+                            <div className="md:col-span-2">
+                              <p className="text-xs text-gray-400 font-serif mb-1">Organization Profile</p>
+                              <p className="text-sm text-gray-100 font-sans">{notification.organizationProfile}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Contact Person Information */}
+                      {(notification.contactPersonName || notification.contactPersonEmail || notification.contactPersonPhone) &&
+                        notification.metadata?.type !== 'researcherRegistration' &&
+                        notification.metadata?.type !== 'producerRegistration' && (
+                          <div className="bg-primary-800 rounded-md p-4">
+                            <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {notification.contactPersonName && (
+                                <div>
+                                  <p className="text-xs text-gray-400 font-serif mb-1">Name</p>
+                                  <p className="text-sm text-gray-100 font-sans">{notification.contactPersonName}</p>
+                                </div>
+                              )}
+                              {notification.contactPersonEmail && (
+                                <div>
+                                  <p className="text-xs text-gray-400 font-serif mb-1">Email</p>
+                                  <p className="text-sm text-gray-100 font-sans">{notification.contactPersonEmail}</p>
+                                </div>
+                              )}
+                              {notification.contactPersonPhone && (
+                                <div>
+                                  <p className="text-xs text-gray-400 font-serif mb-1">Phone</p>
+                                  <p className="text-sm text-gray-100 font-sans">{notification.contactPersonPhone}</p>
+                                </div>
+                              )}
+                              {notification.companyEmail && (
+                                <div>
+                                  <p className="text-xs text-gray-400 font-serif mb-1">Company Email</p>
+                                  <p className="text-sm text-gray-100 font-sans">{notification.companyEmail}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Supporting Documents */}
+                      {notification.documentUrl && notification.documentUrl !== '#' && (
+                        <div className="bg-primary-800 rounded-md p-4">
+                          <h4 className="text-sm font-semibold text-accent-400 font-sans mb-2">Supporting Documents</h4>
+                          <a
+                            href={notification.documentUrl}
+                            download
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md text-sm font-sans transition-colors"
+                          >
+                            📄 Download Application Documents
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Scheme Information - Hide for approval/rejection response notifications */}
+                      {notification.schemeId && notification.schemeName &&
+                        notification.metadata?.type !== 'insuranceCompanySubmissionResponse' &&
+                        notification.metadata?.type !== 'pfiSchemeApplicationResponse' &&
+                        !(notification.metadata?.type === 'beneficiarySchemeApplicationResponse' &&
+                          notification.metadata?.isApproved === false) && (
+                          <div className="bg-primary-800 rounded-md p-4">
+                            <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Scheme Information</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <p className="text-xs text-gray-400 font-serif mb-1">Scheme ID</p>
+                                <p className="text-sm text-gray-100 font-sans">{notification.schemeId}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-400 font-serif mb-1">Scheme Name</p>
+                                <p className="text-sm text-gray-100 font-sans">{notification.schemeName}</p>
+                              </div>
+                            </div>
+                            <div className="mt-3">
+                              {currentUserRole === 'insurance' && notification.schemeId ? (
+                                <Link
+                                  to={`/portal/insurance/scheme-application?schemeId=${notification.schemeId}`}
+                                  onClick={() => {
+                                    setShowApprovalModal(null);
+                                    // Dispatch custom event to open modal in SchemeApplication page
+                                    setTimeout(() => {
+                                      window.dispatchEvent(new CustomEvent('notification-scheme-click', {
+                                        detail: { schemeId: notification.schemeId }
+                                      }));
+                                    }, 100);
+                                  }}
+                                  className="inline-flex items-center gap-2 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md text-sm font-sans transition-colors"
+                                >
+                                  📝 View Scheme & Apply
+                                </Link>
+                              ) : (
+                                <Link
+                                  to={currentUserRole ? `/portal/${currentUserRole}/scheme-application` : '#'}
+                                  onClick={() => setShowApprovalModal(null)}
+                                  className="inline-flex items-center gap-2 px-4 py-2 bg-accent-600 hover:bg-accent-700 text-white rounded-md text-sm font-sans transition-colors"
+                                >
+                                  📝 View Scheme & Apply
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  )}
 
                 {/* View Full Application Section - For CA viewing applications */}
                 {currentUserRole === 'coordinating-agency' && notification.applicationData && (
@@ -1306,10 +2031,11 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                     {showFullApplication && (() => {
                       const applicationData = notification.applicationData;
                       const notificationType = notification.metadata?.type;
-                      
-                      // Check if this is a Researcher/Student or Producer/Farmer registration
+
+                      // Check notification types
                       const isResearcherRegistration = notificationType === 'researcherRegistration';
                       const isProducerRegistration = notificationType === 'producerRegistration';
+                      const isInsuranceCompanySubmission = notificationType === 'insuranceCompanySubmission';
 
                       const buildEntries = (source: Record<string, any>, labels: Record<string, string>) =>
                         Object.entries(labels)
@@ -1462,6 +2188,67 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                                     </button>
                                   </div>
                                 </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Render Insurance Company submission data
+                      if (isInsuranceCompanySubmission) {
+                        return (
+                          <div className="mt-4 space-y-6 bg-primary-800 rounded-md p-4">
+                            <div className="space-y-4">
+                              <h5 className="text-sm font-semibold text-accent-400 font-sans uppercase tracking-wide">Insurance Company Submission Details</h5>
+
+                              <div className="bg-primary-900/60 rounded-md border border-primary-700 p-4 space-y-3">
+                                <h6 className="text-sm font-semibold text-accent-300 font-sans">Premium Rate & Policies</h6>
+                                <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                                  {applicationData.premiumRate && (
+                                    <div>
+                                      <dt className="text-xs uppercase tracking-wide text-gray-400 font-serif">Premium Rate</dt>
+                                      <dd className="text-sm text-gray-100 font-sans mt-1">{applicationData.premiumRate}%</dd>
+                                    </div>
+                                  )}
+                                  {applicationData.insurancePolicies && (
+                                    <div className="md:col-span-2">
+                                      <dt className="text-xs uppercase tracking-wide text-gray-400 font-serif mb-1">Insurance Policies</dt>
+                                      <dd className="text-sm text-gray-100 font-sans mt-1 whitespace-pre-wrap break-words">{applicationData.insurancePolicies}</dd>
+                                    </div>
+                                  )}
+                                </dl>
+                              </div>
+
+                              {applicationData.documents && applicationData.documents.length > 0 && (
+                                <div className="bg-primary-900/60 rounded-md border border-primary-700 p-4">
+                                  <div className="flex items-center justify-between gap-3 mb-3">
+                                    <h6 className="text-sm font-semibold text-accent-300 font-sans">Supporting Documents</h6>
+                                    <button
+                                      type="button"
+                                      onClick={() => openDocuments(
+                                        'Supporting Documents',
+                                        applicationData.documents.map((doc: any) => ({
+                                          label: doc.description || 'Document',
+                                          name: doc.fileName
+                                        }))
+                                      )}
+                                      className="text-xs text-accent-400 hover:text-accent-300 font-semibold transition-colors"
+                                    >
+                                      View Documents
+                                    </button>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {applicationData.documents.map((doc: any, index: number) => (
+                                      <div key={index} className="text-sm text-gray-300 font-sans">
+                                        • {doc.fileName} {doc.description ? `- ${doc.description}` : ''}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {!applicationData.premiumRate && !applicationData.insurancePolicies && (
+                                <p className="text-xs text-gray-500 font-serif">No submission data available.</p>
                               )}
                             </div>
                           </div>
@@ -1664,9 +2451,9 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                           : null,
                         step5?.certificateOfIncorporation && step5.certificateOfIncorporation !== 'Not provided'
                           ? {
-                              label: 'Certificate of Incorporation / Registration',
-                              name: String(step5.certificateOfIncorporation),
-                            }
+                            label: 'Certificate of Incorporation / Registration',
+                            name: String(step5.certificateOfIncorporation),
+                          }
                           : null,
                       ].filter(Boolean) as { label: string; name: string }[];
 
@@ -1714,59 +2501,128 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                   </div>
                 )}
 
+                {/* Beneficiary Rejection Message Modal - Show for rejected beneficiary scheme applications */}
+                {notification.metadata?.type === 'beneficiarySchemeApplicationResponse' &&
+                  notification.metadata?.isApproved === false &&
+                  (currentUserRole === 'anchor' || currentUserRole === 'lead-firm' || currentUserRole === 'producer') && (
+                    <div className="space-y-4 border-t border-primary-700 pt-4">
+                      <div className="bg-red-900/20 border border-red-700/50 rounded-md p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-2xl">❌</span>
+                          <h4 className="text-lg font-semibold text-red-400 font-sans">Application Rejected</h4>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <p className="text-xs text-gray-400 font-serif mb-1">Scheme Name</p>
+                              <p className="text-sm text-gray-100 font-sans font-medium">{notification.schemeName || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400 font-serif mb-1">Beneficiary Role</p>
+                              <p className="text-sm text-gray-100 font-sans font-medium">{notification.metadata?.beneficiaryType || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400 font-serif mb-1">Status</p>
+                              <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-red-600 text-white">
+                                Rejected
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400 font-serif mb-1">Rejection Date</p>
+                              <p className="text-sm text-gray-100 font-sans">{new Date(notification.receivedAt).toLocaleString()}</p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 pt-4 border-t border-red-700/50">
+                            <p className="text-xs text-gray-400 font-serif mb-2">Rejection Reason</p>
+                            <div className="bg-primary-800 rounded-md p-3">
+                              <p className="text-sm text-gray-100 font-sans whitespace-pre-wrap">
+                                {notification.metadata?.rejectionReason || notification.message || 'No rejection reason provided.'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 pt-4 border-t border-red-700/50">
+                            <p className="text-xs text-gray-500 font-serif italic">
+                              Note: This application has been rejected. You cannot reapply for this scheme.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowApprovalModal(null);
+                            setShowFullApplication(false);
+                          }}
+                          className="btn-primary"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                 {/* Approval Form - Show for CA when viewing application notifications, or for other roles */}
-                {((currentUserRole === 'coordinating-agency' && notification.applicationData) || 
-                  (currentUserRole !== 'coordinating-agency' && notification.role !== '🏛️ Coordinating Agency')) && (
-                  <form onSubmit={handleApprovalSubmit} className="space-y-4 border-t border-primary-700 pt-4">
-                    <div>
-                      <label className="block text-sm text-gray-300 font-serif mb-1">Decision</label>
-                      <select 
-                        value={approvalDecision} 
-                        onChange={(e) => setApprovalDecision(e.target.value)} 
-                        className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
-                        required
-                      >
-                        <option value="">Select decision</option>
-                        <option value="approve">Approve</option>
-                        <option value="reject">Reject</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-300 font-serif mb-1">
-                        {((notification.metadata?.type === 'fundProviderRegistration' || notification.metadata?.type === 'insuranceCompanyRegistration' || notification.metadata?.type === 'cooperativeGroupRegistration' || notification.metadata?.type === 'extensionOrganizationRegistration' || notification.metadata?.type === 'pfiRegistration' || notification.metadata?.type === 'anchorRegistration' || notification.metadata?.type === 'leadFirmRegistration' || notification.metadata?.type === 'producerRegistration' || notification.metadata?.type === 'researcherRegistration') && approvalDecision === 'reject')
-                          ? 'Reason for Rejection'
-                          : 'Remarks'}
-                      </label>
-                      <textarea 
-                        value={approvalRemarks} 
-                        onChange={(e) => setApprovalRemarks(e.target.value)} 
-                        rows={3} 
-                        className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600" 
-                        placeholder={((notification.metadata?.type === 'fundProviderRegistration' || notification.metadata?.type === 'insuranceCompanyRegistration' || notification.metadata?.type === 'cooperativeGroupRegistration' || notification.metadata?.type === 'extensionOrganizationRegistration' || notification.metadata?.type === 'pfiRegistration' || notification.metadata?.type === 'anchorRegistration' || notification.metadata?.type === 'leadFirmRegistration' || notification.metadata?.type === 'producerRegistration' || notification.metadata?.type === 'researcherRegistration') && approvalDecision === 'reject')
-                          ? 'Provide the reason for rejection'
-                          : 'Add remarks (optional)'} 
-                        required={((notification.metadata?.type === 'fundProviderRegistration' || notification.metadata?.type === 'insuranceCompanyRegistration' || notification.metadata?.type === 'cooperativeGroupRegistration' || notification.metadata?.type === 'extensionOrganizationRegistration' || notification.metadata?.type === 'pfiRegistration' || notification.metadata?.type === 'anchorRegistration' || notification.metadata?.type === 'leadFirmRegistration' || notification.metadata?.type === 'producerRegistration' || notification.metadata?.type === 'researcherRegistration') && approvalDecision === 'reject')}
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <button type="button" onClick={() => {
-                        setShowApprovalModal(null);
-                        setShowFullApplication(false);
-                      }} className="btn-secondary">Cancel</button>
-                      <button type="submit" className="btn-primary">Submit Decision</button>
-                    </div>
-                  </form>
-                )}
+                {/* Hide approval form for beneficiary rejections */}
+                {!((notification.metadata?.type === 'beneficiarySchemeApplicationResponse' &&
+                  notification.metadata?.isApproved === false &&
+                  (currentUserRole === 'anchor' || currentUserRole === 'lead-firm' || currentUserRole === 'producer'))) &&
+                  ((currentUserRole === 'coordinating-agency' && notification.applicationData) ||
+                    (currentUserRole !== 'coordinating-agency' && notification.role !== '🏛️ Coordinating Agency')) && (
+                    <form onSubmit={handleApprovalSubmit} className="space-y-4 border-t border-primary-700 pt-4">
+                      <div>
+                        <label className="block text-sm text-gray-300 font-serif mb-1">Decision</label>
+                        <select
+                          value={approvalDecision}
+                          onChange={(e) => setApprovalDecision(e.target.value)}
+                          className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                          required
+                        >
+                          <option value="">Select decision</option>
+                          <option value="approve">Approve</option>
+                          <option value="reject">Reject</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-300 font-serif mb-1">
+                          {((notification.metadata?.type === 'fundProviderRegistration' || notification.metadata?.type === 'insuranceCompanyRegistration' || notification.metadata?.type === 'cooperativeGroupRegistration' || notification.metadata?.type === 'extensionOrganizationRegistration' || notification.metadata?.type === 'pfiRegistration' || notification.metadata?.type === 'anchorRegistration' || notification.metadata?.type === 'leadFirmRegistration' || notification.metadata?.type === 'producerRegistration' || notification.metadata?.type === 'researcherRegistration') && approvalDecision === 'reject')
+                            ? 'Reason for Rejection'
+                            : 'Remarks'}
+                        </label>
+                        <textarea
+                          value={approvalRemarks}
+                          onChange={(e) => setApprovalRemarks(e.target.value)}
+                          rows={3}
+                          className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                          placeholder={((notification.metadata?.type === 'fundProviderRegistration' || notification.metadata?.type === 'insuranceCompanyRegistration' || notification.metadata?.type === 'cooperativeGroupRegistration' || notification.metadata?.type === 'extensionOrganizationRegistration' || notification.metadata?.type === 'pfiRegistration' || notification.metadata?.type === 'anchorRegistration' || notification.metadata?.type === 'leadFirmRegistration' || notification.metadata?.type === 'producerRegistration' || notification.metadata?.type === 'researcherRegistration') && approvalDecision === 'reject')
+                            ? 'Provide the reason for rejection'
+                            : 'Add remarks (optional)'}
+                          required={((notification.metadata?.type === 'fundProviderRegistration' || notification.metadata?.type === 'insuranceCompanyRegistration' || notification.metadata?.type === 'cooperativeGroupRegistration' || notification.metadata?.type === 'extensionOrganizationRegistration' || notification.metadata?.type === 'pfiRegistration' || notification.metadata?.type === 'anchorRegistration' || notification.metadata?.type === 'leadFirmRegistration' || notification.metadata?.type === 'producerRegistration' || notification.metadata?.type === 'researcherRegistration') && approvalDecision === 'reject')}
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button type="button" onClick={() => {
+                          setShowApprovalModal(null);
+                          setShowFullApplication(false);
+                        }} className="btn-secondary">Cancel</button>
+                        <button type="submit" className="btn-primary">Submit Decision</button>
+                      </div>
+                    </form>
+                  )}
 
                 {/* For Coordinating Agency scheme notifications (not applications), show acknowledge button */}
                 {currentUserRole === 'coordinating-agency' && notification.role === '🏛️ Coordinating Agency' && !notification.applicationData && (
                   <div className="border-t border-primary-700 pt-4 flex justify-end gap-2">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => {
                         updateNotificationStatus(notification.id, 'read');
                         setShowApprovalModal(null);
-                      }} 
+                      }}
                       className="btn-primary"
                     >
                       Acknowledge
@@ -1866,6 +2722,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
           </div>
         </div>
       )}
+
 
       {/* Document Viewer Modal */}
       {documentModal && (

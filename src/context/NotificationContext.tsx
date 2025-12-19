@@ -34,6 +34,14 @@ export type NotificationItem = {
   applicationId?: string;
   applicationData?: ApplicationData;
   applicationStatus?: 'pending' | 'approved' | 'rejected';
+  // Relationship Management Fields
+  relationshipId?: string;
+  creationRequestId?: string;
+  leaveRequestId?: string;
+  anchorId?: string;
+  anchorName?: string;
+  producerId?: string;
+  producerName?: string;
   metadata?: Record<string, any>;
 };
 
@@ -75,6 +83,14 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   // Save to localStorage whenever notifications change
   useEffect(() => {
     try {
+      // DEBUG: Track IC notifications
+      const icNotifs = notifications.filter(n => n.metadata?.type === 'insuranceCompanySubmission' || n.metadata?.type === 'insuranceCompanySchemeApplication');
+      const pfiNotifs = notifications.filter(n => n.metadata?.type === 'pfiSchemeApplication');
+      console.log('[NotificationContext] Saving notifications - IC count:', icNotifs.length, 'PFI count:', pfiNotifs.length);
+      if (icNotifs.length > 0) {
+        console.log('[NotificationContext] IC notifications:', icNotifs.map(n => ({ id: n.id, schemeId: n.schemeId, company: n.companyName })));
+      }
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
     } catch (error) {
       console.error('Error saving notifications to localStorage:', error);
@@ -90,7 +106,28 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       isViewed: false,
     };
 
-    setNotifications(prev => [newNotification, ...prev]);
+    console.log('[NotificationContext] Adding notification:', {
+      type: newNotification.metadata?.type,
+      schemeId: newNotification.schemeId,
+      id: newNotification.id
+    });
+
+    setNotifications(prev => {
+      const icCountBefore = prev.filter(n => n.metadata?.type === 'insuranceCompanySubmission' || n.metadata?.type === 'insuranceCompanySchemeApplication').length;
+      const result = [newNotification, ...prev];
+      const icCountAfter = result.filter(n => n.metadata?.type === 'insuranceCompanySubmission' || n.metadata?.type === 'insuranceCompanySchemeApplication').length;
+
+      if (icCountBefore !== icCountAfter && newNotification.metadata?.type !== 'insuranceCompanySubmission' && newNotification.metadata?.type !== 'insuranceCompanySchemeApplication') {
+        console.error('[NotificationContext] IC COUNT CHANGED when adding non-IC notification!', {
+          before: icCountBefore,
+          after: icCountAfter,
+          addedType: newNotification.metadata?.type
+        });
+      }
+
+      return result;
+    });
+
     return newNotification.id;
   }, []);
 
@@ -99,10 +136,10 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       prev.map(notif =>
         notif.id === id
           ? {
-              ...notif,
-              status,
-              isViewed: status !== 'pending' ? true : notif.isViewed,
-            }
+            ...notif,
+            status,
+            isViewed: status !== 'pending' ? true : notif.isViewed,
+          }
           : notif
       )
     );
@@ -128,17 +165,17 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, []);
 
   const hasAppliedToScheme = useCallback((schemeId: string, userRole: 'fund-provider' | 'anchor' | 'producer' | 'researcher' | 'pfi' | 'lead-firm') => {
-    return notifications.some(n => 
-      n.schemeId === schemeId && 
-      n.targetRole === 'coordinating-agency' && 
+    return notifications.some(n =>
+      n.schemeId === schemeId &&
+      n.targetRole === 'coordinating-agency' &&
       n.role.toLowerCase().includes(userRole.replace('-', ' ')) &&
       n.applicationStatus !== 'rejected'
     );
   }, [notifications]);
 
   const getApplicationsForScheme = useCallback((schemeId: string) => {
-    return notifications.filter(n => 
-      n.schemeId === schemeId && 
+    return notifications.filter(n =>
+      n.schemeId === schemeId &&
       n.targetRole === 'coordinating-agency' &&
       n.applicationData !== undefined
     );
@@ -153,8 +190,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       'researcher': ['🎓 Researcher/Student']
     };
     const roleLabels = roleMap[role] || [];
-    return notifications.find(n => 
-      n.schemeId === schemeId && 
+    return notifications.find(n =>
+      n.schemeId === schemeId &&
       n.targetRole === 'coordinating-agency' &&
       roleLabels.includes(n.role) &&
       n.applicationStatus === 'approved'

@@ -3,10 +3,10 @@ import PortalLayout from '../../../components/PortalLayout';
 
 const LocalMonitoring: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -16,26 +16,26 @@ const LocalMonitoring: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'state-monitoring', 
-      name: 'State Monitoring Team', 
-      icon: '🗺️', 
+    {
+      id: 'me-team',
+      name: 'M&E Team',
+      icon: '📋',
       href: '/portal/coordinating-agency/monitoring/state'
     },
-    { 
-      id: 'applicants', 
-      name: 'Applicants', 
-      icon: '📝', 
+    {
+      id: 'applicants',
+      name: 'Applicants',
+      icon: '📝',
       href: '/portal/coordinating-agency/applicants',
       hasDropdown: true,
       dropdownItems: [
         { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
         { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
         { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-        { 
-          id: 'fund-beneficiaries', 
-          name: 'Fund Beneficiaries', 
-          icon: '👥', 
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
           href: '/portal/coordinating-agency/fund-beneficiaries',
           hasDropdown: true,
           dropdownItems: [
@@ -47,10 +47,10 @@ const LocalMonitoring: React.FC = () => {
         }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Department', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Department',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -61,10 +61,10 @@ const LocalMonitoring: React.FC = () => {
         { id: 'legal', name: 'Legal Department', icon: '⚖️', href: '/portal/coordinating-agency/stakeholders/legal' },
         { id: 'it', name: 'IT Department', icon: '💻', href: '/portal/coordinating-agency/stakeholders/it' },
         { id: 'training', name: 'Training Department', icon: '📚', href: '/portal/coordinating-agency/stakeholders/training' },
-        { 
-          id: 'monitoring-dept', 
-          name: 'Monitoring Department', 
-          icon: '📈', 
+        {
+          id: 'monitoring-dept',
+          name: 'Monitoring Department',
+          icon: '📈',
           href: '/portal/coordinating-agency/stakeholders/monitoring',
           hasDropdown: true,
           dropdownItems: [
@@ -292,9 +292,9 @@ const LocalMonitoring: React.FC = () => {
     return monitoringReports.filter(report => {
       const matchesState = stateFilter === 'All' || report.state === stateFilter;
       const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           report.reportType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           report.assignedTo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           report.lga.toLowerCase().includes(searchTerm.toLowerCase());
+        report.reportType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.assignedTo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.lga.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesState && matchesSearch;
     });
   }, [stateFilter, searchTerm]);
@@ -315,8 +315,8 @@ const LocalMonitoring: React.FC = () => {
   };
 
   const handleReportSelect = (reportId: string) => {
-    setSelectedReports(prev => 
-      prev.includes(reportId) 
+    setSelectedReports(prev =>
+      prev.includes(reportId)
         ? prev.filter(id => id !== reportId)
         : [...prev, reportId]
     );
@@ -324,7 +324,7 @@ const LocalMonitoring: React.FC = () => {
 
   const handleMassAction = (action: string) => {
     if (selectedReports.length === 0) return;
-    
+
     alert(`${action} applied to ${selectedReports.length} selected reports`);
     setSelectedReports([]);
   };
@@ -412,19 +412,19 @@ const LocalMonitoring: React.FC = () => {
                   {selectedReports.length} report{selectedReports.length > 1 ? 's' : ''} selected
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <button 
+                  <button
                     onClick={() => handleMassAction('Approve')}
                     className="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
                   >
                     ✅ Approve Selected
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleMassAction('Export')}
                     className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
                   >
                     📤 Export Selected
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleMassAction('Forward to State')}
                     className="px-3 py-1 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700"
                   >
@@ -490,11 +490,10 @@ const LocalMonitoring: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        report.status === 'Completed' ? 'bg-green-600 text-white' :
+                      <span className={`px-2 py-1 text-xs rounded-full ${report.status === 'Completed' ? 'bg-green-600 text-white' :
                         report.status === 'In Progress' ? 'bg-yellow-600 text-white' :
-                        'bg-gray-600 text-white'
-                      }`}>
+                          'bg-gray-600 text-white'
+                        }`}>
                         {report.status}
                       </span>
                     </td>
@@ -504,8 +503,8 @@ const LocalMonitoring: React.FC = () => {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <div className="w-16 bg-primary-700 rounded-full h-2">
-                          <div 
-                            className="bg-accent-500 h-2 rounded-full" 
+                          <div
+                            className="bg-accent-500 h-2 rounded-full"
                             style={{ width: `${report.completionRate}%` }}
                           ></div>
                         </div>

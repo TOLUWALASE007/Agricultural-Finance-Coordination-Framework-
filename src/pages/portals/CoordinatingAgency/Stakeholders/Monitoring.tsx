@@ -4,10 +4,10 @@ import PortalLayout from '../../../../components/PortalLayout';
 
 const Monitoring: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -17,26 +17,26 @@ const Monitoring: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'state-monitoring', 
-      name: 'State Monitoring Team', 
-      icon: '🗺️', 
+    {
+      id: 'me-team',
+      name: 'M&E Team',
+      icon: '📋',
       href: '/portal/coordinating-agency/monitoring/state'
     },
-    { 
-      id: 'applicants', 
-      name: 'Applicants', 
-      icon: '📝', 
+    {
+      id: 'applicants',
+      name: 'Applicants',
+      icon: '📝',
       href: '/portal/coordinating-agency/applicants',
       hasDropdown: true,
       dropdownItems: [
         { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
         { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
         { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-        { 
-          id: 'fund-beneficiaries', 
-          name: 'Fund Beneficiaries', 
-          icon: '👥', 
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
           href: '/portal/coordinating-agency/fund-beneficiaries',
           hasDropdown: true,
           dropdownItems: [
@@ -48,10 +48,10 @@ const Monitoring: React.FC = () => {
         }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Department', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Department',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -78,9 +78,9 @@ const Monitoring: React.FC = () => {
     },
     {
       id: 'state',
-      name: 'State Monitoring Team',
-      icon: '🗺️',
-      description: 'State-level monitoring across all 36 states and FCT',
+      name: 'M&E Team',
+      icon: '📋',
+      description: 'Monitoring & Evaluation team for verification of all user submissions',
       href: '/portal/coordinating-agency/monitoring/state',
       stats: { reports: '847', coverage: '37 States', status: 'Active' }
     },
@@ -171,7 +171,7 @@ const Monitoring: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-primary-600">
                 <div>
                   <p className="text-xs text-gray-400 font-serif">Reports</p>
@@ -188,7 +188,7 @@ const Monitoring: React.FC = () => {
                   </span>
                 </div>
               </div>
-              
+
               <div className="mt-4 flex items-center text-accent-400 text-sm font-sans">
                 View Reports →
               </div>
@@ -224,4 +224,5 @@ const Monitoring: React.FC = () => {
 };
 
 export default Monitoring;
+
 

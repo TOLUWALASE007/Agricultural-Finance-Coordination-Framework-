@@ -22,7 +22,7 @@ const LazySection: React.FC<LazySectionProps> = ({
 
   const getAnimationClasses = () => {
     const baseClasses = 'transition-all duration-700 ease-out';
-    
+
     if (!isIntersecting) {
       switch (animation) {
         case 'fade-up':
@@ -37,7 +37,7 @@ const LazySection: React.FC<LazySectionProps> = ({
           return `${baseClasses} opacity-0 translate-y-8`;
       }
     }
-    
+
     return `${baseClasses} opacity-100 translate-y-0 translate-x-0`;
   };
 

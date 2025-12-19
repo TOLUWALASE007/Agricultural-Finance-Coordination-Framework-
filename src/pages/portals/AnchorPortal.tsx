@@ -8,13 +8,26 @@ const AnchorPortal: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/anchor' },
     { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/anchor/scheme-application' },
+    {
+      id: 'producer-management',
+      name: 'Producer/Farmer Management',
+      icon: '🌾',
+      hasDropdown: true,
+      dropdownItems: [
+        { id: 'create-producer', name: 'Create New Producer/Farmer', icon: '➕', href: '/portal/anchor/producer-management/create' },
+        { id: 'invite-producers', name: 'Invite Existing Producers', icon: '📨', href: '/portal/anchor/producer-management/invite' },
+        { id: 'manage-producers', name: 'Manage Current Producers', icon: '👥', href: '/portal/anchor/producer-management/manage' },
+        { id: 'join-requests', name: 'View Join Requests', icon: '📥', href: '/portal/anchor/producer-management/requests' },
+        { id: 'activity-logs', name: 'Producer Activity Logs', icon: '📋', href: '/portal/anchor/producer-management/logs' },
+      ]
+    },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/anchor/settings' }
   ];
 
   const [status, setStatus] = useState<AnchorStatus>('unverified');
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [recordLoaded, setRecordLoaded] = useState(false);
- 
+
   useEffect(() => {
     const snapshot = getAnchorStatusSnapshot();
     if (snapshot) {
@@ -23,7 +36,7 @@ const AnchorPortal: React.FC = () => {
     }
     setRecordLoaded(true);
   }, []);
- 
+
   const isVerified = status === 'verified';
 
   const stats = [
@@ -117,7 +130,7 @@ const AnchorPortal: React.FC = () => {
       </PortalLayout>
     );
   }
- 
+
   if (!isVerified) {
     return (
       <PortalLayout role="Anchor" roleIcon="⚓" sidebarItems={sidebarItems}>
@@ -204,12 +217,11 @@ const AnchorPortal: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                      activity.status === 'performing' ? 'bg-green-500 text-white' :
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${activity.status === 'performing' ? 'bg-green-500 text-white' :
                       activity.status === 'non-performing' ? 'bg-yellow-500 text-white' :
-                      activity.status === 'bad schemes' ? 'bg-red-500 text-white' :
-                      'bg-gray-500 text-white'
-                    }`}>
+                        activity.status === 'bad schemes' ? 'bg-red-500 text-white' :
+                          'bg-gray-500 text-white'
+                      }`}>
                       {activity.status}
                     </span>
                     <button
@@ -357,7 +369,7 @@ const AnchorPortal: React.FC = () => {
             >
               📝 Apply to Schemes
             </Link>
-            <button 
+            <button
               className="btn-secondary"
               onClick={() => generateReport('Quality Assessment Report', 'PDF')}
             >
@@ -388,12 +400,11 @@ const AnchorPortal: React.FC = () => {
                 <h3 className="text-lg font-semibold font-sans text-gray-100 mb-2">{selectedScheme.description}</h3>
                 <div className="flex flex-wrap gap-4 mb-3">
                   {selectedScheme.status && (
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      selectedScheme.status === 'performing' ? 'bg-green-500 text-white' :
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${selectedScheme.status === 'performing' ? 'bg-green-500 text-white' :
                       selectedScheme.status === 'non-performing' ? 'bg-yellow-500 text-white' :
-                      selectedScheme.status === 'bad schemes' ? 'bg-red-500 text-white' :
-                      'bg-gray-500 text-white'
-                    }`}>
+                        selectedScheme.status === 'bad schemes' ? 'bg-red-500 text-white' :
+                          'bg-gray-500 text-white'
+                      }`}>
                       {selectedScheme.status}
                     </span>
                   )}
@@ -405,7 +416,7 @@ const AnchorPortal: React.FC = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="bg-primary-700 rounded-lg p-4">
                 <h4 className="text-md font-semibold font-sans text-gray-100 mb-2">Scheme Overview</h4>
                 <p className="text-sm text-gray-300 font-serif leading-relaxed whitespace-pre-line">

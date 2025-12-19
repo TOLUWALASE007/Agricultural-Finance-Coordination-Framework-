@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import PortalLayout from '../../components/PortalLayout';
 import { generateReport, processAction, addNewRecord, viewDetails } from '../../utils/quickActions';
-import { getInsuranceCompanyStatusSnapshot, InsuranceCompanyStatus } from '../../utils/localDatabase';
+import { getInsuranceCompanyStatusSnapshot, InsuranceCompanyStatus, getActiveInsuranceCompanyRecord } from '../../utils/localDatabase';
 
 const InsurancePortal: React.FC = () => {
   const sidebarItems = [
@@ -25,6 +25,36 @@ const InsurancePortal: React.FC = () => {
   }, []);
  
   const isVerified = status === 'verified';
+  const activeInsuranceCompany = useMemo(() => getActiveInsuranceCompanyRecord(), []);
+
+  // Fetch assigned schemes
+  const [assignedSchemes, setAssignedSchemes] = useState<any[]>([]);
+  useEffect(() => {
+    if (!activeInsuranceCompany) return;
+    
+    const storedSchemes = localStorage.getItem('fundSchemes');
+    if (storedSchemes) {
+      try {
+        const parsedSchemes = JSON.parse(storedSchemes);
+        const schemes = parsedSchemes.filter((scheme: any) => {
+          return scheme.status === 'Active' && 
+                 scheme.selectedInsuranceCompanyIds?.includes(activeInsuranceCompany.id);
+        }).map((scheme: any) => ({
+          id: scheme.id,
+          name: scheme.name,
+          amount: scheme.amount,
+          state: scheme.state,
+          workflowStage: scheme.workflowStage || 'initial',
+          submissionStatus: scheme.insuranceCompanySubmissions?.find((sub: any) => 
+            sub.insuranceCompanyId === activeInsuranceCompany.id
+          )?.status || 'pending'
+        }));
+        setAssignedSchemes(schemes);
+      } catch (e) {
+        console.error('Error loading schemes:', e);
+      }
+    }
+  }, [activeInsuranceCompany]);
 
   const stats = [
     { title: 'Active Policies', value: '8,247', change: '+156', icon: '🛡️' },
@@ -185,6 +215,44 @@ const InsurancePortal: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Schemes Card */}
+        {assignedSchemes.length > 0 && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold font-sans text-gray-100">Assigned Schemes</h3>
+              <Link
+                to="/portal/insurance/scheme-application"
+                className="text-sm text-accent-400 hover:text-accent-300 font-sans"
+              >
+                View All →
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {assignedSchemes.slice(0, 3).map((scheme) => (
+                <Link
+                  key={scheme.id}
+                  to="/portal/insurance/scheme-application"
+                  className="block p-3 bg-primary-700 rounded-lg hover:bg-primary-600 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-medium font-sans text-gray-100">{scheme.name}</p>
+                      <p className="text-sm text-gray-300 font-serif">{scheme.amount} • {scheme.state}</p>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      scheme.submissionStatus === 'approved' ? 'bg-green-500 text-white' :
+                      scheme.submissionStatus === 'pending' ? 'bg-yellow-500 text-white' :
+                      'bg-gray-500 text-white'
+                    }`}>
+                      {scheme.submissionStatus}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="card">

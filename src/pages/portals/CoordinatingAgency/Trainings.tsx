@@ -3,10 +3,10 @@ import PortalLayout from '../../../components/PortalLayout';
 
 const Trainings: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -16,16 +16,16 @@ const Trainings: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'state-monitoring', 
-      name: 'State Monitoring Team', 
-      icon: '🗺️', 
+    {
+      id: 'me-team',
+      name: 'M&E Team',
+      icon: '📋',
       href: '/portal/coordinating-agency/monitoring/state'
     },
-    { 
-      id: 'representative-body', 
-      name: 'Representative Body', 
-      icon: '🏛️', 
+    {
+      id: 'representative-body',
+      name: 'Representative Body',
+      icon: '🏛️',
       href: '/portal/coordinating-agency/representative',
       hasDropdown: true,
       dropdownItems: [
@@ -34,20 +34,20 @@ const Trainings: React.FC = () => {
         { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
       ]
     },
-    { 
-      id: 'applicants', 
-      name: 'Applicants', 
-      icon: '📝', 
+    {
+      id: 'applicants',
+      name: 'Applicants',
+      icon: '📝',
       href: '/portal/coordinating-agency/applicants',
       hasDropdown: true,
       dropdownItems: [
         { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
         { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
         { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-        { 
-          id: 'fund-beneficiaries', 
-          name: 'Fund Beneficiaries', 
-          icon: '👥', 
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
           href: '/portal/coordinating-agency/fund-beneficiaries',
           hasDropdown: true,
           dropdownItems: [
@@ -59,10 +59,10 @@ const Trainings: React.FC = () => {
         }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Department', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Department',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -276,9 +276,9 @@ const Trainings: React.FC = () => {
   const filteredTrainings = useMemo(() => {
     return trainingPrograms.filter(training => {
       const matchesSearch = training.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           training.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           training.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           training.location.toLowerCase().includes(searchTerm.toLowerCase());
+        training.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        training.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        training.location.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === 'All' || training.status === filterStatus;
       const matchesCategory = filterCategory === 'All' || training.category === filterCategory;
       return matchesSearch && matchesStatus && matchesCategory;
@@ -301,8 +301,8 @@ const Trainings: React.FC = () => {
   };
 
   const handleSelectTraining = (trainingId: string) => {
-    setSelectedTrainings(prev => 
-      prev.includes(trainingId) 
+    setSelectedTrainings(prev =>
+      prev.includes(trainingId)
         ? prev.filter(id => id !== trainingId)
         : [...prev, trainingId]
     );
@@ -405,7 +405,7 @@ const Trainings: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
             <h3 className="text-lg font-semibold font-sans text-gray-100 mb-2 sm:mb-0">Training Programs</h3>
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={handleSelectAll}
                 className="btn-secondary text-sm"
               >
@@ -435,11 +435,10 @@ const Trainings: React.FC = () => {
                       <p className="text-sm text-gray-400 font-serif">{training.category} • {training.duration}</p>
                     </div>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-sans ${
-                    training.status === 'Ongoing' ? 'bg-green-600 text-green-100' :
+                  <span className={`px-2 py-1 rounded-full text-xs font-sans ${training.status === 'Ongoing' ? 'bg-green-600 text-green-100' :
                     training.status === 'Scheduled' ? 'bg-blue-600 text-blue-100' :
-                    'bg-gray-600 text-gray-100'
-                  }`}>
+                      'bg-gray-600 text-gray-100'
+                    }`}>
                     {training.status}
                   </span>
                 </div>
@@ -549,3 +548,4 @@ const Trainings: React.FC = () => {
 };
 
 export default Trainings;
+

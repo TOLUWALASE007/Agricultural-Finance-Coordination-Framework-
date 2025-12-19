@@ -3,10 +3,10 @@ import PortalLayout from '../../../components/PortalLayout';
 
 const Stakeholders: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -16,26 +16,26 @@ const Stakeholders: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'state-monitoring', 
-      name: 'State Monitoring Team', 
-      icon: '🗺️', 
+    {
+      id: 'me-team',
+      name: 'M&E Team',
+      icon: '📋',
       href: '/portal/coordinating-agency/monitoring/state'
     },
-    { 
-      id: 'applicants', 
-      name: 'Applicants', 
-      icon: '📝', 
+    {
+      id: 'applicants',
+      name: 'Applicants',
+      icon: '📝',
       href: '/portal/coordinating-agency/applicants',
       hasDropdown: true,
       dropdownItems: [
         { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
         { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
         { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-        { 
-          id: 'fund-beneficiaries', 
-          name: 'Fund Beneficiaries', 
-          icon: '👥', 
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
           href: '/portal/coordinating-agency/fund-beneficiaries',
           hasDropdown: true,
           dropdownItems: [
@@ -47,10 +47,10 @@ const Stakeholders: React.FC = () => {
         }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Department', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Department',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -125,25 +125,25 @@ const Stakeholders: React.FC = () => {
   const totalPages = Math.ceil(filteredSchemes.length / itemsPerPage);
 
   const stats = [
-    { 
-      title: 'Total Schemes', 
-      value: schemes.length.toString(), 
-      icon: '📊' 
+    {
+      title: 'Total Schemes',
+      value: schemes.length.toString(),
+      icon: '📊'
     },
-    { 
-      title: 'Pending Approval', 
-      value: Object.values(schemeStatuses).filter(s => s === 'Pending Approval').length.toString(), 
-      icon: '⏳' 
+    {
+      title: 'Pending Approval',
+      value: Object.values(schemeStatuses).filter(s => s === 'Pending Approval').length.toString(),
+      icon: '⏳'
     },
-    { 
-      title: 'Approved', 
-      value: Object.values(schemeStatuses).filter(s => s === 'Approved').length.toString(), 
-      icon: '✅' 
+    {
+      title: 'Approved',
+      value: Object.values(schemeStatuses).filter(s => s === 'Approved').length.toString(),
+      icon: '✅'
     },
-    { 
-      title: 'Disapproved', 
-      value: Object.values(schemeStatuses).filter(s => s === 'Disapproved').length.toString(), 
-      icon: '❌' 
+    {
+      title: 'Disapproved',
+      value: Object.values(schemeStatuses).filter(s => s === 'Disapproved').length.toString(),
+      icon: '❌'
     }
   ];
 
@@ -204,11 +204,10 @@ const Stakeholders: React.FC = () => {
                           <h3 className="text-lg font-semibold font-sans text-gray-100">{scheme.name}</h3>
                           <p className="text-sm text-gray-400 font-serif">ID: {scheme.id}</p>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          currentStatus === 'Approved' ? 'bg-green-500 text-white' :
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${currentStatus === 'Approved' ? 'bg-green-500 text-white' :
                           currentStatus === 'Disapproved' ? 'bg-red-500 text-white' :
-                          'bg-yellow-500 text-gray-900'
-                        }`}>
+                            'bg-yellow-500 text-gray-900'
+                          }`}>
                           {currentStatus}
                         </span>
                       </div>
@@ -264,8 +263,8 @@ const Stakeholders: React.FC = () => {
           {/* Pagination - Always at bottom */}
           {totalPages > 1 && (
             <div className="flex items-center justify-center space-x-2 pt-4 border-t border-primary-600">
-              <button 
-                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))} 
+              <button
+                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
                 disabled={currentPage === 1}
                 className="btn-secondary text-sm p-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -274,8 +273,8 @@ const Stakeholders: React.FC = () => {
               <span className="text-gray-300 text-sm font-sans">
                 Page {currentPage} of {totalPages}
               </span>
-              <button 
-                onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))} 
+              <button
+                onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 className="btn-secondary text-sm p-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -294,4 +293,5 @@ const Stakeholders: React.FC = () => {
 };
 
 export default Stakeholders;
+
 

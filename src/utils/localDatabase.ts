@@ -2504,3 +2504,517 @@ export const clearProducers = () => {
   if (!isBrowser) return;
   localStorage.removeItem(PRODUCERS_KEY);
 };
+
+// ==================== M&E Team Types and Interfaces ====================
+
+export type MEMemberStatus = 'active' | 'inactive' | 'suspended';
+
+export interface MEMemberFormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  position: string;
+  department: string;
+  state: string;
+  lga: string;
+  address: string;
+  qualification: string;
+  yearsOfExperience: string;
+  specialization: string;
+  profileImage?: string;
+}
+
+export interface MEMemberRecord {
+  id: string;
+  email: string;
+  password: string;
+  status: MEMemberStatus;
+  createdAt: string;
+  lastActiveAt?: string;
+  createdBy: string; // CA user ID
+  assignedProjectsCount: number;
+  completedProjectsCount: number;
+  formData: MEMemberFormData;
+}
+
+export type MEProjectStatus = 'pending' | 'in-progress' | 'evaluation-complete' | 'archived';
+export type MEProjectType = 'registration' | 'scheme-application' | 'incident-report';
+export type MERecommendation = 'approve' | 'reject' | 'pending';
+
+export interface MEProjectAttachment {
+  id: string;
+  fileName: string;
+  fileType: string;
+  uploadedAt: string;
+  uploadedBy: string;
+  description?: string;
+}
+
+export interface MEEvaluationReport {
+  id: string;
+  projectId: string;
+  evaluatorId: string;
+  evaluatorName: string;
+  findings: string;
+  recommendation: MERecommendation;
+  recommendationReason: string;
+  additionalNotes?: string;
+  evidenceAttachments?: MEProjectAttachment[];
+  submittedAt: string;
+  reviewedByCA?: boolean;
+  caReviewedAt?: string;
+  caReviewNotes?: string;
+  isLeadMEReport?: boolean;          // True if submitted by Lead M&E
+}
+
+export interface MEProject {
+  id: string;
+  name: string;
+  description?: string;
+  projectType: MEProjectType;
+  status: MEProjectStatus;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+
+  // Source reference
+  sourceType: 'producer' | 'anchor' | 'lead-firm' | 'cooperative' | 'pfi' | 'insurance' | 'extension' | 'researcher';
+  sourceId: string; // ID of the user/entity being evaluated
+  sourceName: string;
+  sourceEmail?: string;
+  sourcePhone?: string;
+
+  // Related data
+  schemeId?: string;
+  schemeName?: string;
+  notificationId?: string;
+
+  // Attached user submission data
+  submissionData: Record<string, any>;
+  attachments: MEProjectAttachment[];
+
+  // Assignment
+  assignedMemberIds: string[];
+  assignedMemberNames: string[];
+
+  // Lead M&E designation
+  leadMEMemberId?: string;           // ID of the designated Lead M&E
+  leadMEMemberName?: string;         // Name of the designated Lead M&E
+  leadMEAssignedAt?: string;         // Timestamp when Lead M&E was assigned
+  leadMEAssignedBy?: string;         // CA user who assigned the Lead M&E
+
+  // Timestamps
+  createdAt: string;
+  createdBy: string;
+  dueDate?: string;
+  startedAt?: string;
+  completedAt?: string;
+
+  // Evaluation reports from assigned members
+  evaluationReports: MEEvaluationReport[];
+
+  // Final CA decision after reviewing M&E reports
+  caDecision?: 'approved' | 'rejected' | 'pending-review';
+  caDecisionAt?: string;
+  caDecisionNotes?: string;
+}
+
+const ME_MEMBERS_KEY = 'afcf_me_members';
+const ME_PROJECTS_KEY = 'afcf_me_projects';
+
+// ==================== M&E Member Functions ====================
+
+export const getMEMembers = (): MEMemberRecord[] => {
+  if (!isBrowser) return [];
+  return safeParse<MEMemberRecord[]>(localStorage.getItem(ME_MEMBERS_KEY), []);
+};
+
+const saveMEMembers = (records: MEMemberRecord[]) => {
+  if (!isBrowser) return;
+  localStorage.setItem(ME_MEMBERS_KEY, JSON.stringify(records));
+};
+
+export const findMEMemberByEmail = (email: string): MEMemberRecord | undefined => {
+  return getMEMembers().find((record) => record.email.toLowerCase() === email.toLowerCase());
+};
+
+export const findMEMemberById = (id: string): MEMemberRecord | undefined => {
+  return getMEMembers().find((record) => record.id === id);
+};
+
+export const registerMEMember = (
+  payload: Omit<MEMemberRecord, 'id' | 'createdAt' | 'assignedProjectsCount' | 'completedProjectsCount'>
+): MEMemberRecord => {
+  if (!isBrowser) {
+    throw new Error('Registration is only supported in a browser environment.');
+  }
+
+  const existing = findMEMemberByEmail(payload.email);
+  if (existing) {
+    throw new Error('An M&E Team Member with this email already exists.');
+  }
+
+  const newRecord: MEMemberRecord = {
+    ...payload,
+    id: `me_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+    assignedProjectsCount: 0,
+    completedProjectsCount: 0,
+  };
+
+  const updated = [newRecord, ...getMEMembers()];
+  saveMEMembers(updated);
+  return newRecord;
+};
+
+export const updateMEMemberRecord = (
+  id: string,
+  updates: Partial<Omit<MEMemberRecord, 'id'>>
+): MEMemberRecord | undefined => {
+  if (!isBrowser) return undefined;
+  const records = getMEMembers();
+  const index = records.findIndex((record) => record.id === id);
+  if (index === -1) return undefined;
+
+  if (updates.email) {
+    const normalizedEmail = updates.email.trim().toLowerCase();
+    const duplicate = records.find(
+      (record) => record.id !== id && record.email.toLowerCase() === normalizedEmail
+    );
+    if (duplicate) {
+      throw new Error('An M&E Team Member with this email already exists.');
+    }
+    updates.email = updates.email.trim();
+  }
+
+  const updatedRecord: MEMemberRecord = {
+    ...records[index],
+    ...updates,
+    formData: {
+      ...records[index].formData,
+      ...(updates.formData || {}),
+    },
+  };
+
+  records[index] = updatedRecord;
+  saveMEMembers(records);
+  return updatedRecord;
+};
+
+export const updateMEMemberStatus = (
+  id: string,
+  status: MEMemberStatus
+): MEMemberRecord | undefined => {
+  return updateMEMemberRecord(id, { status, lastActiveAt: new Date().toISOString() });
+};
+
+export const authenticateMEMember = (email: string, password: string): MEMemberRecord | null => {
+  const record = findMEMemberByEmail(email);
+  if (!record) return null;
+  if (record.password !== password) return null;
+  if (record.status !== 'active') return null;
+  return record;
+};
+
+export const deleteMEMember = (id: string): boolean => {
+  if (!isBrowser) return false;
+  const records = getMEMembers();
+  const index = records.findIndex((record) => record.id === id);
+  if (index === -1) return false;
+
+  records.splice(index, 1);
+  saveMEMembers(records);
+  return true;
+};
+
+export const clearMEMembers = () => {
+  if (!isBrowser) return;
+  localStorage.removeItem(ME_MEMBERS_KEY);
+};
+
+export const buildMEMemberSession = (record: MEMemberRecord): StoredUserSession => ({
+  id: record.id,
+  email: record.email,
+  role: 'Coordinating Agency', // M&E members access through CA portal but with limited permissions
+  status: record.status === 'active' ? 'verified' : 'unverified',
+  fullName: record.formData.fullName,
+  lastLogin: new Date().toISOString(),
+});
+
+// ==================== M&E Project Functions ====================
+
+export const getMEProjects = (): MEProject[] => {
+  if (!isBrowser) return [];
+  return safeParse<MEProject[]>(localStorage.getItem(ME_PROJECTS_KEY), []);
+};
+
+const saveMEProjects = (projects: MEProject[]) => {
+  if (!isBrowser) return;
+  localStorage.setItem(ME_PROJECTS_KEY, JSON.stringify(projects));
+};
+
+export const findMEProjectById = (id: string): MEProject | undefined => {
+  return getMEProjects().find((project) => project.id === id);
+};
+
+export const getMEProjectsByMemberId = (memberId: string): MEProject[] => {
+  return getMEProjects().filter((project) => project.assignedMemberIds.includes(memberId));
+};
+
+export const getMEProjectsByStatus = (status: MEProjectStatus): MEProject[] => {
+  return getMEProjects().filter((project) => project.status === status);
+};
+
+export const createMEProject = (
+  payload: Omit<MEProject, 'id' | 'createdAt' | 'evaluationReports'>
+): MEProject => {
+  if (!isBrowser) {
+    throw new Error('Project creation is only supported in a browser environment.');
+  }
+
+  const newProject: MEProject = {
+    ...payload,
+    id: `mep_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+    evaluationReports: [],
+  };
+
+  const updated = [newProject, ...getMEProjects()];
+  saveMEProjects(updated);
+
+  // Update assigned member counts
+  payload.assignedMemberIds.forEach((memberId) => {
+    const member = findMEMemberById(memberId);
+    if (member) {
+      updateMEMemberRecord(memberId, {
+        assignedProjectsCount: member.assignedProjectsCount + 1,
+      });
+    }
+  });
+
+  return newProject;
+};
+
+export const updateMEProject = (
+  id: string,
+  updates: Partial<Omit<MEProject, 'id' | 'createdAt'>>
+): MEProject | undefined => {
+  if (!isBrowser) return undefined;
+  const projects = getMEProjects();
+  const index = projects.findIndex((project) => project.id === id);
+  if (index === -1) return undefined;
+
+  const updatedProject: MEProject = {
+    ...projects[index],
+    ...updates,
+  };
+
+  projects[index] = updatedProject;
+  saveMEProjects(projects);
+  return updatedProject;
+};
+
+export const updateMEProjectStatus = (
+  id: string,
+  status: MEProjectStatus
+): MEProject | undefined => {
+  const updates: Partial<MEProject> = { status };
+
+  if (status === 'in-progress' && !findMEProjectById(id)?.startedAt) {
+    updates.startedAt = new Date().toISOString();
+  }
+
+  if (status === 'evaluation-complete' || status === 'archived') {
+    updates.completedAt = new Date().toISOString();
+
+    // Update completed count for all assigned members
+    const project = findMEProjectById(id);
+    if (project && status === 'evaluation-complete') {
+      project.assignedMemberIds.forEach((memberId) => {
+        const member = findMEMemberById(memberId);
+        if (member) {
+          updateMEMemberRecord(memberId, {
+            completedProjectsCount: member.completedProjectsCount + 1,
+          });
+        }
+      });
+    }
+  }
+
+  return updateMEProject(id, updates);
+};
+
+export const addMEProjectAttachment = (
+  projectId: string,
+  attachment: Omit<MEProjectAttachment, 'id' | 'uploadedAt'>
+): MEProject | undefined => {
+  const project = findMEProjectById(projectId);
+  if (!project) return undefined;
+
+  const newAttachment: MEProjectAttachment = {
+    ...attachment,
+    id: `att_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    uploadedAt: new Date().toISOString(),
+  };
+
+  return updateMEProject(projectId, {
+    attachments: [...project.attachments, newAttachment],
+  });
+};
+
+export const submitMEEvaluationReport = (
+  projectId: string,
+  report: Omit<MEEvaluationReport, 'id' | 'projectId' | 'submittedAt' | 'isLeadMEReport'>
+): MEProject | undefined => {
+  const project = findMEProjectById(projectId);
+  if (!project) return undefined;
+
+  // Check if the evaluator is the Lead M&E for this project
+  const isLeadME = project.leadMEMemberId === report.evaluatorId;
+
+  const newReport: MEEvaluationReport = {
+    ...report,
+    id: `rep_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    projectId,
+    submittedAt: new Date().toISOString(),
+    isLeadMEReport: isLeadME,  // Automatically flag if submitted by Lead M&E
+  };
+
+  // Check if this evaluator already submitted a report
+  const existingReportIndex = project.evaluationReports.findIndex(
+    (r) => r.evaluatorId === report.evaluatorId
+  );
+
+  let updatedReports: MEEvaluationReport[];
+  if (existingReportIndex >= 0) {
+    // Replace existing report
+    updatedReports = [...project.evaluationReports];
+    updatedReports[existingReportIndex] = newReport;
+  } else {
+    updatedReports = [...project.evaluationReports, newReport];
+  }
+
+  // Check if all assigned members have submitted their reports
+  const allReportsSubmitted = project.assignedMemberIds.every((memberId) =>
+    updatedReports.some((r) => r.evaluatorId === memberId)
+  );
+
+  return updateMEProject(projectId, {
+    evaluationReports: updatedReports,
+    status: allReportsSubmitted ? 'evaluation-complete' : 'in-progress',
+    completedAt: allReportsSubmitted ? new Date().toISOString() : project.completedAt,
+  });
+};
+
+export const setCADecisionOnMEProject = (
+  projectId: string,
+  decision: 'approved' | 'rejected' | 'pending-review',
+  notes?: string
+): MEProject | undefined => {
+  return updateMEProject(projectId, {
+    caDecision: decision,
+    caDecisionAt: new Date().toISOString(),
+    caDecisionNotes: notes,
+    status: 'archived',
+  });
+};
+
+export const deleteMEProject = (id: string): boolean => {
+  if (!isBrowser) return false;
+  const projects = getMEProjects();
+  const index = projects.findIndex((project) => project.id === id);
+  if (index === -1) return false;
+
+  projects.splice(index, 1);
+  saveMEProjects(projects);
+  return true;
+};
+
+export const clearMEProjects = () => {
+  if (!isBrowser) return;
+  localStorage.removeItem(ME_PROJECTS_KEY);
+};
+
+// ==================== Lead M&E Management Functions ====================
+
+/**
+ * Assign a Lead M&E to a project
+ * The Lead M&E must be one of the already assigned members
+ */
+export const assignLeadMEToProject = (
+  projectId: string,
+  leadMEMemberId: string,
+  assignedBy: string
+): MEProject | undefined => {
+  const project = findMEProjectById(projectId);
+  if (!project) return undefined;
+
+  // Validate that the Lead M&E is one of the assigned members
+  if (!project.assignedMemberIds.includes(leadMEMemberId)) {
+    throw new Error('Lead M&E must be one of the assigned members for this project.');
+  }
+
+  // Get the Lead M&E member name
+  const memberIndex = project.assignedMemberIds.indexOf(leadMEMemberId);
+  const leadMEMemberName = project.assignedMemberNames[memberIndex];
+
+  return updateMEProject(projectId, {
+    leadMEMemberId,
+    leadMEMemberName,
+    leadMEAssignedAt: new Date().toISOString(),
+    leadMEAssignedBy: assignedBy,
+  });
+};
+
+/**
+ * Remove Lead M&E designation from a project
+ */
+export const removeLeadMEFromProject = (
+  projectId: string
+): MEProject | undefined => {
+  return updateMEProject(projectId, {
+    leadMEMemberId: undefined,
+    leadMEMemberName: undefined,
+    leadMEAssignedAt: undefined,
+    leadMEAssignedBy: undefined,
+  });
+};
+
+/**
+ * Check if a specific M&E member is the Lead M&E for a project
+ */
+export const isLeadMEForProject = (
+  projectId: string,
+  memberId: string
+): boolean => {
+  const project = findMEProjectById(projectId);
+  if (!project) return false;
+  return project.leadMEMemberId === memberId;
+};
+
+// Get active M&E member from session
+export const getActiveMEMemberRecord = (): MEMemberRecord | null => {
+  if (!isBrowser) return null;
+  const rawSession = localStorage.getItem('me_member_session');
+  if (!rawSession) return null;
+
+  const session = safeParse<{ id: string } | null>(rawSession, null);
+  if (!session || !session.id) return null;
+
+  return findMEMemberById(session.id) || null;
+};
+
+// Save M&E member session
+export const saveMEMemberSession = (member: MEMemberRecord) => {
+  if (!isBrowser) return;
+  localStorage.setItem('me_member_session', JSON.stringify({
+    id: member.id,
+    email: member.email,
+    fullName: member.formData.fullName,
+    lastLogin: new Date().toISOString(),
+  }));
+};
+
+// Clear M&E member session
+export const clearMEMemberSession = () => {
+  if (!isBrowser) return;
+  localStorage.removeItem('me_member_session');
+};

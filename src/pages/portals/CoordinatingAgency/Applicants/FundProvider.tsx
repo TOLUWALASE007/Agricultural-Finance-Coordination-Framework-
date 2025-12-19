@@ -5,10 +5,10 @@ import { useNotifications } from '../../../../context/NotificationContext';
 
 const FundProviderApplicants: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -18,16 +18,16 @@ const FundProviderApplicants: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'state-monitoring', 
-      name: 'State Monitoring Team', 
-      icon: '🗺️', 
+    {
+      id: 'me-team',
+      name: 'M&E Team',
+      icon: '📋',
       href: '/portal/coordinating-agency/monitoring/state'
     },
-    { 
-      id: 'representative-body', 
-      name: 'Representative Body', 
-      icon: '🏛️', 
+    {
+      id: 'representative-body',
+      name: 'Representative Body',
+      icon: '🏛️',
       href: '/portal/coordinating-agency/representative',
       hasDropdown: true,
       dropdownItems: [
@@ -36,20 +36,20 @@ const FundProviderApplicants: React.FC = () => {
         { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
       ]
     },
-    { 
-      id: 'applicants', 
-      name: 'Applicants', 
-      icon: '📝', 
+    {
+      id: 'applicants',
+      name: 'Applicants',
+      icon: '📝',
       href: '/portal/coordinating-agency/applicants',
       hasDropdown: true,
       dropdownItems: [
         { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
         { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
         { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-        { 
-          id: 'fund-beneficiaries', 
-          name: 'Fund Beneficiaries', 
-          icon: '👥', 
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
           href: '/portal/coordinating-agency/fund-beneficiaries',
           hasDropdown: true,
           dropdownItems: [
@@ -61,10 +61,10 @@ const FundProviderApplicants: React.FC = () => {
         }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Department', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Department',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -102,7 +102,7 @@ const FundProviderApplicants: React.FC = () => {
     title: string;
     documents: { label: string; name: string; type: string }[];
   } | null>(null);
-  
+
   const { addNotification } = useNotifications();
 
 
@@ -129,15 +129,24 @@ const FundProviderApplicants: React.FC = () => {
   const [rightsConfirm, setRightsConfirm] = useState<{ name: string; decision: string } | null>(null);
   const [restrictToast, setRestrictToast] = useState<string | null>(null);
   const [rightsToast, setRightsToast] = useState<string | null>(null);
-  
+
+  // Batch Approval Modal State
+  const [showBatchApprovalModal, setShowBatchApprovalModal] = useState(false);
+  const [batchApprovalRemarks, setBatchApprovalRemarks] = useState('');
+
+  // Batch Restriction Modal State
+  const [showBatchRestrictionModal, setShowBatchRestrictionModal] = useState(false);
+  const [batchRestrictionReason, setBatchRestrictionReason] = useState('');
+  const [batchRestrictionRemarks, setBatchRestrictionRemarks] = useState('');
+
   // Get all Fund Provider records
   const [fundProviderRecords, setFundProviderRecords] = useState<FundProviderRecord[]>([]);
-  
+
   useEffect(() => {
     const records = getFundProviders();
     setFundProviderRecords(records);
   }, []);
-  
+
   // Refresh records when status changes
   const refreshFundProviders = () => {
     const records = getFundProviders();
@@ -145,11 +154,11 @@ const FundProviderApplicants: React.FC = () => {
   };
 
   const pageSize = 3;
-  
+
   // Helper function to render full application view
   const renderFullApplicationView = (applicationData: any) => {
     if (!applicationData) return null;
-    
+
     const buildEntries = (source: Record<string, any>, labels: Record<string, string>) =>
       Object.entries(labels)
         .map(([key, label]) => {
@@ -161,13 +170,13 @@ const FundProviderApplicants: React.FC = () => {
           return { label, value: trimmed };
         })
         .filter(Boolean) as { label: string; value: string }[];
-    
+
     const deriveDocumentType = (fileName: string) => {
       if (!fileName) return 'Unknown';
       const extension = fileName.split('.').pop();
       return extension ? extension.toUpperCase() : 'Unknown';
     };
-    
+
     const openDocuments = (title: string, docs: { label: string; name: string }[]) => {
       if (!docs.length) return;
       setDocumentModal({
@@ -178,7 +187,7 @@ const FundProviderApplicants: React.FC = () => {
         })),
       });
     };
-    
+
     const renderGroup = (
       title: string,
       entries: { label: string; value: string }[],
@@ -203,20 +212,20 @@ const FundProviderApplicants: React.FC = () => {
         )}
       </div>
     );
-    
+
     const step1 = applicationData.step1 ?? {};
     const step2 = applicationData.step2 ?? {};
     const step3 = applicationData.step3 ?? {};
     const step4 = applicationData.step4 ?? {};
     const step5 = applicationData.step5 ?? {};
-    
+
     const personalDetailsEntries = buildEntries(step1, {
       fullName: 'Full Name',
       position: 'Position',
       gender: 'Gender',
       birthDate: 'Date of Birth',
     });
-    
+
     const contactInformationEntries = buildEntries(step2, {
       email: 'Email Address',
       phone: 'Phone Number',
@@ -226,7 +235,7 @@ const FundProviderApplicants: React.FC = () => {
       state: 'State',
       country: 'Country',
     });
-    
+
     const verificationEntries = buildEntries(step3, {
       idType: 'ID Type',
       idNumber: 'ID Number',
@@ -235,7 +244,7 @@ const FundProviderApplicants: React.FC = () => {
       emergencyRelationship: 'Relationship with Emergency Contact',
       idDocument: 'Uploaded ID Document',
     });
-    
+
     const basicInformationEntries = buildEntries(step4, {
       organizationName: 'Organization Name',
       registrationNumber: 'Registration Number / CAC Number',
@@ -244,7 +253,7 @@ const FundProviderApplicants: React.FC = () => {
       industry: 'Industry / Sector',
       missionStatement: 'Short Description / Mission Statement',
     });
-    
+
     const addressInformationEntries = buildEntries(step4, {
       headquartersAddress: 'Headquarters Address',
       hqCity: 'Headquarters City',
@@ -258,7 +267,7 @@ const FundProviderApplicants: React.FC = () => {
       twitter: 'X Handle',
       instagram: 'Instagram Handle',
     });
-    
+
     const operationsEntries = buildEntries(
       {
         numEmployees: step5.numEmployees,
@@ -273,24 +282,24 @@ const FundProviderApplicants: React.FC = () => {
         partnershipDetails: 'Partnership Details',
       }
     );
-    
+
     const verificationDocuments =
       step3?.idDocument && step3.idDocument !== 'Not provided'
         ? [{ label: 'Government-issued ID', name: String(step3.idDocument) }]
         : [];
-    
+
     const operationsDocuments = [
       step5?.organizationLogo && step5.organizationLogo !== 'Not provided'
         ? { label: 'Organization Logo', name: String(step5.organizationLogo) }
         : null,
       step5?.certificateOfIncorporation && step5.certificateOfIncorporation !== 'Not provided'
         ? {
-            label: 'Certificate of Incorporation / Registration',
-            name: String(step5.certificateOfIncorporation),
-          }
+          label: 'Certificate of Incorporation / Registration',
+          name: String(step5.certificateOfIncorporation),
+        }
         : null,
     ].filter(Boolean) as { label: string; name: string }[];
-    
+
     return (
       <div className="mt-4 space-y-6 bg-primary-800 rounded-md p-4">
         <div className="space-y-4">
@@ -348,11 +357,11 @@ const FundProviderApplicants: React.FC = () => {
       // Normalize formData to ensure areasOfOperation is an array
       const normalizedFormData = {
         ...record.formData,
-        areasOfOperation: Array.isArray(record.formData.areasOfOperation) 
-          ? record.formData.areasOfOperation 
+        areasOfOperation: Array.isArray(record.formData.areasOfOperation)
+          ? record.formData.areasOfOperation
           : (record.formData.areasOfOperation ? [record.formData.areasOfOperation] : [])
       };
-      
+
       return {
         id: record.id,
         name: record.formData.organizationName || record.formData.fullName,
@@ -381,8 +390,8 @@ const FundProviderApplicants: React.FC = () => {
     return fundProviderApplicants.filter(user => {
       const matchesState = approveStateFilter === 'All' || user.state === approveStateFilter;
       const matchesSearch = user.name.toLowerCase().includes(approveSearch.toLowerCase()) ||
-                           user.email.toLowerCase().includes(approveSearch.toLowerCase()) ||
-                           user.organization.toLowerCase().includes(approveSearch.toLowerCase());
+        user.email.toLowerCase().includes(approveSearch.toLowerCase()) ||
+        user.organization.toLowerCase().includes(approveSearch.toLowerCase());
       return matchesState && matchesSearch;
     });
   }, [fundProviderApplicants, approveStateFilter, approveSearch]);
@@ -401,8 +410,8 @@ const FundProviderApplicants: React.FC = () => {
       .filter(user => {
         const matchesState = restrictStateFilter === 'All' || user.state === restrictStateFilter;
         const matchesSearch = user.name.toLowerCase().includes(restrictSearch.toLowerCase()) ||
-                             user.email.toLowerCase().includes(restrictSearch.toLowerCase()) ||
-                             user.organization.toLowerCase().includes(restrictSearch.toLowerCase());
+          user.email.toLowerCase().includes(restrictSearch.toLowerCase()) ||
+          user.organization.toLowerCase().includes(restrictSearch.toLowerCase());
         return matchesState && matchesSearch;
       });
   }, [fundProviderApplicants, restrictStateFilter, restrictSearch]);
@@ -413,7 +422,7 @@ const FundProviderApplicants: React.FC = () => {
   }, [filteredRestrictUsers, restrictPage]);
 
   const totalRestrictPages = Math.ceil(filteredRestrictUsers.length / pageSize);
-  
+
   // Filter for Approval Rights - Fund Providers who applied for schemes (using notifications)
   // This card is preserved for scheme applications, not registration approvals
   type ApprovalRightsUser = {
@@ -425,7 +434,7 @@ const FundProviderApplicants: React.FC = () => {
     organization: string;
     canApprove: boolean;
   };
-  
+
   const filteredApprovalRightsUsers: ApprovalRightsUser[] = useMemo(() => {
     // This will be populated from notifications for scheme applications
     // For now, return empty array - this card is preserved for scheme applications
@@ -434,8 +443,8 @@ const FundProviderApplicants: React.FC = () => {
 
   // Handlers
   const handleApproveCheckboxChange = (userId: string) => {
-    setSelectedApproveUsers(prev => 
-      prev.includes(userId) 
+    setSelectedApproveUsers(prev =>
+      prev.includes(userId)
         ? prev.filter(id => id !== userId)
         : [...prev, userId]
     );
@@ -448,33 +457,33 @@ const FundProviderApplicants: React.FC = () => {
     setSelectedApproveUsers([]);
     refreshFundProviders();
   };
-  
+
   // Process approval/rejection
   const processApproval = (userId: string) => {
     if (!approvalDecision) return;
-    
+
     const user = fundProviderApplicants.find(u => u.id === userId);
     if (!user || !user.record) return;
-    
+
     const trimmedRemarks = approvalRemarks.trim();
     const isApproved = approvalDecision === 'approve';
-    
+
     if (!isApproved && !trimmedRemarks) {
       alert('Please provide a reason for rejecting this Fund Provider.');
       return;
     }
-    
+
     // Update Fund Provider status
     updateFundProviderStatus(user.record.id, isApproved ? 'verified' : 'unverified', {
       rejectionReason: isApproved ? undefined : trimmedRemarks,
       pendingNotificationId: null,
     });
-    
+
     // Send notification to Fund Provider
     const message = isApproved
       ? 'Your registration has been approved. You now have full access.'
       : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
-    
+
     addNotification({
       role: '🏛️ Coordinating Agency',
       targetRole: 'fund-provider',
@@ -484,7 +493,7 @@ const FundProviderApplicants: React.FC = () => {
         fundProviderId: user.record.id,
       },
     });
-    
+
     refreshFundProviders();
     setShowApprovalModal(null);
     setApprovalDecision('');
@@ -495,59 +504,59 @@ const FundProviderApplicants: React.FC = () => {
     setFinalApprovalNotice(`✅ Decision ${isApproved ? 'Approved' : 'Rejected'} submitted for ${user.name}`);
     setTimeout(() => setFinalApprovalNotice(null), 3000);
   };
-  
+
   const handleApprovalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!showApprovalModal || !approvalDecision) return;
-    
+
     if (approvalDecision === 'approve' && !showApprovalConfirmation) {
       setShowApprovalConfirmation(true);
       return;
     }
-    
+
     if (approvalDecision === 'reject' && !showRejectionConfirmation) {
       setShowRejectionConfirmation(true);
       return;
     }
-    
+
     processApproval(showApprovalModal);
   };
-  
+
   const handleConfirmApproval = () => {
     setShowApprovalConfirmation(false);
     if (showApprovalModal) {
       processApproval(showApprovalModal);
     }
   };
-  
+
   const handleConfirmRejection = () => {
     setShowRejectionConfirmation(false);
     if (showApprovalModal) {
       processApproval(showApprovalModal);
     }
   };
-  
+
   const handleCancelApproval = () => {
     setShowApprovalConfirmation(false);
     setApprovalDecision('');
   };
-  
+
   const handleCancelRejection = () => {
     setShowRejectionConfirmation(false);
     setApprovalDecision('');
   };
-  
+
   // Handle restrict access
   const handleRestrictAccess = (userId: string) => {
     const user = fundProviderApplicants.find(u => u.id === userId);
     if (!user || !user.record) return;
-    
+
     // Change status from verified to unverified
     updateFundProviderStatus(user.record.id, 'unverified', {
       rejectionReason: restrictRemarks || 'Access restricted by Coordinating Agency',
       pendingNotificationId: null,
     });
-    
+
     // Send notification
     addNotification({
       role: '🏛️ Coordinating Agency',
@@ -558,7 +567,7 @@ const FundProviderApplicants: React.FC = () => {
         fundProviderId: user.record.id,
       },
     });
-    
+
     refreshFundProviders();
     setShowRestrictModal(null);
     setRestrictReason('');
@@ -568,8 +577,8 @@ const FundProviderApplicants: React.FC = () => {
   };
 
   const handleRestrictCheckboxChange = (userId: string) => {
-    setSelectedRestrictUsers(prev => 
-      prev.includes(userId) 
+    setSelectedRestrictUsers(prev =>
+      prev.includes(userId)
         ? prev.filter(id => id !== userId)
         : [...prev, userId]
     );
@@ -577,13 +586,51 @@ const FundProviderApplicants: React.FC = () => {
 
   const handleMassRestrict = () => {
     if (selectedRestrictUsers.length === 0) return;
-    alert(`Restricted access for ${selectedRestrictUsers.length} Fund Provider users`);
+    setShowBatchRestrictionModal(true);
+  };
+
+  const processBatchRestriction = () => {
+    if (!batchRestrictionReason.trim()) {
+      alert('Please provide a reason for restriction.');
+      return;
+    }
+
+    const selectedUsers = filteredRestrictUsers.filter(u => selectedRestrictUsers.includes(u.id));
+
+    selectedUsers.forEach(user => {
+      if (user.record) {
+        const restrictionMessage = `RESTRICTED: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`;
+        updateFundProviderStatus(user.record.id, 'unverified', {
+          rejectionReason: restrictionMessage,
+          pendingNotificationId: null,
+        });
+
+        addNotification({
+          role: '🏛️ Coordinating Agency',
+          targetRole: 'fund-provider',
+          message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
+          metadata: {
+            type: 'fundProviderAccessRestricted',
+            fundProviderId: user.record.id,
+            reason: batchRestrictionReason.trim(),
+          },
+        });
+      }
+    });
+
+    setShowBatchRestrictionModal(false);
+    setBatchRestrictionReason('');
+    setBatchRestrictionRemarks('');
     setSelectedRestrictUsers([]);
+    refreshFundProviders();
+
+    setRestrictToast(`🚫 Successfully restricted access for ${selectedUsers.length} Fund Provider users`);
+    setTimeout(() => setRestrictToast(null), 3000);
   };
 
   const handleApprovalRightsCheckboxChange = (userId: string) => {
-    setSelectedApprovalRightsUsers(prev => 
-      prev.includes(userId) 
+    setSelectedApprovalRightsUsers(prev =>
+      prev.includes(userId)
         ? prev.filter(id => id !== userId)
         : [...prev, userId]
     );
@@ -686,7 +733,7 @@ const FundProviderApplicants: React.FC = () => {
             {selectedApproveUsers.length > 0 && (
               <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md">
                 <span className="text-sm text-gray-200 font-sans">{selectedApproveUsers.length} selected</span>
-                <button 
+                <button
                   onClick={handleMassApprove}
                   className="btn-primary text-xs px-3 py-1"
                 >
@@ -695,7 +742,7 @@ const FundProviderApplicants: React.FC = () => {
               </div>
             )}
           </div>
-            
+
           <div className="flex-1 flex flex-col">
             <div className="space-y-3 flex-1">
               {paginatedApproveUsers.length > 0 ? (
@@ -724,11 +771,10 @@ const FundProviderApplicants: React.FC = () => {
                               <p className="text-sm font-medium text-gray-100 font-sans">{user.name}</p>
                               <p className="text-xs text-gray-400 font-serif">{user.email}</p>
                             </div>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              user.status === 'verified' 
-                                ? 'bg-green-500 text-white' 
-                                : 'bg-yellow-500 text-white'
-                            }`}>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'verified'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-yellow-500 text-white'
+                              }`}>
                               {user.status === 'verified' ? 'Approved' : 'Pending'}
                             </span>
                           </div>
@@ -744,13 +790,13 @@ const FundProviderApplicants: React.FC = () => {
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            <button 
+                            <button
                               onClick={() => setShowApproveMoreInfo(user.id)}
                               className="text-xs text-accent-400 hover:text-accent-300 font-medium"
                             >
                               📋 More Info
                             </button>
-                            <button 
+                            <button
                               onClick={() => setShowApprovalModal(user.id)}
                               className="text-xs bg-accent-600 hover:bg-accent-700 text-white px-3 py-1 rounded transition-colors font-medium"
                             >
@@ -773,16 +819,16 @@ const FundProviderApplicants: React.FC = () => {
             {/* Pagination */}
             {filteredApproveUsers.length > pageSize && (
               <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                <button 
-                  onClick={() => setApprovePage(prev => Math.max(prev - 1, 1))} 
+                <button
+                  onClick={() => setApprovePage(prev => Math.max(prev - 1, 1))}
                   disabled={approvePage === 1}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ←
                 </button>
                 <span className="text-xs text-gray-400">{approvePage} of {totalApprovePages}</span>
-                <button 
-                  onClick={() => setApprovePage(prev => Math.min(prev + 1, totalApprovePages))} 
+                <button
+                  onClick={() => setApprovePage(prev => Math.min(prev + 1, totalApprovePages))}
                   disabled={approvePage === totalApprovePages}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -823,56 +869,79 @@ const FundProviderApplicants: React.FC = () => {
             </select>
           </div>
 
+          {selectedRestrictUsers.length > 0 && (
+            <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md mb-4">
+              <span className="text-sm text-gray-200 font-sans">{selectedRestrictUsers.length} selected</span>
+              <button
+                onClick={handleMassRestrict}
+                className="btn-primary text-xs px-3 py-1"
+              >
+                🚫 Restrict All Selected
+              </button>
+            </div>
+          )}
+
           <div className="flex-grow overflow-y-auto custom-scrollbar">
             {paginatedRestrictUsers.length > 0 ? (
-              <div className="space-y-4">
-                {paginatedRestrictUsers.map((user) => (
-                  <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedRestrictUsers.includes(user.id)}
-                      onChange={() => handleRestrictCheckboxChange(user.id)}
-                      className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
-                    />
-                    <div className="flex-grow">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
-                          <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+              <>
+                <div className="flex items-center gap-2 p-2 bg-primary-700 rounded-md mb-3">
+                  <input
+                    type="checkbox"
+                    checked={restrictAllOnPageSelected}
+                    onChange={toggleRestrictSelectAll}
+                    className="w-4 h-4 accent-accent-500"
+                  />
+                  <span className="text-xs text-gray-400 font-sans">Select All</span>
+                </div>
+                <div className="space-y-4">
+                  {paginatedRestrictUsers.map((user) => (
+                    <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedRestrictUsers.includes(user.id)}
+                        onChange={() => handleRestrictCheckboxChange(user.id)}
+                        className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
+                      />
+                      <div className="flex-grow">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                            <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                          </div>
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500 text-white">
+                            Approved
+                          </span>
                         </div>
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500 text-white">
-                          Approved
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
-                        <span className="flex items-center gap-1">
-                          <span>👤</span> {user.role}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>📍</span> {user.state}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>🏢</span> {user.organization}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => setShowRestrictMoreInfo(user.id)} 
-                          className="btn-secondary text-sm px-3 py-1"
-                        >
-                          📋 More Info
-                        </button>
-                        <button 
-                          onClick={() => setShowRestrictModal(user.id)} 
-                          className="btn-primary text-sm px-3 py-1"
-                        >
-                          🚫 Restrict Access
-                        </button>
+                        <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                          <span className="flex items-center gap-1">
+                            <span>👤</span> {user.role}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>📍</span> {user.state}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>🏢</span> {user.organization}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => setShowRestrictMoreInfo(user.id)}
+                            className="btn-secondary text-sm px-3 py-1"
+                          >
+                            📋 More Info
+                          </button>
+                          <button
+                            onClick={() => setShowRestrictModal(user.id)}
+                            className="btn-primary text-sm px-3 py-1"
+                          >
+                            🚫 Restrict Access
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-10">
                 <div className="text-4xl mb-2">✅</div>
@@ -880,20 +949,20 @@ const FundProviderApplicants: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Pagination */}
           {filteredRestrictUsers.length > pageSize && (
             <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-              <button 
-                onClick={() => setRestrictPage(prev => Math.max(prev - 1, 1))} 
+              <button
+                onClick={() => setRestrictPage(prev => Math.max(prev - 1, 1))}
                 disabled={restrictPage === 1}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ←
               </button>
               <span className="text-xs text-gray-400">{restrictPage} of {totalRestrictPages}</span>
-              <button 
-                onClick={() => setRestrictPage(prev => Math.min(prev + 1, totalRestrictPages))} 
+              <button
+                onClick={() => setRestrictPage(prev => Math.min(prev + 1, totalRestrictPages))}
                 disabled={restrictPage === totalRestrictPages}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -933,64 +1002,87 @@ const FundProviderApplicants: React.FC = () => {
             </select>
           </div>
 
+          {selectedApprovalRightsUsers.length > 0 && (
+            <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md mb-4">
+              <span className="text-sm text-gray-200 font-sans">{selectedApprovalRightsUsers.length} selected</span>
+              <button
+                onClick={handleMassApprovalRights}
+                className="btn-primary text-xs px-3 py-1"
+              >
+                ✅ Approve All Selected
+              </button>
+            </div>
+          )}
+
           <div className="flex-grow overflow-y-auto custom-scrollbar">
             {filteredApprovalRightsUsers.length > 0 ? (
-              <div className="space-y-4">
-                {filteredApprovalRightsUsers.map((user) => (
-                  <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedApprovalRightsUsers.includes(user.id)}
-                      onChange={() => handleApprovalRightsCheckboxChange(user.id)}
-                      className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
-                    />
-                    <div className="flex-grow">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
-                          <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+              <>
+                <div className="flex items-center gap-2 p-2 bg-primary-700 rounded-md mb-3">
+                  <input
+                    type="checkbox"
+                    checked={rightsAllOnPageSelected}
+                    onChange={toggleRightsSelectAll}
+                    className="w-4 h-4 accent-accent-500"
+                  />
+                  <span className="text-xs text-gray-400 font-sans">Select All</span>
+                </div>
+                <div className="space-y-4">
+                  {filteredApprovalRightsUsers.map((user) => (
+                    <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedApprovalRightsUsers.includes(user.id)}
+                        onChange={() => handleApprovalRightsCheckboxChange(user.id)}
+                        className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
+                      />
+                      <div className="flex-grow">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                            <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                          <span className="flex items-center gap-1">
+                            <span>👤</span> {user.role}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>📍</span> {user.state}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>🏢</span> {user.organization}
+                          </span>
+                        </div>
+                        <div className="bg-primary-700 p-2 rounded-md mb-2">
+                          <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={user.canApprove}
+                              onChange={() => {/* toggleApprovalRights(user.id) */ }}
+                              className="accent-accent-500 w-4 h-4"
+                            />
+                            <span>Grant Approval Rights</span>
+                          </label>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => setShowApprovalRightsMoreInfo(user.id)}
+                            className="btn-secondary text-sm px-3 py-1"
+                          >
+                            📋 More Info
+                          </button>
+                          <button
+                            onClick={() => setShowRightsModal(user.id)}
+                            className="btn-primary text-sm px-3 py-1"
+                          >
+                            ✅ Apply Changes
+                          </button>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
-                        <span className="flex items-center gap-1">
-                          <span>👤</span> {user.role}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>📍</span> {user.state}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>🏢</span> {user.organization}
-                        </span>
-                      </div>
-                      <div className="bg-primary-700 p-2 rounded-md mb-2">
-                        <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={user.canApprove}
-                            onChange={() => {/* toggleApprovalRights(user.id) */}}
-                            className="accent-accent-500 w-4 h-4"
-                          />
-                          <span>Grant Approval Rights</span>
-                        </label>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => setShowApprovalRightsMoreInfo(user.id)} 
-                          className="btn-secondary text-sm px-3 py-1"
-                        >
-                          📋 More Info
-                        </button>
-                        <button 
-                          onClick={() => setShowRightsModal(user.id)} 
-                          className="btn-primary text-sm px-3 py-1"
-                        >
-                          ✅ Apply Changes
-                        </button>
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-10">
                 <div className="text-4xl mb-2">📋</div>
@@ -1018,7 +1110,7 @@ const FundProviderApplicants: React.FC = () => {
                     </div>
                     <button onClick={() => setShowApproveMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   {/* Application Details Section */}
                   <div className="space-y-4 mb-6">
                     <div className="bg-primary-800 rounded-md p-4">
@@ -1048,7 +1140,7 @@ const FundProviderApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Contact Person Information */}
                     <div className="bg-primary-800 rounded-md p-4">
                       <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -1080,7 +1172,7 @@ const FundProviderApplicants: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* View Full Application Section */}
                   {user.applicationData && (
                     <div className="mb-6 border-t border-primary-700 pt-4">
@@ -1095,11 +1187,11 @@ const FundProviderApplicants: React.FC = () => {
                           {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                         </span>
                       </button>
-                      
+
                       {showFullApplication && renderFullApplicationView(user.applicationData)}
                     </div>
                   )}
-                  
+
                   <div className="flex justify-end">
                     <button
                       onClick={() => { setShowApproveMoreInfo(null); setShowApprovalModal(user.id); }}
@@ -1131,7 +1223,7 @@ const FundProviderApplicants: React.FC = () => {
                     </div>
                     <button onClick={() => setShowApprovalModal(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   {/* Application Details Section */}
                   <div className="space-y-4 mb-6">
                     <div className="bg-primary-800 rounded-md p-4">
@@ -1161,7 +1253,7 @@ const FundProviderApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Contact Person Information */}
                     <div className="bg-primary-800 rounded-md p-4">
                       <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -1193,7 +1285,7 @@ const FundProviderApplicants: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* View Full Application Section */}
                   {user.applicationData && (
                     <div className="mb-6 border-t border-primary-700 pt-4">
@@ -1208,18 +1300,18 @@ const FundProviderApplicants: React.FC = () => {
                           {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                         </span>
                       </button>
-                      
+
                       {showFullApplication && renderFullApplicationView(user.applicationData)}
                     </div>
                   )}
-                  
+
                   {/* Approval Form */}
                   <form onSubmit={handleApprovalSubmit} className="space-y-4 border-t border-primary-700 pt-4">
                     <div>
                       <label className="block text-sm text-gray-300 font-serif mb-1">Decision</label>
-                      <select 
-                        value={approvalDecision} 
-                        onChange={(e) => setApprovalDecision(e.target.value)} 
+                      <select
+                        value={approvalDecision}
+                        onChange={(e) => setApprovalDecision(e.target.value)}
                         className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
                         required
                       >
@@ -1232,22 +1324,22 @@ const FundProviderApplicants: React.FC = () => {
                       <label className="block text-sm text-gray-300 font-serif mb-1">
                         {approvalDecision === 'reject' ? 'Reason for Rejection' : 'Remarks'}
                       </label>
-                      <textarea 
-                        value={approvalRemarks} 
-                        onChange={(e) => setApprovalRemarks(e.target.value)} 
-                        rows={3} 
-                        className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600" 
-                        placeholder={approvalDecision === 'reject' ? 'Provide the reason for rejection' : 'Add remarks (optional)'} 
+                      <textarea
+                        value={approvalRemarks}
+                        onChange={(e) => setApprovalRemarks(e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                        placeholder={approvalDecision === 'reject' ? 'Provide the reason for rejection' : 'Add remarks (optional)'}
                         required={approvalDecision === 'reject'}
                       />
                     </div>
                     <div className="flex justify-end gap-2">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           setShowApprovalModal(null);
                           setShowFullApplication(false);
-                        }} 
+                        }}
                         className="btn-secondary"
                       >
                         Cancel
@@ -1417,7 +1509,7 @@ const FundProviderApplicants: React.FC = () => {
                     </div>
                     <button onClick={() => setShowRestrictMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   {/* Application Details Section */}
                   <div className="space-y-4 mb-6">
                     <div className="bg-primary-800 rounded-md p-4">
@@ -1447,7 +1539,7 @@ const FundProviderApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Contact Person Information */}
                     <div className="bg-primary-800 rounded-md p-4">
                       <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -1479,7 +1571,7 @@ const FundProviderApplicants: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* View Full Application Section */}
                   {user.applicationData && (
                     <div className="mb-6 border-t border-primary-700 pt-4">
@@ -1494,7 +1586,7 @@ const FundProviderApplicants: React.FC = () => {
                           {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                         </span>
                       </button>
-                      
+
                       {showFullApplication && renderFullApplicationView(user.applicationData)}
                     </div>
                   )}
@@ -1503,7 +1595,7 @@ const FundProviderApplicants: React.FC = () => {
             </div>
           ) : null;
         })()}
-        
+
         {/* Document Modal */}
         {documentModal && (
           <div className="fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto" onClick={() => setDocumentModal(null)}>
@@ -1654,6 +1746,81 @@ const FundProviderApplicants: React.FC = () => {
           </div>
         )}
 
+        {/* Batch Restriction Modal */}
+        {showBatchRestrictionModal && (
+          <div className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center" onClick={() => setShowBatchRestrictionModal(false)}>
+            <div className="w-full max-w-md bg-primary-900 border border-primary-700 rounded-lg p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-100 font-sans">Batch Restriction</h3>
+                  <p className="text-sm text-gray-300 font-serif mt-2">
+                    Restrict access for {selectedRestrictUsers.length} selected Fund Provider users
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowBatchRestrictionModal(false)}
+                  className="text-gray-400 hover:text-gray-200"
+                >
+                  ✖
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-300 font-serif mb-1">
+                    Reason for Restriction <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={batchRestrictionReason}
+                    onChange={(e) => setBatchRestrictionReason(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                    required
+                  >
+                    <option value="">Select reason</option>
+                    <option value="Fraudulent Activity">Fraudulent Activity</option>
+                    <option value="Policy Violation">Policy Violation</option>
+                    <option value="Suspicious Behavior">Suspicious Behavior</option>
+                    <option value="Non-compliance">Non-compliance</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-300 font-serif mb-1">
+                    Additional Remarks (Optional)
+                  </label>
+                  <textarea
+                    value={batchRestrictionRemarks}
+                    onChange={(e) => setBatchRestrictionRemarks(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                    placeholder="Add additional remarks (optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowBatchRestrictionModal(false);
+                    setBatchRestrictionReason('');
+                    setBatchRestrictionRemarks('');
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={processBatchRestriction}
+                  className="btn-primary bg-red-600 hover:bg-red-700"
+                >
+                  🚫 Restrict All ({selectedRestrictUsers.length})
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="text-center text-gray-400 text-sm py-4">
           Powered by Mc. George
@@ -1664,3 +1831,4 @@ const FundProviderApplicants: React.FC = () => {
 };
 
 export default FundProviderApplicants;
+

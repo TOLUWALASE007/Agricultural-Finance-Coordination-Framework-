@@ -1085,48 +1085,6 @@ const Settings: React.FC = () => {
           )}
         </form>
 
-        {/* System Information */}
-        <div className="card">
-          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">ℹ️ System Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-serif">Account ID:</span>
-                <span className="text-gray-100 font-sans">PFI-2024-001</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-serif">Registration Date:</span>
-                <span className="text-gray-100 font-sans">March 15, 2024</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-serif">Last Login:</span>
-                <span className="text-gray-100 font-sans">Today, 2:30 PM</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-serif">Account Status:</span>
-                <span className="text-green-400 font-sans">Active</span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-serif">API Version:</span>
-                <span className="text-gray-100 font-sans">v2.1.0</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-serif">Database Version:</span>
-                <span className="text-gray-100 font-sans">PostgreSQL 14.2</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-serif">System Uptime:</span>
-                <span className="text-gray-100 font-sans">99.8%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-serif">Support Level:</span>
-                <span className="text-blue-400 font-sans">Premium</span>
-              </div>
-            </div>
-          </div>
-        </div>
         <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
           Powered by Mc. George
         </div>

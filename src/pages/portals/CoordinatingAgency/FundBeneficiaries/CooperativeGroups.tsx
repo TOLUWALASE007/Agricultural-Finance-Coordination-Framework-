@@ -1,49 +1,58 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import PortalLayout from '../../../../components/PortalLayout';
+import CreateMEProjectModal from '../../../../components/CreateMEProjectModal';
 import { getCooperativeGroups, updateCooperativeGroupStatus, buildCooperativeGroupApplicationData, CooperativeGroupRecord } from '../../../../utils/localDatabase';
 import { useNotifications } from '../../../../context/NotificationContext';
 
 const CooperativeGroups: React.FC = () => {
   const sidebarItems = [
-    { id: 'dashboard', name: 'Dashboard', icon: '🏠', href: '/portal/coordinating-agency', hasDropdown: true, dropdownItems: [
-      { id: 'activities', name: 'Activities', icon: '⚡', href: '/portal/coordinating-agency/activities' },
-      { id: 'fund-schemes', name: 'Fund Schemes', icon: '💼', href: '/portal/coordinating-agency/fund-schemes' },
-      { id: 'reportings', name: 'Reports', icon: '📑', href: '/portal/coordinating-agency/reportings' },
-      { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
-    ] },
-    { id: 'state-monitoring', name: 'State Monitoring Team', icon: '🗺️', href: '/portal/coordinating-agency/monitoring/state' },
-    { id: 'representative-body', name: 'Representative Body', icon: '🏛️', href: '/portal/coordinating-agency/representative', hasDropdown: true, dropdownItems: [
-      { id: 'rep-insurance', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/representative/insurance-companies' },
-      { id: 'rep-extension', name: 'Extension Organizations', icon: '🌿', href: '/portal/coordinating-agency/representative/extension-organizations' },
-      { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
-    ] },
-    { id: 'applicants', name: 'Applicants', icon: '📝', href: '/portal/coordinating-agency/applicants', hasDropdown: true, dropdownItems: [
-      { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
-      { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
-      { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-      { 
-        id: 'fund-beneficiaries', 
-        name: 'Fund Beneficiaries', 
-        icon: '👥', 
-        href: '/portal/coordinating-agency/fund-beneficiaries',
-        hasDropdown: true,
-        dropdownItems: [
-          { id: 'lead-firms', name: 'Lead Firms', icon: '🏢', href: '/portal/coordinating-agency/fund-beneficiaries/lead-firms' },
-          { id: 'anchors', name: 'Anchors', icon: '⚓', href: '/portal/coordinating-agency/fund-beneficiaries/anchors' },
-          { id: 'cooperative-groups', name: 'Cooperative Groups', icon: '🤝', href: '/portal/coordinating-agency/fund-beneficiaries/cooperative-groups' },
-          { id: 'producers-farmers', name: 'Producers/Farmers', icon: '🌾', href: '/portal/coordinating-agency/fund-beneficiaries/producers-farmers' }
-        ]
-      }
-    ] },
-    { id: 'stakeholders', name: 'Department', icon: '🤝', href: '/portal/coordinating-agency/stakeholders', hasDropdown: true, dropdownItems: [
-      { id: 'fund-management', name: 'Fund Management Department', icon: '💼', href: '/portal/coordinating-agency/stakeholders/fund-management' },
-      { id: 'credit-risk', name: 'Agricultural Credit Risk Management Department', icon: '📊', href: '/portal/coordinating-agency/stakeholders/credit-risk' },
-      { id: 'insurance', name: 'Agricultural Insurance Management Department', icon: '🛡️', href: '/portal/coordinating-agency/stakeholders/insurance' },
-      { id: 'finance', name: 'Finance and Accounting Department', icon: '🪙', href: '/portal/coordinating-agency/stakeholders/finance' },
-      { id: 'legal', name: 'Legal Department', icon: '⚖️', href: '/portal/coordinating-agency/stakeholders/legal' },
-      { id: 'it', name: 'IT Department', icon: '💻', href: '/portal/coordinating-agency/stakeholders/it' },
-      { id: 'training', name: 'Training Department', icon: '📚', href: '/portal/coordinating-agency/stakeholders/training' }
-    ] },
+    {
+      id: 'dashboard', name: 'Dashboard', icon: '🏠', href: '/portal/coordinating-agency', hasDropdown: true, dropdownItems: [
+        { id: 'activities', name: 'Activities', icon: '⚡', href: '/portal/coordinating-agency/activities' },
+        { id: 'fund-schemes', name: 'Fund Schemes', icon: '💼', href: '/portal/coordinating-agency/fund-schemes' },
+        { id: 'reportings', name: 'Reports', icon: '📑', href: '/portal/coordinating-agency/reportings' },
+        { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
+      ]
+    },
+    { id: 'me-team', name: 'M&E Team', icon: '📋', href: '/portal/coordinating-agency/monitoring/state' },
+    {
+      id: 'representative-body', name: 'Representative Body', icon: '🏛️', href: '/portal/coordinating-agency/representative', hasDropdown: true, dropdownItems: [
+        { id: 'rep-insurance', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/representative/insurance-companies' },
+        { id: 'rep-extension', name: 'Extension Organizations', icon: '🌿', href: '/portal/coordinating-agency/representative/extension-organizations' },
+        { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
+      ]
+    },
+    {
+      id: 'applicants', name: 'Applicants', icon: '📝', href: '/portal/coordinating-agency/applicants', hasDropdown: true, dropdownItems: [
+        { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
+        { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
+        { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
+          href: '/portal/coordinating-agency/fund-beneficiaries',
+          hasDropdown: true,
+          dropdownItems: [
+            { id: 'lead-firms', name: 'Lead Firms', icon: '🏢', href: '/portal/coordinating-agency/fund-beneficiaries/lead-firms' },
+            { id: 'anchors', name: 'Anchors', icon: '⚓', href: '/portal/coordinating-agency/fund-beneficiaries/anchors' },
+            { id: 'cooperative-groups', name: 'Cooperative Groups', icon: '🤝', href: '/portal/coordinating-agency/fund-beneficiaries/cooperative-groups' },
+            { id: 'producers-farmers', name: 'Producers/Farmers', icon: '🌾', href: '/portal/coordinating-agency/fund-beneficiaries/producers-farmers' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'stakeholders', name: 'Department', icon: '🤝', href: '/portal/coordinating-agency/stakeholders', hasDropdown: true, dropdownItems: [
+        { id: 'fund-management', name: 'Fund Management Department', icon: '💼', href: '/portal/coordinating-agency/stakeholders/fund-management' },
+        { id: 'credit-risk', name: 'Agricultural Credit Risk Management Department', icon: '📊', href: '/portal/coordinating-agency/stakeholders/credit-risk' },
+        { id: 'insurance', name: 'Agricultural Insurance Management Department', icon: '🛡️', href: '/portal/coordinating-agency/stakeholders/insurance' },
+        { id: 'finance', name: 'Finance and Accounting Department', icon: '🪙', href: '/portal/coordinating-agency/stakeholders/finance' },
+        { id: 'legal', name: 'Legal Department', icon: '⚖️', href: '/portal/coordinating-agency/stakeholders/legal' },
+        { id: 'it', name: 'IT Department', icon: '💻', href: '/portal/coordinating-agency/stakeholders/it' },
+        { id: 'training', name: 'Training Department', icon: '📚', href: '/portal/coordinating-agency/stakeholders/training' }
+      ]
+    },
     { id: 'publications', name: 'Publications', icon: '📚', href: '/portal/coordinating-agency/publications' },
     { id: 'blog', name: 'Blog', icon: '📰', href: '/portal/coordinating-agency/blog' },
     { id: 'faqs', name: 'FAQs', icon: '❓', href: '/portal/coordinating-agency/faqs' },
@@ -68,7 +77,20 @@ const CooperativeGroups: React.FC = () => {
     title: string;
     documents: { label: string; name: string; type: string }[];
   } | null>(null);
-  
+
+  // M&E Project Modal State
+  const [showMEProjectModal, setShowMEProjectModal] = useState(false);
+  const [meProjectData, setMEProjectData] = useState<{
+    sourceType: 'cooperative';
+    sourceId: string;
+    sourceName: string;
+    submissionData: Record<string, any>;
+    projectType: 'registration' | 'scheme-application' | 'incident-report';
+    schemeId?: string;
+    schemeName?: string;
+    notificationId?: string;
+  } | null>(null);
+
   const { addNotification } = useNotifications();
 
   const [restrictSearch, setRestrictSearch] = useState('');
@@ -95,27 +117,37 @@ const CooperativeGroups: React.FC = () => {
   const [rightsToast, setRightsToast] = useState<string | null>(null);
   const [rightsConfirm, setRightsConfirm] = useState<{ name: string; decision: string } | null>(null);
 
+  // Batch Approval Modal State
+  const [showBatchApprovalModal, setShowBatchApprovalModal] = useState(false);
+  const [batchDisbursementAmount, setBatchDisbursementAmount] = useState('');
+  const [batchApprovalRemarks, setBatchApprovalRemarks] = useState('');
+
+  // Batch Restriction Modal State
+  const [showBatchRestrictionModal, setShowBatchRestrictionModal] = useState(false);
+  const [batchRestrictionReason, setBatchRestrictionReason] = useState('');
+  const [batchRestrictionRemarks, setBatchRestrictionRemarks] = useState('');
+
   const pageSize = 3;
-  const nigerianStates = [ 'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT Abuja','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara' ];
-  
+  const nigerianStates = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT Abuja', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'];
+
   // Get all Cooperative Group records
   const [cooperativeGroupRecords, setCooperativeGroupRecords] = useState<CooperativeGroupRecord[]>([]);
-  
+
   useEffect(() => {
     const records = getCooperativeGroups();
     setCooperativeGroupRecords(records);
   }, []);
-  
+
   // Refresh records when status changes
   const refreshCooperativeGroups = () => {
     const records = getCooperativeGroups();
     setCooperativeGroupRecords(records);
   };
-  
+
   // Helper function to render full application view for Cooperative Group (5 steps)
   const renderFullApplicationView = (applicationData: any) => {
     if (!applicationData) return null;
-    
+
     const buildEntries = (source: Record<string, any>, labels: Record<string, string>) =>
       Object.entries(labels)
         .map(([key, label]) => {
@@ -127,13 +159,13 @@ const CooperativeGroups: React.FC = () => {
           return { label, value: trimmed };
         })
         .filter(Boolean) as { label: string; value: string }[];
-    
+
     const deriveDocumentType = (fileName: string) => {
       if (!fileName) return 'Unknown';
       const extension = fileName.split('.').pop();
       return extension ? extension.toUpperCase() : 'Unknown';
     };
-    
+
     const openDocuments = (title: string, docs: { label: string; name: string }[]) => {
       if (!docs.length) return;
       setDocumentModal({
@@ -144,7 +176,7 @@ const CooperativeGroups: React.FC = () => {
         })),
       });
     };
-    
+
     const renderGroup = (
       title: string,
       entries: { label: string; value: string }[],
@@ -169,20 +201,20 @@ const CooperativeGroups: React.FC = () => {
         )}
       </div>
     );
-    
+
     const step1 = applicationData.step1 ?? {};
     const step2 = applicationData.step2 ?? {};
     const step3 = applicationData.step3 ?? {};
     const step4 = applicationData.step4 ?? {};
     const step5 = applicationData.step5 ?? {};
-    
+
     const personalDetailsEntries = buildEntries(step1, {
       fullName: 'Full Name',
       position: 'Position',
       gender: 'Gender',
       birthDate: 'Date of Birth',
     });
-    
+
     const contactInformationEntries = buildEntries(step2, {
       email: 'Email Address',
       phone: 'Phone Number',
@@ -192,7 +224,7 @@ const CooperativeGroups: React.FC = () => {
       state: 'State',
       country: 'Country',
     });
-    
+
     const verificationEntries = buildEntries(step3, {
       idType: 'ID Type',
       idNumber: 'ID Number',
@@ -201,7 +233,7 @@ const CooperativeGroups: React.FC = () => {
       emergencyContactPhone: 'Emergency Contact Phone',
       emergencyRelationship: 'Relationship with Emergency Contact',
     });
-    
+
     const organizationEntries = buildEntries(step4, {
       organizationName: 'Organization Name',
       registrationNumber: 'Registration Number / CAC Number',
@@ -221,7 +253,7 @@ const CooperativeGroups: React.FC = () => {
       twitter: 'X Handle',
       instagram: 'Instagram Handle',
     });
-    
+
     const operationsEntries = buildEntries(
       {
         numEmployees: step5.numEmployees,
@@ -236,24 +268,24 @@ const CooperativeGroups: React.FC = () => {
         partnershipDetails: 'Partnership Details',
       }
     );
-    
+
     const verificationDocuments =
       step3?.idDocument && step3.idDocument !== 'Not provided'
         ? [{ label: 'Government-issued ID', name: String(step3.idDocument) }]
         : [];
-    
+
     const operationsDocuments = [
       step5?.organizationLogo && step5.organizationLogo !== 'Not provided'
         ? { label: 'Organization Logo', name: String(step5.organizationLogo) }
         : null,
       step5?.certificateOfIncorporation && step5.certificateOfIncorporation !== 'Not provided'
         ? {
-            label: 'Certificate of Incorporation / Registration',
-            name: String(step5.certificateOfIncorporation),
-          }
+          label: 'Certificate of Incorporation / Registration',
+          name: String(step5.certificateOfIncorporation),
+        }
         : null,
     ].filter(Boolean) as { label: string; name: string }[];
-    
+
     return (
       <div className="mt-4 space-y-6 bg-primary-800 rounded-md p-4">
         <div className="space-y-4">
@@ -301,11 +333,11 @@ const CooperativeGroups: React.FC = () => {
       // Normalize formData to ensure areasOfOperation is an array
       const normalizedFormData = {
         ...record.formData,
-        areasOfOperation: Array.isArray(record.formData.areasOfOperation) 
-          ? record.formData.areasOfOperation 
+        areasOfOperation: Array.isArray(record.formData.areasOfOperation)
+          ? record.formData.areasOfOperation
           : (record.formData.areasOfOperation ? [record.formData.areasOfOperation] : [])
       };
-      
+
       return {
         id: record.id,
         name: record.formData.organizationName || record.formData.fullName,
@@ -381,20 +413,20 @@ const CooperativeGroups: React.FC = () => {
     organization: string;
     canApprove: boolean;
   };
-  
+
   const filteredApprovalRightsUsers: ApprovalRightsUser[] = useMemo(() => {
     // This will be populated from notifications for scheme applications
     // For now, return empty array - this card is preserved for scheme applications
     return [] as ApprovalRightsUser[];
   }, []);
-  
+
   const paginatedApprovalRightsUsers = useMemo(() => {
     const startIndex = (approvalRightsPage - 1) * pageSize;
     return filteredApprovalRightsUsers.slice(startIndex, startIndex + pageSize);
   }, [filteredApprovalRightsUsers, approvalRightsPage]);
-  
+
   const totalApprovalRightsPages = Math.ceil(filteredApprovalRightsUsers.length / pageSize);
-  
+
   const rightsAllOnPageSelected = filteredApprovalRightsUsers.length > 0 && filteredApprovalRightsUsers.every(u => selectedApprovalRightsUsers.includes(u.id));
   const toggleRightsSelectAll = () => {
     if (rightsAllOnPageSelected) {
@@ -404,7 +436,7 @@ const CooperativeGroups: React.FC = () => {
       setSelectedApprovalRightsUsers(prev => [...prev, ...toAdd]);
     }
   };
-  
+
   // Reset pages on filter/search change
   useEffect(() => { setApprovePage(1); }, [approveSearch, approveStateFilter]);
   useEffect(() => { setRestrictPage(1); }, [restrictSearch, restrictStateFilter]);
@@ -413,40 +445,40 @@ const CooperativeGroups: React.FC = () => {
   const handleApproveCheckboxChange = (userId: string) => setSelectedApproveUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
   const handleRestrictCheckboxChange = (userId: string) => setSelectedRestrictUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
   const handleApprovalRightsCheckboxChange = (userId: string) => setSelectedApprovalRightsUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
-  
+
   const handleMassApprove = () => {
     if (selectedApproveUsers.length === 0) return;
     alert(`Approved ${selectedApproveUsers.length} Cooperative Group applications`);
     setSelectedApproveUsers([]);
     refreshCooperativeGroups();
   };
-  
+
   // Process approval/rejection
   const processApproval = (userId: string) => {
     if (!approvalDecision) return;
-    
+
     const user = cooperativeGroups.find(u => u.id === userId);
     if (!user || !user.record) return;
-    
+
     const trimmedRemarks = approvalRemarks.trim();
     const isApproved = approvalDecision === 'approve';
-    
+
     if (!isApproved && !trimmedRemarks) {
       alert('Please provide a reason for rejecting this Cooperative Group.');
       return;
     }
-    
+
     // Update Cooperative Group status
     updateCooperativeGroupStatus(user.record.id, isApproved ? 'verified' : 'unverified', {
       rejectionReason: isApproved ? undefined : trimmedRemarks,
       pendingNotificationId: null,
     });
-    
+
     // Send notification to Cooperative Group
     const message = isApproved
       ? 'Your registration has been approved. You now have full access.'
       : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
-    
+
     addNotification({
       role: '🏛️ Coordinating Agency',
       targetRole: 'cooperative',
@@ -456,7 +488,7 @@ const CooperativeGroups: React.FC = () => {
         cooperativeGroupId: user.record.id,
       },
     });
-    
+
     refreshCooperativeGroups();
     setShowApprovalModal(null);
     setApprovalDecision('');
@@ -467,59 +499,59 @@ const CooperativeGroups: React.FC = () => {
     setFinalApprovalNotice(`✅ Decision ${isApproved ? 'Approved' : 'Rejected'} submitted for ${user.name}`);
     setTimeout(() => setFinalApprovalNotice(null), 3000);
   };
-  
+
   const handleApprovalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!showApprovalModal || !approvalDecision) return;
-    
+
     if (approvalDecision === 'approve' && !showApprovalConfirmation) {
       setShowApprovalConfirmation(true);
       return;
     }
-    
+
     if (approvalDecision === 'reject' && !showRejectionConfirmation) {
       setShowRejectionConfirmation(true);
       return;
     }
-    
+
     processApproval(showApprovalModal);
   };
-  
+
   const handleConfirmApproval = () => {
     setShowApprovalConfirmation(false);
     if (showApprovalModal) {
       processApproval(showApprovalModal);
     }
   };
-  
+
   const handleConfirmRejection = () => {
     setShowRejectionConfirmation(false);
     if (showApprovalModal) {
       processApproval(showApprovalModal);
     }
   };
-  
+
   const handleCancelApproval = () => {
     setShowApprovalConfirmation(false);
     setApprovalDecision('');
   };
-  
+
   const handleCancelRejection = () => {
     setShowRejectionConfirmation(false);
     setApprovalDecision('');
   };
-  
+
   // Handle restrict access
   const handleRestrictAccess = (userId: string) => {
     const user = cooperativeGroups.find(u => u.id === userId);
     if (!user || !user.record) return;
-    
+
     // Change status from verified to unverified
     updateCooperativeGroupStatus(user.record.id, 'unverified', {
       rejectionReason: restrictRemarks || 'Access restricted by Coordinating Agency',
       pendingNotificationId: null,
     });
-    
+
     // Send notification
     addNotification({
       role: '🏛️ Coordinating Agency',
@@ -530,7 +562,7 @@ const CooperativeGroups: React.FC = () => {
         cooperativeGroupId: user.record.id,
       },
     });
-    
+
     refreshCooperativeGroups();
     setShowRestrictModal(null);
     setRestrictReason('');
@@ -538,13 +570,51 @@ const CooperativeGroups: React.FC = () => {
     setRestrictToast(`🚫 Access restricted for ${user.name}`);
     setTimeout(() => setRestrictToast(null), 3000);
   };
-  
+
   const handleMassRestrict = () => {
     if (selectedRestrictUsers.length === 0) return;
-    alert(`Restricted access for ${selectedRestrictUsers.length} Cooperative Group users`);
-    setSelectedRestrictUsers([]);
+    setShowBatchRestrictionModal(true);
   };
-  
+
+  const processBatchRestriction = () => {
+    if (!batchRestrictionReason.trim()) {
+      alert('Please provide a reason for restriction.');
+      return;
+    }
+
+    const selectedUsers = filteredRestrictUsers.filter(u => selectedRestrictUsers.includes(u.id));
+
+    selectedUsers.forEach(user => {
+      if (user.record) {
+        const restrictionMessage = `RESTRICTED: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`;
+        updateCooperativeGroupStatus(user.record.id, 'unverified', {
+          rejectionReason: restrictionMessage,
+          pendingNotificationId: null,
+        });
+
+        addNotification({
+          role: '🏛️ Coordinating Agency',
+          targetRole: 'cooperative',
+          message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
+          metadata: {
+            type: 'cooperativeGroupAccessRestricted',
+            cooperativeGroupId: user.record.id,
+            reason: batchRestrictionReason.trim(),
+          },
+        });
+      }
+    });
+
+    setShowBatchRestrictionModal(false);
+    setBatchRestrictionReason('');
+    setBatchRestrictionRemarks('');
+    setSelectedRestrictUsers([]);
+    refreshCooperativeGroups();
+
+    setRestrictToast(`🚫 Successfully restricted access for ${selectedUsers.length} Cooperative Group users`);
+    setTimeout(() => setRestrictToast(null), 3000);
+  };
+
   const handleMassApprovalRights = () => {
     if (selectedApprovalRightsUsers.length === 0) return;
     alert(`Updated approval rights for ${selectedApprovalRightsUsers.length} Cooperative Group users`);
@@ -573,7 +643,7 @@ const CooperativeGroups: React.FC = () => {
                   {filteredApproveUsers.filter(u => u.status === 'unverified').length} Pending
                 </span>
               </div>
-              <button onClick={() => {}} className="btn-secondary text-xs px-3 py-1">📜 View History</button>
+              <button onClick={() => { }} className="btn-secondary text-xs px-3 py-1">📜 View History</button>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
@@ -602,7 +672,7 @@ const CooperativeGroups: React.FC = () => {
             {selectedApproveUsers.length > 0 && (
               <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md">
                 <span className="text-sm text-gray-200 font-sans">{selectedApproveUsers.length} selected</span>
-                <button 
+                <button
                   onClick={handleMassApprove}
                   className="btn-primary text-xs px-3 py-1"
                 >
@@ -611,7 +681,7 @@ const CooperativeGroups: React.FC = () => {
               </div>
             )}
           </div>
-            
+
           <div className="flex-1 flex flex-col">
             <div className="space-y-3 flex-1">
               {paginatedApproveUsers.length > 0 ? (
@@ -640,11 +710,10 @@ const CooperativeGroups: React.FC = () => {
                               <p className="text-sm font-medium text-gray-100 font-sans">{user.name}</p>
                               <p className="text-xs text-gray-400 font-serif">{user.email}</p>
                             </div>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              user.status === 'verified' 
-                                ? 'bg-green-500 text-white' 
-                                : 'bg-yellow-500 text-white'
-                            }`}>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'verified'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-yellow-500 text-white'
+                              }`}>
                               {user.status === 'verified' ? 'Approved' : 'Pending'}
                             </span>
                           </div>
@@ -660,13 +729,13 @@ const CooperativeGroups: React.FC = () => {
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            <button 
+                            <button
                               onClick={() => setShowApproveMoreInfo(user.id)}
                               className="text-xs text-accent-400 hover:text-accent-300 font-medium"
                             >
                               📋 More Info
                             </button>
-                            <button 
+                            <button
                               onClick={() => setShowApprovalModal(user.id)}
                               className="text-xs bg-accent-600 hover:bg-accent-700 text-white px-3 py-1 rounded transition-colors font-medium"
                             >
@@ -689,16 +758,16 @@ const CooperativeGroups: React.FC = () => {
             {/* Pagination */}
             {filteredApproveUsers.length > pageSize && (
               <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                <button 
-                  onClick={() => setApprovePage(prev => Math.max(prev - 1, 1))} 
+                <button
+                  onClick={() => setApprovePage(prev => Math.max(prev - 1, 1))}
                   disabled={approvePage === 1}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ←
                 </button>
                 <span className="text-xs text-gray-400">{approvePage} of {totalApprovePages}</span>
-                <button 
-                  onClick={() => setApprovePage(prev => Math.min(prev + 1, totalApprovePages))} 
+                <button
+                  onClick={() => setApprovePage(prev => Math.min(prev + 1, totalApprovePages))}
                   disabled={approvePage === totalApprovePages}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -726,7 +795,7 @@ const CooperativeGroups: React.FC = () => {
                     </div>
                     <button onClick={() => setShowApproveMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   {/* Application Details Section */}
                   <div className="space-y-4 mb-6">
                     <div className="bg-primary-800 rounded-md p-4">
@@ -756,7 +825,7 @@ const CooperativeGroups: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Contact Person Information */}
                     <div className="bg-primary-800 rounded-md p-4">
                       <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -788,7 +857,7 @@ const CooperativeGroups: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* View Full Application Section */}
                   {user.applicationData && (
                     <div className="mb-6 border-t border-primary-700 pt-4">
@@ -803,12 +872,27 @@ const CooperativeGroups: React.FC = () => {
                           {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                         </span>
                       </button>
-                      
+
                       {showFullApplication && renderFullApplicationView(user.applicationData)}
                     </div>
                   )}
-                  
-                  <div className="flex justify-end">
+
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => {
+                        setMEProjectData({
+                          sourceType: 'cooperative',
+                          sourceId: user.id,
+                          sourceName: user.organization || user.name,
+                          submissionData: user.applicationData || {},
+                          projectType: 'registration',
+                        });
+                        setShowMEProjectModal(true);
+                      }}
+                      className="btn-secondary text-sm"
+                    >
+                      📋 Create M&E Project
+                    </button>
                     <button
                       onClick={() => { setShowApproveMoreInfo(null); setShowApprovalModal(user.id); }}
                       className="btn-primary"
@@ -839,7 +923,7 @@ const CooperativeGroups: React.FC = () => {
                     </div>
                     <button onClick={() => setShowApprovalModal(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   {/* Application Details Section */}
                   <div className="space-y-4 mb-6">
                     <div className="bg-primary-800 rounded-md p-4">
@@ -869,7 +953,7 @@ const CooperativeGroups: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Contact Person Information */}
                     <div className="bg-primary-800 rounded-md p-4">
                       <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -901,7 +985,7 @@ const CooperativeGroups: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* View Full Application Section */}
                   {user.applicationData && (
                     <div className="mb-6 border-t border-primary-700 pt-4">
@@ -916,18 +1000,18 @@ const CooperativeGroups: React.FC = () => {
                           {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                         </span>
                       </button>
-                      
+
                       {showFullApplication && renderFullApplicationView(user.applicationData)}
                     </div>
                   )}
-                  
+
                   {/* Approval Form */}
                   <form onSubmit={handleApprovalSubmit} className="space-y-4 border-t border-primary-700 pt-4">
                     <div>
                       <label className="block text-sm text-gray-300 font-serif mb-1">Decision</label>
-                      <select 
-                        value={approvalDecision} 
-                        onChange={(e) => setApprovalDecision(e.target.value)} 
+                      <select
+                        value={approvalDecision}
+                        onChange={(e) => setApprovalDecision(e.target.value)}
                         className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
                         required
                       >
@@ -940,22 +1024,22 @@ const CooperativeGroups: React.FC = () => {
                       <label className="block text-sm text-gray-300 font-serif mb-1">
                         {approvalDecision === 'reject' ? 'Reason for Rejection' : 'Remarks'}
                       </label>
-                      <textarea 
-                        value={approvalRemarks} 
-                        onChange={(e) => setApprovalRemarks(e.target.value)} 
-                        rows={3} 
-                        className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600" 
-                        placeholder={approvalDecision === 'reject' ? 'Provide the reason for rejection' : 'Add remarks (optional)'} 
+                      <textarea
+                        value={approvalRemarks}
+                        onChange={(e) => setApprovalRemarks(e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                        placeholder={approvalDecision === 'reject' ? 'Provide the reason for rejection' : 'Add remarks (optional)'}
                         required={approvalDecision === 'reject'}
                       />
                     </div>
                     <div className="flex justify-end gap-2">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           setShowApprovalModal(null);
                           setShowFullApplication(false);
-                        }} 
+                        }}
                         className="btn-secondary"
                       >
                         Cancel
@@ -970,7 +1054,7 @@ const CooperativeGroups: React.FC = () => {
         })()}
 
         {finalApprovalNotice && (<div className="fixed right-4 bottom-4 sm:right-6 z-50 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg">{finalApprovalNotice}</div>)}
-        
+
         {/* Approval Confirmation Dialogs */}
         {showApprovalConfirmation && showApprovalModal && (
           <div
@@ -1064,56 +1148,79 @@ const CooperativeGroups: React.FC = () => {
             </select>
           </div>
 
+          {selectedRestrictUsers.length > 0 && (
+            <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md mb-4">
+              <span className="text-sm text-gray-200 font-sans">{selectedRestrictUsers.length} selected</span>
+              <button
+                onClick={handleMassRestrict}
+                className="btn-primary text-xs px-3 py-1"
+              >
+                🚫 Restrict All Selected
+              </button>
+            </div>
+          )}
+
           <div className="flex-grow overflow-y-auto custom-scrollbar">
             {paginatedRestrictUsers.length > 0 ? (
-              <div className="space-y-4">
-                {paginatedRestrictUsers.map((user) => (
-                  <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedRestrictUsers.includes(user.id)}
-                      onChange={() => handleRestrictCheckboxChange(user.id)}
-                      className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
-                    />
-                    <div className="flex-grow">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
-                          <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+              <>
+                <div className="flex items-center gap-2 p-2 bg-primary-700 rounded-md mb-3">
+                  <input
+                    type="checkbox"
+                    checked={restrictAllOnPageSelected}
+                    onChange={toggleRestrictSelectAll}
+                    className="w-4 h-4 accent-accent-500"
+                  />
+                  <span className="text-xs text-gray-400 font-sans">Select All</span>
+                </div>
+                <div className="space-y-4">
+                  {paginatedRestrictUsers.map((user) => (
+                    <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedRestrictUsers.includes(user.id)}
+                        onChange={() => handleRestrictCheckboxChange(user.id)}
+                        className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
+                      />
+                      <div className="flex-grow">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                            <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                          </div>
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500 text-white">
+                            Approved
+                          </span>
                         </div>
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500 text-white">
-                          Approved
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
-                        <span className="flex items-center gap-1">
-                          <span>👤</span> {user.role}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>📍</span> {user.state}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>🤝</span> {user.organization}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => setShowRestrictMoreInfo(user.id)} 
-                          className="btn-secondary text-sm px-3 py-1"
-                        >
-                          📋 More Info
-                        </button>
-                        <button 
-                          onClick={() => setShowRestrictModal(user.id)} 
-                          className="btn-primary text-sm px-3 py-1"
-                        >
-                          🚫 Restrict Access
-                        </button>
+                        <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                          <span className="flex items-center gap-1">
+                            <span>👤</span> {user.role}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>📍</span> {user.state}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>🤝</span> {user.organization}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => setShowRestrictMoreInfo(user.id)}
+                            className="btn-secondary text-sm px-3 py-1"
+                          >
+                            📋 More Info
+                          </button>
+                          <button
+                            onClick={() => setShowRestrictModal(user.id)}
+                            className="btn-primary text-sm px-3 py-1"
+                          >
+                            🚫 Restrict Access
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-10">
                 <div className="text-4xl mb-2">✅</div>
@@ -1121,20 +1228,20 @@ const CooperativeGroups: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Pagination */}
           {filteredRestrictUsers.length > pageSize && (
             <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-              <button 
-                onClick={() => setRestrictPage(prev => Math.max(prev - 1, 1))} 
+              <button
+                onClick={() => setRestrictPage(prev => Math.max(prev - 1, 1))}
                 disabled={restrictPage === 1}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ←
               </button>
               <span className="text-xs text-gray-400">{restrictPage} of {totalRestrictPages}</span>
-              <button 
-                onClick={() => setRestrictPage(prev => Math.min(prev + 1, totalRestrictPages))} 
+              <button
+                onClick={() => setRestrictPage(prev => Math.min(prev + 1, totalRestrictPages))}
                 disabled={restrictPage === totalRestrictPages}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -1163,69 +1270,91 @@ const CooperativeGroups: React.FC = () => {
             </div>
           </div>
 
+          {selectedApprovalRightsUsers.length > 0 && (
+            <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md mb-4">
+              <span className="text-sm text-gray-200 font-sans">{selectedApprovalRightsUsers.length} selected</span>
+              <button
+                onClick={handleMassApprovalRights}
+                className="btn-primary text-xs px-3 py-1"
+              >
+                ✅ Approve All Selected
+              </button>
+            </div>
+          )}
+
           <div className="flex-grow overflow-y-auto custom-scrollbar">
             {paginatedApprovalRightsUsers.length > 0 ? (
-              <div className="space-y-4">
-                {paginatedApprovalRightsUsers.map((user) => (
-                  <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedApprovalRightsUsers.includes(user.id)}
-                      onChange={() => handleApprovalRightsCheckboxChange(user.id)}
-                      className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
-                    />
-                    <div className="flex-grow">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
-                          <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+              <>
+                <div className="flex items-center gap-2 p-2 bg-primary-700 rounded-md mb-3">
+                  <input
+                    type="checkbox"
+                    checked={rightsAllOnPageSelected}
+                    onChange={toggleRightsSelectAll}
+                    className="w-4 h-4 accent-accent-500"
+                  />
+                  <span className="text-xs text-gray-400 font-sans">Select All</span>
+                </div>
+                <div className="space-y-4">
+                  {paginatedApprovalRightsUsers.map((user) => (
+                    <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedApprovalRightsUsers.includes(user.id)}
+                        onChange={() => handleApprovalRightsCheckboxChange(user.id)}
+                        className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
+                      />
+                      <div className="flex-grow">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                            <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.canApprove ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
+                            }`}>
+                            {user.canApprove ? 'Can Approve' : 'No Approval Rights'}
+                          </span>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.canApprove ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
-                        }`}>
-                          {user.canApprove ? 'Can Approve' : 'No Approval Rights'}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
-                        <span className="flex items-center gap-1">
-                          <span>👤</span> {user.role}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>📍</span> {user.state}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>🏢</span> {user.organization}
-                        </span>
-                      </div>
-                      <div className="bg-primary-700 p-2 rounded-md mb-2">
-                        <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={user.canApprove}
-                            onChange={() => {/* toggleApprovalRights(user.id) */}}
-                            className="accent-accent-500 w-4 h-4"
-                          />
-                          <span>Grant Approval Rights</span>
-                        </label>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => setShowApprovalRightsMoreInfo(user.id)} 
-                          className="btn-secondary text-sm px-3 py-1"
-                        >
-                          📋 More Info
-                        </button>
-                        <button 
-                          onClick={() => setShowRightsModal(user.id)} 
-                          className="btn-primary text-sm px-3 py-1"
-                        >
-                          ✅ Apply Changes
-                        </button>
+                        <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                          <span className="flex items-center gap-1">
+                            <span>👤</span> {user.role}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>📍</span> {user.state}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>🏢</span> {user.organization}
+                          </span>
+                        </div>
+                        <div className="bg-primary-700 p-2 rounded-md mb-2">
+                          <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={user.canApprove}
+                              onChange={() => {/* toggleApprovalRights(user.id) */ }}
+                              className="accent-accent-500 w-4 h-4"
+                            />
+                            <span>Grant Approval Rights</span>
+                          </label>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => setShowApprovalRightsMoreInfo(user.id)}
+                            className="btn-secondary text-sm px-3 py-1"
+                          >
+                            📋 More Info
+                          </button>
+                          <button
+                            onClick={() => setShowRightsModal(user.id)}
+                            className="btn-primary text-sm px-3 py-1"
+                          >
+                            ✅ Apply Changes
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-10">
                 <div className="text-4xl mb-2">🔍</div>
@@ -1233,20 +1362,20 @@ const CooperativeGroups: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Pagination */}
           {filteredApprovalRightsUsers.length > pageSize && (
             <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-              <button 
-                onClick={() => setApprovalRightsPage(prev => Math.max(prev - 1, 1))} 
+              <button
+                onClick={() => setApprovalRightsPage(prev => Math.max(prev - 1, 1))}
                 disabled={approvalRightsPage === 1}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ←
               </button>
               <span className="text-xs text-gray-400">{approvalRightsPage} of {totalApprovalRightsPages}</span>
-              <button 
-                onClick={() => setApprovalRightsPage(prev => Math.min(prev + 1, totalApprovalRightsPages))} 
+              <button
+                onClick={() => setApprovalRightsPage(prev => Math.min(prev + 1, totalApprovalRightsPages))}
                 disabled={approvalRightsPage === totalApprovalRightsPages}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -1273,7 +1402,7 @@ const CooperativeGroups: React.FC = () => {
                     </div>
                     <button onClick={() => setShowRestrictMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   {/* Application Details Section */}
                   <div className="space-y-4 mb-6">
                     <div className="bg-primary-800 rounded-md p-4">
@@ -1303,7 +1432,7 @@ const CooperativeGroups: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Contact Person Information */}
                     <div className="bg-primary-800 rounded-md p-4">
                       <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -1335,7 +1464,7 @@ const CooperativeGroups: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* View Full Application Section */}
                   {user.applicationData && (
                     <div className="mb-6 border-t border-primary-700 pt-4">
@@ -1350,11 +1479,11 @@ const CooperativeGroups: React.FC = () => {
                           {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                         </span>
                       </button>
-                      
+
                       {showFullApplication && renderFullApplicationView(user.applicationData)}
                     </div>
                   )}
-                  
+
                   <div className="flex justify-end">
                     <button onClick={() => setShowRestrictMoreInfo(null)} className="btn-primary">Close</button>
                   </div>
@@ -1363,7 +1492,7 @@ const CooperativeGroups: React.FC = () => {
             </div>
           ) : null;
         })()}
-        
+
         {/* Restrict Access Modal */}
         {showRestrictModal && (() => {
           const user = cooperativeGroups.find(u => u.id === showRestrictModal);
@@ -1378,9 +1507,9 @@ const CooperativeGroups: React.FC = () => {
                   <form onSubmit={(e) => { e.preventDefault(); handleRestrictAccess(user.id); }} className="space-y-4">
                     <div>
                       <label className="block text-sm text-gray-300 font-serif mb-1">Reason for Restriction</label>
-                      <select 
-                        value={restrictReason} 
-                        onChange={(e) => setRestrictReason(e.target.value)} 
+                      <select
+                        value={restrictReason}
+                        onChange={(e) => setRestrictReason(e.target.value)}
                         className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
                         required
                       >
@@ -1393,23 +1522,23 @@ const CooperativeGroups: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-sm text-gray-300 font-serif mb-1">Remarks</label>
-                      <textarea 
-                        value={restrictRemarks} 
-                        onChange={(e) => setRestrictRemarks(e.target.value)} 
-                        rows={3} 
-                        className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600" 
-                        placeholder="Add remarks (required)" 
+                      <textarea
+                        value={restrictRemarks}
+                        onChange={(e) => setRestrictRemarks(e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                        placeholder="Add remarks (required)"
                         required
                       />
                     </div>
                     <div className="flex justify-end gap-2">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           setShowRestrictModal(null);
                           setRestrictReason('');
                           setRestrictRemarks('');
-                        }} 
+                        }}
                         className="btn-secondary"
                       >
                         Cancel
@@ -1422,7 +1551,7 @@ const CooperativeGroups: React.FC = () => {
             </div>
           ) : null;
         })()}
-        
+
         {restrictToast && (<div className="fixed right-4 bottom-4 sm:right-6 z-50 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg">{restrictToast}</div>)}
 
         {showRightsModal && (() => {
@@ -1454,11 +1583,183 @@ const CooperativeGroups: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Batch Restriction Modal */}
+        {showBatchRestrictionModal && (
+          <div className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center" onClick={() => setShowBatchRestrictionModal(false)}>
+            <div className="w-full max-w-md bg-primary-900 border border-primary-700 rounded-lg p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-100 font-sans">Batch Restriction</h3>
+                  <p className="text-sm text-gray-300 font-serif mt-2">
+                    Restrict access for {selectedRestrictUsers.length} selected Cooperative Group users
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowBatchRestrictionModal(false)}
+                  className="text-gray-400 hover:text-gray-200"
+                >
+                  ✖
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-300 font-serif mb-1">
+                    Reason for Restriction <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={batchRestrictionReason}
+                    onChange={(e) => setBatchRestrictionReason(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                    required
+                  >
+                    <option value="">Select reason</option>
+                    <option value="Fraudulent Activity">Fraudulent Activity</option>
+                    <option value="Policy Violation">Policy Violation</option>
+                    <option value="Suspicious Behavior">Suspicious Behavior</option>
+                    <option value="Non-compliance">Non-compliance</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-300 font-serif mb-1">
+                    Additional Remarks (Optional)
+                  </label>
+                  <textarea
+                    value={batchRestrictionRemarks}
+                    onChange={(e) => setBatchRestrictionRemarks(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                    placeholder="Add additional remarks (optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowBatchRestrictionModal(false);
+                    setBatchRestrictionReason('');
+                    setBatchRestrictionRemarks('');
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={processBatchRestriction}
+                  className="btn-primary bg-red-600 hover:bg-red-700"
+                >
+                  🚫 Restrict All ({selectedRestrictUsers.length})
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Batch Approval Modal - Placeholder for future scheme applications */}
+        {showBatchApprovalModal && (
+          <div className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center" onClick={() => setShowBatchApprovalModal(false)}>
+            <div className="w-full max-w-md bg-primary-900 border border-primary-700 rounded-lg p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-100 font-sans">Batch Approval</h3>
+                  <p className="text-sm text-gray-300 font-serif mt-2">
+                    Approve {selectedApprovalRightsUsers.length} selected Cooperative Group scheme applications
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowBatchApprovalModal(false)}
+                  className="text-gray-400 hover:text-gray-200"
+                >
+                  ✖
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-300 font-serif mb-1">
+                    Amount to be Disbursed <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={batchDisbursementAmount}
+                    onChange={(e) => setBatchDisbursementAmount(e.target.value)}
+                    placeholder="Enter amount to be disbursed"
+                    className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                    required
+                    min="0"
+                    step="0.01"
+                  />
+                  <p className="text-xs text-gray-400 mt-1 font-serif">This amount will be applied to all selected applications.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-300 font-serif mb-1">
+                    Remarks (Optional)
+                  </label>
+                  <textarea
+                    value={batchApprovalRemarks}
+                    onChange={(e) => setBatchApprovalRemarks(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                    placeholder="Add remarks (optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowBatchApprovalModal(false);
+                    setBatchDisbursementAmount('');
+                    setBatchApprovalRemarks('');
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowBatchApprovalModal(false);
+                    alert('Batch approval functionality will be implemented when scheme applications are available.');
+                  }}
+                  className="btn-primary"
+                >
+                  ✅ Approve All ({selectedApprovalRightsUsers.length})
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="text-center text-gray-400 text-sm py-4">Powered by Mc. George</div>
+
+        {/* M&E Project Modal */}
+        {showMEProjectModal && meProjectData && (
+          <CreateMEProjectModal
+            isOpen={showMEProjectModal}
+            onClose={() => {
+              setShowMEProjectModal(false);
+              setMEProjectData(null);
+            }}
+            projectType={meProjectData.projectType}
+            sourceType={meProjectData.sourceType}
+            sourceId={meProjectData.sourceId}
+            sourceName={meProjectData.sourceName}
+            submissionData={meProjectData.submissionData}
+            schemeId={meProjectData.schemeId}
+            schemeName={meProjectData.schemeName}
+            notificationId={meProjectData.notificationId}
+          />
+        )}
       </div>
     </PortalLayout>
   );
 };
 
 export default CooperativeGroups;
+

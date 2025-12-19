@@ -5,45 +5,53 @@ import { useNotifications } from '../../../../context/NotificationContext';
 
 const InsuranceCompanyApplicants: React.FC = () => {
   const sidebarItems = [
-    { id: 'dashboard', name: 'Dashboard', icon: '🏠', href: '/portal/coordinating-agency', hasDropdown: true, dropdownItems: [
-      { id: 'activities', name: 'Activities', icon: '⚡', href: '/portal/coordinating-agency/activities' },
-      { id: 'fund-schemes', name: 'Fund Schemes', icon: '💼', href: '/portal/coordinating-agency/fund-schemes' },
-      { id: 'reportings', name: 'Reports', icon: '📑', href: '/portal/coordinating-agency/reportings' },
-      { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
-    ] },
-    { id: 'state-monitoring', name: 'State Monitoring Team', icon: '🗺️', href: '/portal/coordinating-agency/monitoring/state' },
-    { id: 'representative-body', name: 'Representative Body', icon: '🏛️', href: '/portal/coordinating-agency/representative', hasDropdown: true, dropdownItems: [
-      { id: 'rep-insurance', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/representative/insurance-companies' },
-      { id: 'rep-extension', name: 'Extension Organizations', icon: '🌿', href: '/portal/coordinating-agency/representative/extension-organizations' },
-      { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
-    ] },
-    { id: 'applicants', name: 'Applicants', icon: '📝', href: '/portal/coordinating-agency/applicants', hasDropdown: true, dropdownItems: [
-      { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
-      { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
-      { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-      { 
-        id: 'fund-beneficiaries', 
-        name: 'Fund Beneficiaries', 
-        icon: '👥', 
-        href: '/portal/coordinating-agency/fund-beneficiaries',
-        hasDropdown: true,
-        dropdownItems: [
-          { id: 'lead-firms', name: 'Lead Firms', icon: '🏢', href: '/portal/coordinating-agency/fund-beneficiaries/lead-firms' },
-          { id: 'anchors', name: 'Anchors', icon: '⚓', href: '/portal/coordinating-agency/fund-beneficiaries/anchors' },
-          { id: 'cooperative-groups', name: 'Cooperative Groups', icon: '🤝', href: '/portal/coordinating-agency/fund-beneficiaries/cooperative-groups' },
-          { id: 'producers-farmers', name: 'Producers/Farmers', icon: '🌾', href: '/portal/coordinating-agency/fund-beneficiaries/producers-farmers' }
-        ]
-      }
-    ] },
-    { id: 'stakeholders', name: 'Department', icon: '🤝', href: '/portal/coordinating-agency/stakeholders', hasDropdown: true, dropdownItems: [
-      { id: 'fund-management', name: 'Fund Management Department', icon: '💼', href: '/portal/coordinating-agency/stakeholders/fund-management' },
-      { id: 'credit-risk', name: 'Agricultural Credit Risk Management Department', icon: '📊', href: '/portal/coordinating-agency/stakeholders/credit-risk' },
-      { id: 'insurance', name: 'Agricultural Insurance Management Department', icon: '🛡️', href: '/portal/coordinating-agency/stakeholders/insurance' },
-      { id: 'finance', name: 'Finance and Accounting Department', icon: '🪙', href: '/portal/coordinating-agency/stakeholders/finance' },
-      { id: 'legal', name: 'Legal Department', icon: '⚖️', href: '/portal/coordinating-agency/stakeholders/legal' },
-      { id: 'it', name: 'IT Department', icon: '💻', href: '/portal/coordinating-agency/stakeholders/it' },
-      { id: 'training', name: 'Training Department', icon: '📚', href: '/portal/coordinating-agency/stakeholders/training' }
-    ] },
+    {
+      id: 'dashboard', name: 'Dashboard', icon: '🏠', href: '/portal/coordinating-agency', hasDropdown: true, dropdownItems: [
+        { id: 'activities', name: 'Activities', icon: '⚡', href: '/portal/coordinating-agency/activities' },
+        { id: 'fund-schemes', name: 'Fund Schemes', icon: '💼', href: '/portal/coordinating-agency/fund-schemes' },
+        { id: 'reportings', name: 'Reports', icon: '📑', href: '/portal/coordinating-agency/reportings' },
+        { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
+      ]
+    },
+    { id: 'me-team', name: 'M&E Team', icon: '📋', href: '/portal/coordinating-agency/monitoring/state' },
+    {
+      id: 'representative-body', name: 'Representative Body', icon: '🏛️', href: '/portal/coordinating-agency/representative', hasDropdown: true, dropdownItems: [
+        { id: 'rep-insurance', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/representative/insurance-companies' },
+        { id: 'rep-extension', name: 'Extension Organizations', icon: '🌿', href: '/portal/coordinating-agency/representative/extension-organizations' },
+        { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
+      ]
+    },
+    {
+      id: 'applicants', name: 'Applicants', icon: '📝', href: '/portal/coordinating-agency/applicants', hasDropdown: true, dropdownItems: [
+        { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
+        { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
+        { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
+          href: '/portal/coordinating-agency/fund-beneficiaries',
+          hasDropdown: true,
+          dropdownItems: [
+            { id: 'lead-firms', name: 'Lead Firms', icon: '🏢', href: '/portal/coordinating-agency/fund-beneficiaries/lead-firms' },
+            { id: 'anchors', name: 'Anchors', icon: '⚓', href: '/portal/coordinating-agency/fund-beneficiaries/anchors' },
+            { id: 'cooperative-groups', name: 'Cooperative Groups', icon: '🤝', href: '/portal/coordinating-agency/fund-beneficiaries/cooperative-groups' },
+            { id: 'producers-farmers', name: 'Producers/Farmers', icon: '🌾', href: '/portal/coordinating-agency/fund-beneficiaries/producers-farmers' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'stakeholders', name: 'Department', icon: '🤝', href: '/portal/coordinating-agency/stakeholders', hasDropdown: true, dropdownItems: [
+        { id: 'fund-management', name: 'Fund Management Department', icon: '💼', href: '/portal/coordinating-agency/stakeholders/fund-management' },
+        { id: 'credit-risk', name: 'Agricultural Credit Risk Management Department', icon: '📊', href: '/portal/coordinating-agency/stakeholders/credit-risk' },
+        { id: 'insurance', name: 'Agricultural Insurance Management Department', icon: '🛡️', href: '/portal/coordinating-agency/stakeholders/insurance' },
+        { id: 'finance', name: 'Finance and Accounting Department', icon: '🪙', href: '/portal/coordinating-agency/stakeholders/finance' },
+        { id: 'legal', name: 'Legal Department', icon: '⚖️', href: '/portal/coordinating-agency/stakeholders/legal' },
+        { id: 'it', name: 'IT Department', icon: '💻', href: '/portal/coordinating-agency/stakeholders/it' },
+        { id: 'training', name: 'Training Department', icon: '📚', href: '/portal/coordinating-agency/stakeholders/training' }
+      ]
+    },
     { id: 'publications', name: 'Publications', icon: '📚', href: '/portal/coordinating-agency/publications' },
     { id: 'blog', name: 'Blog', icon: '📰', href: '/portal/coordinating-agency/blog' },
     { id: 'faqs', name: 'FAQs', icon: '❓', href: '/portal/coordinating-agency/faqs' },
@@ -69,8 +77,8 @@ const InsuranceCompanyApplicants: React.FC = () => {
     title: string;
     documents: { label: string; name: string; type: string }[];
   } | null>(null);
-  
-  const { addNotification } = useNotifications();
+
+  const { addNotification, getNotificationsByRole } = useNotifications();
 
   const [restrictSearch, setRestrictSearch] = useState('');
   const [restrictPage, setRestrictPage] = useState(1);
@@ -96,27 +104,36 @@ const InsuranceCompanyApplicants: React.FC = () => {
   const [rightsToast, setRightsToast] = useState<string | null>(null);
   const [rightsConfirm, setRightsConfirm] = useState<{ name: string; decision: string } | null>(null);
 
+  // Batch Approval Modal State
+  const [showBatchApprovalModal, setShowBatchApprovalModal] = useState(false);
+  const [batchApprovalRemarks, setBatchApprovalRemarks] = useState('');
+
+  // Batch Restriction Modal State
+  const [showBatchRestrictionModal, setShowBatchRestrictionModal] = useState(false);
+  const [batchRestrictionReason, setBatchRestrictionReason] = useState('');
+  const [batchRestrictionRemarks, setBatchRestrictionRemarks] = useState('');
+
   const pageSize = 3;
-  const nigerianStates = [ 'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT Abuja','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara' ];
-  
+  const nigerianStates = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT Abuja', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'];
+
   // Get all Insurance Company records
   const [insuranceRecords, setInsuranceRecords] = useState<InsuranceCompanyRecord[]>([]);
-  
+
   useEffect(() => {
     const records = getInsuranceCompanies();
     setInsuranceRecords(records);
   }, []);
-  
+
   // Refresh records when status changes
   const refreshInsuranceCompanies = () => {
     const records = getInsuranceCompanies();
     setInsuranceRecords(records);
   };
-  
+
   // Helper function to render full application view for Insurance Company
   const renderFullApplicationView = (applicationData: any) => {
     if (!applicationData) return null;
-    
+
     const buildEntries = (source: Record<string, any>, labels: Record<string, string>) =>
       Object.entries(labels)
         .map(([key, label]) => {
@@ -128,13 +145,13 @@ const InsuranceCompanyApplicants: React.FC = () => {
           return { label, value: trimmed };
         })
         .filter(Boolean) as { label: string; value: string }[];
-    
+
     const deriveDocumentType = (fileName: string) => {
       if (!fileName) return 'Unknown';
       const extension = fileName.split('.').pop();
       return extension ? extension.toUpperCase() : 'Unknown';
     };
-    
+
     const openDocuments = (title: string, docs: { label: string; name: string }[]) => {
       if (!docs.length) return;
       setDocumentModal({
@@ -145,7 +162,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
         })),
       });
     };
-    
+
     const renderGroup = (
       title: string,
       entries: { label: string; value: string }[],
@@ -170,21 +187,21 @@ const InsuranceCompanyApplicants: React.FC = () => {
         )}
       </div>
     );
-    
+
     const step1 = applicationData.step1 ?? {};
     const step2 = applicationData.step2 ?? {};
     const step3 = applicationData.step3 ?? {};
     const step4 = applicationData.step4 ?? {};
     const step5 = applicationData.step5 ?? {};
     const step6 = applicationData.step6 ?? {};
-    
+
     const personalDetailsEntries = buildEntries(step1, {
       fullName: 'Full Name',
       position: 'Position',
       gender: 'Gender',
       birthDate: 'Date of Birth',
     });
-    
+
     const contactInformationEntries = buildEntries(step2, {
       email: 'Email Address',
       phone: 'Phone Number',
@@ -194,7 +211,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
       state: 'State',
       country: 'Country',
     });
-    
+
     const verificationEntries = buildEntries(step3, {
       idType: 'ID Type',
       idNumber: 'ID Number',
@@ -203,7 +220,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
       emergencyRelationship: 'Relationship with Emergency Contact',
       idDocumentName: 'Uploaded ID Document',
     });
-    
+
     const basicInformationEntries = buildEntries(step4, {
       organizationName: 'Organization Name',
       registrationNumber: 'Registration Number / CAC Number',
@@ -212,7 +229,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
       industry: 'Industry / Sector',
       missionStatement: 'Short Description / Mission Statement',
     });
-    
+
     const addressInformationEntries = buildEntries(step5, {
       headquartersAddress: 'Headquarters Address',
       hqCity: 'Headquarters City',
@@ -226,7 +243,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
       twitter: 'X Handle',
       instagram: 'Instagram Handle',
     });
-    
+
     const operationsEntries = buildEntries(
       {
         numEmployees: step6.numEmployees,
@@ -241,24 +258,24 @@ const InsuranceCompanyApplicants: React.FC = () => {
         partnershipDetails: 'Partnership Details',
       }
     );
-    
+
     const verificationDocuments =
       step3?.idDocumentName && step3.idDocumentName !== 'Not provided'
         ? [{ label: 'Government-issued ID', name: String(step3.idDocumentName) }]
         : [];
-    
+
     const operationsDocuments = [
       step6?.organizationLogoName && step6.organizationLogoName !== 'Not provided'
         ? { label: 'Organization Logo', name: String(step6.organizationLogoName) }
         : null,
       step6?.certificateOfIncorporationName && step6.certificateOfIncorporationName !== 'Not provided'
         ? {
-            label: 'Certificate of Incorporation / Registration',
-            name: String(step6.certificateOfIncorporationName),
-          }
+          label: 'Certificate of Incorporation / Registration',
+          name: String(step6.certificateOfIncorporationName),
+        }
         : null,
     ].filter(Boolean) as { label: string; name: string }[];
-    
+
     return (
       <div className="mt-4 space-y-6 bg-primary-800 rounded-md p-4">
         <div className="space-y-4">
@@ -307,11 +324,11 @@ const InsuranceCompanyApplicants: React.FC = () => {
       // Normalize formData to ensure areasOfOperation is an array
       const normalizedFormData = {
         ...record.formData,
-        areasOfOperation: Array.isArray(record.formData.areasOfOperation) 
-          ? record.formData.areasOfOperation 
+        areasOfOperation: Array.isArray(record.formData.areasOfOperation)
+          ? record.formData.areasOfOperation
           : (record.formData.areasOfOperation ? [record.formData.areasOfOperation] : [])
       };
-      
+
       return {
         id: record.id,
         name: record.formData.organizationName || record.formData.fullName,
@@ -367,14 +384,14 @@ const InsuranceCompanyApplicants: React.FC = () => {
         return matchesState && matchesSearch;
       });
   }, [insuranceApplicants, restrictStateFilter, restrictSearch]);
-  
+
   const paginatedRestrictUsers = useMemo(() => {
     const startIndex = (restrictPage - 1) * pageSize;
     return filteredRestrictUsers.slice(startIndex, startIndex + pageSize);
   }, [filteredRestrictUsers, restrictPage]);
-  
+
   const totalRestrictPages = Math.ceil(filteredRestrictUsers.length / pageSize);
-  
+
   // Filter for Approval Rights - Insurance Companies who applied for schemes (using notifications)
   type ApprovalRightsUser = {
     id: string;
@@ -384,21 +401,290 @@ const InsuranceCompanyApplicants: React.FC = () => {
     state: string;
     organization: string;
     canApprove: boolean;
+    notification?: any; // Store notification for scheme applications
+    submissionStatus?: string; // Status of the submission: 'Approved' or 'Pending'
   };
-  
+
+  // Fetch scheme submission notifications
+  // Include all statuses (pending, read, approved, rejected) to maintain audit trail
+  // Items are only removed when the scheme is deleted
+  const schemeSubmissionNotifications = useMemo(() => {
+    const allNotifications = getNotificationsByRole('coordinating-agency');
+    const filtered = allNotifications.filter(n =>
+      (n.metadata?.type === 'insuranceCompanySubmission' || n.metadata?.type === 'insuranceCompanySchemeApplication') &&
+      n.schemeId // Only filter by schemeId - include all notification statuses
+    );
+
+    // DEBUG: Log IC notification count to track any clearing
+    console.log('[IC Approval Rights] Total CA notifications:', allNotifications.length);
+    console.log('[IC Approval Rights] IC notifications found:', filtered.length);
+    if (filtered.length > 0) {
+      console.log('[IC Approval Rights] IC notifications:', filtered.map(n => ({
+        id: n.id,
+        schemeId: n.schemeId,
+        company: n.companyName,
+        status: n.status
+      })));
+    }
+
+    return filtered;
+  }, [getNotificationsByRole]);
+
+  // Check for sessionStorage flag to open modal only when explicitly triggered by notification click
+  // (must be after schemeSubmissionNotifications declaration)
+  useEffect(() => {
+    // Only open modal if there's a sessionStorage flag indicating intentional click
+    const notificationIdToOpen = sessionStorage.getItem('openInsuranceSubmissionModal');
+    if (notificationIdToOpen && !showApprovalModal) {
+      // Clear the flag immediately to prevent reopening on subsequent renders
+      sessionStorage.removeItem('openInsuranceSubmissionModal');
+
+      // Function to find and open the modal
+      const findAndOpenModal = () => {
+        // First, check all notifications (not just filtered ones) to find the notification
+        const allNotifications = getNotificationsByRole('coordinating-agency');
+        const notification = allNotifications.find(n =>
+          n.id === notificationIdToOpen &&
+          (n.metadata?.type === 'insuranceCompanySubmission' || n.metadata?.type === 'insuranceCompanySchemeApplication')
+        );
+
+        if (notification) {
+          // Open the modal with the notification ID
+          setShowApprovalModal(notificationIdToOpen);
+          // Scroll to top to ensure modal is visible
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return true;
+        }
+        return false;
+      };
+
+      // Try immediately first
+      if (findAndOpenModal()) {
+        return;
+      }
+
+      // If not found, try again after a delay (notifications might still be loading)
+      const timer = setTimeout(() => {
+        findAndOpenModal();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [getNotificationsByRole, showApprovalModal]);
+
   const filteredApprovalRightsUsers: ApprovalRightsUser[] = useMemo(() => {
-    // This will be populated from notifications for scheme applications
-    // For now, return empty array - this card is preserved for scheme applications
-    return [] as ApprovalRightsUser[];
-  }, []);
-  
+    // Load schemes to check submission status
+    const storedSchemes = localStorage.getItem('fundSchemes');
+    const schemes = storedSchemes ? JSON.parse(storedSchemes) : [];
+
+    // Step 1: Build a map of all submissions (pending, approved, rejected) from scheme data
+    // This is the source of truth for submission status
+    const submissionsMap = new Map<string, {
+      schemeId: string;
+      insuranceCompanyId: string;
+      submittedAt: string;
+      status: 'pending' | 'approved' | 'rejected';
+    }>();
+    schemes.forEach((scheme: any) => {
+      if (scheme.insuranceCompanySubmissions) {
+        scheme.insuranceCompanySubmissions.forEach((sub: any) => {
+          const key = `${scheme.id}_${sub.insuranceCompanyId}`;
+          // Keep the most recent submission for each scheme+IC combination
+          const existing = submissionsMap.get(key);
+          if (!existing || (sub.submittedAt && (!existing.submittedAt || sub.submittedAt > existing.submittedAt))) {
+            submissionsMap.set(key, {
+              schemeId: scheme.id,
+              insuranceCompanyId: sub.insuranceCompanyId,
+              submittedAt: sub.submittedAt,
+              status: sub.status || 'pending'
+            });
+          }
+        });
+      }
+    });
+
+    // Step 2: Filter notifications to only those matching pending submissions
+    // and deduplicate by schemeId + insuranceCompanyId
+    const submissionMap = new Map<string, typeof schemeSubmissionNotifications[0]>();
+    const seenNotificationIds = new Set<string>();
+
+    schemeSubmissionNotifications.forEach(notif => {
+      // Skip if we've already seen this notification ID
+      if (seenNotificationIds.has(notif.id)) {
+        return;
+      }
+      seenNotificationIds.add(notif.id);
+
+      // Normalize keys
+      const schemeId = String(notif.schemeId || '').trim();
+      const insuranceCompanyId = String(notif.metadata?.insuranceCompanyId || '').trim();
+      const uniqueKey = `${schemeId}_${insuranceCompanyId}`;
+
+      // Skip if key is invalid
+      if (!schemeId || !insuranceCompanyId) {
+        return;
+      }
+
+      // Check if this submission exists in scheme data
+      const submission = submissionsMap.get(uniqueKey);
+      if (!submission) {
+        // This submission doesn't exist in scheme data (scheme may have been deleted)
+        return;
+      }
+
+      // Check if the scheme still exists (not deleted)
+      const scheme = schemes.find((s: any) => s.id === schemeId);
+      if (!scheme) {
+        // Scheme has been deleted - don't show this submission
+        return;
+      }
+
+      // Hide rejected submissions temporarily - they will reappear when IC resubmits
+      // Only show pending and approved submissions on the Approval Rights card
+      // Rejected submissions are kept in history but not shown until resubmission
+      if (submission.status === 'rejected') {
+        return;
+      }
+
+      // Check if we already have a notification for this submission
+      const existing = submissionMap.get(uniqueKey);
+      if (!existing) {
+        // First notification for this submission - add it
+        submissionMap.set(uniqueKey, notif);
+      } else {
+        // We already have a notification - keep the best one
+        // Priority: pending > read, then most recent
+        const existingIsPending = existing.status === 'pending';
+        const currentIsPending = notif.status === 'pending';
+
+        if (currentIsPending && !existingIsPending) {
+          // Current is pending, existing is read - keep current
+          submissionMap.set(uniqueKey, notif);
+        } else if (!currentIsPending && existingIsPending) {
+          // Current is read, existing is pending - keep existing
+          // Do nothing
+        } else {
+          // Both have same status - keep the most recent one
+          const existingTime = existing.receivedAt || '';
+          const currentTime = notif.receivedAt || '';
+          if (currentTime > existingTime) {
+            submissionMap.set(uniqueKey, notif);
+          }
+        }
+      }
+    });
+
+    // Step 3: Get final unique list
+    const finalUniqueNotifications = Array.from(submissionMap.values());
+
+    // Map to Approval Rights Users, using schemeId + insuranceCompanyId as the unique ID
+    // This ensures that even if there are multiple notifications, we only show one user entry
+    const userMap = new Map<string, ApprovalRightsUser & { notification?: any }>();
+
+    finalUniqueNotifications.forEach(notif => {
+      const schemeId = String(notif.schemeId || '').trim();
+      const insuranceCompanyId = String(notif.metadata?.insuranceCompanyId || '').trim();
+      const uniqueUserId = `submission_${schemeId}_${insuranceCompanyId}`;
+
+      // Skip if we already have a user for this submission
+      if (userMap.has(uniqueUserId)) {
+        return;
+      }
+
+      const icRecord = insuranceRecords.find(r => r.id === insuranceCompanyId);
+      const submission = submissionsMap.get(`${schemeId}_${insuranceCompanyId}`);
+      const submissionStatus = submission?.status || 'pending';
+
+      // Status display rules:
+      // - Approved → show "Approved"
+      // - Rejected → show "Pending" (because IC can reapply, so CA is still waiting)
+      // - Pending → show "Pending"
+      const displayStatus = submissionStatus === 'approved' ? 'Approved' : 'Pending';
+
+      const user: ApprovalRightsUser & { notification?: any; submissionStatus?: string } = {
+        id: uniqueUserId, // Use stable unique ID based on submission, not notification
+        name: notif.applicantName || notif.companyName || icRecord?.formData?.organizationName || 'Unknown',
+        email: notif.contactPersonEmail || notif.companyEmail || icRecord?.email || '',
+        role: 'Insurance Company',
+        state: icRecord?.formData?.hqState || 'N/A',
+        organization: notif.companyName || icRecord?.formData?.organizationName || 'Unknown',
+        canApprove: true,
+        notification: notif, // Store the full notification for access
+        submissionStatus: displayStatus // Display status according to rules
+      };
+
+      userMap.set(uniqueUserId, user);
+    });
+
+    return Array.from(userMap.values()).filter((user): user is ApprovalRightsUser & { notification?: any; submissionStatus?: string } => {
+      // Filter by search
+      const matchesSearch = !approvalRightsSearch ||
+        user.name.toLowerCase().includes(approvalRightsSearch.toLowerCase()) ||
+        user.email.toLowerCase().includes(approvalRightsSearch.toLowerCase()) ||
+        user.organization.toLowerCase().includes(approvalRightsSearch.toLowerCase());
+
+      // Filter by state
+      const matchesState = approvalRightsStateFilter === 'All' ||
+        user.state === approvalRightsStateFilter;
+
+      return matchesSearch && matchesState;
+    });
+  }, [schemeSubmissionNotifications, insuranceRecords, approvalRightsSearch, approvalRightsStateFilter]);
+
   const paginatedApprovalRightsUsers = useMemo(() => {
     const startIndex = (approvalRightsPage - 1) * pageSize;
     return filteredApprovalRightsUsers.slice(startIndex, startIndex + pageSize);
   }, [filteredApprovalRightsUsers, approvalRightsPage]);
-  
+
   const totalApprovalRightsPages = Math.ceil(filteredApprovalRightsUsers.length / pageSize);
-  
+
+  // Build submission history from all schemes
+  const submissionHistory = useMemo(() => {
+    const storedSchemes = localStorage.getItem('fundSchemes');
+    if (!storedSchemes) return [];
+
+    const schemes = JSON.parse(storedSchemes);
+    const history: Array<{
+      date: string;
+      insuranceCompanyName: string;
+      schemeName: string;
+      action: 'Approved' | 'Rejected';
+      rejectionReason?: string;
+      reviewedAt: string;
+    }> = [];
+
+    schemes.forEach((scheme: any) => {
+      if (scheme.insuranceCompanySubmissions) {
+        scheme.insuranceCompanySubmissions.forEach((sub: any) => {
+          // Only include submissions that have been reviewed (approved or rejected)
+          if (sub.reviewedAt && (sub.status === 'approved' || sub.status === 'rejected')) {
+            const icRecord = insuranceRecords.find(r => r.id === sub.insuranceCompanyId);
+            const insuranceCompanyName = icRecord?.formData?.organizationName || 'Unknown Insurance Company';
+
+            history.push({
+              date: new Date(sub.reviewedAt).toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }).replace(',', ''),
+              insuranceCompanyName,
+              schemeName: scheme.name || 'Unknown Scheme',
+              action: sub.status === 'approved' ? 'Approved' : 'Rejected',
+              rejectionReason: sub.reviewNotes || undefined,
+              reviewedAt: sub.reviewedAt
+            });
+          }
+        });
+      }
+    });
+
+    // Sort by reviewedAt (most recent first)
+    return history.sort((a, b) => new Date(b.reviewedAt).getTime() - new Date(a.reviewedAt).getTime());
+  }, [insuranceRecords]);
+
   const restrictAllOnPageSelected = paginatedRestrictUsers.length > 0 && paginatedRestrictUsers.every(u => selectedRestrictUsers.includes(u.id));
   const toggleRestrictSelectAll = () => {
     if (restrictAllOnPageSelected) {
@@ -408,7 +694,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
       setSelectedRestrictUsers(prev => [...prev, ...toAdd]);
     }
   };
-  
+
   const rightsAllOnPageSelected = filteredApprovalRightsUsers.length > 0 && filteredApprovalRightsUsers.every(u => selectedApprovalRightsUsers.includes(u.id));
   const toggleRightsSelectAll = () => {
     if (rightsAllOnPageSelected) {
@@ -418,7 +704,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
       setSelectedApprovalRightsUsers(prev => [...prev, ...toAdd]);
     }
   };
-  
+
   // Reset pages on filter/search change
   useEffect(() => { setRestrictPage(1); }, [restrictSearch, restrictStateFilter]);
   useEffect(() => { setApprovalRightsPage(1); }, [approvalRightsSearch, approvalRightsStateFilter]);
@@ -426,50 +712,162 @@ const InsuranceCompanyApplicants: React.FC = () => {
   const handleApproveCheckboxChange = (userId: string) => setSelectedApproveUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
   const handleRestrictCheckboxChange = (userId: string) => setSelectedRestrictUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
   const handleApprovalRightsCheckboxChange = (userId: string) => setSelectedApprovalRightsUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
-  
+
   const handleMassApprove = () => {
     if (selectedApproveUsers.length === 0) return;
     alert(`Approved ${selectedApproveUsers.length} Insurance Company applications`);
     setSelectedApproveUsers([]);
     refreshInsuranceCompanies();
   };
-  
+
+  const { updateNotificationStatus } = useNotifications();
+
   // Process approval/rejection
-  const processApproval = (userId: string) => {
+  const processApproval = (notificationId: string) => {
     if (!approvalDecision) return;
-    
-    const user = insuranceApplicants.find(u => u.id === userId);
-    if (!user || !user.record) return;
-    
+
     const trimmedRemarks = approvalRemarks.trim();
     const isApproved = approvalDecision === 'approve';
-    
-    if (!isApproved && !trimmedRemarks) {
-      alert('Please provide a reason for rejecting this Insurance Company.');
+
+    // Find the notification
+    const notification = schemeSubmissionNotifications.find(n => n.id === notificationId);
+    if (!notification) {
+      // Fall back to registration approval
+      const user = insuranceApplicants.find(u => u.id === notificationId);
+      if (!user || !user.record) return;
+
+      if (!isApproved && !trimmedRemarks) {
+        alert('Please provide a reason for rejecting this Insurance Company.');
+        return;
+      }
+
+      // Update Insurance Company status
+      updateInsuranceCompanyStatus(user.record.id, isApproved ? 'verified' : 'unverified', {
+        rejectionReason: isApproved ? undefined : trimmedRemarks,
+        pendingNotificationId: null,
+      });
+
+      // Send notification to Insurance Company
+      const message = isApproved
+        ? 'Your registration has been approved. You now have full access.'
+        : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+
+      addNotification({
+        role: '🏛️ Coordinating Agency',
+        targetRole: 'insurance',
+        message,
+        metadata: {
+          type: 'insuranceCompanyRegistrationResponse',
+          insuranceCompanyId: user.record.id,
+        },
+      });
+
+      refreshInsuranceCompanies();
+      setShowApprovalModal(null);
+      setApprovalDecision('');
+      setApprovalRemarks('');
+      setShowFullApplication(false);
+      setShowApprovalConfirmation(false);
+      setShowRejectionConfirmation(false);
+      setFinalApprovalNotice(`✅ Decision ${isApproved ? 'Approved' : 'Rejected'} submitted for ${user.name}`);
+      setTimeout(() => setFinalApprovalNotice(null), 3000);
       return;
     }
-    
-    // Update Insurance Company status
-    updateInsuranceCompanyStatus(user.record.id, isApproved ? 'verified' : 'unverified', {
-      rejectionReason: isApproved ? undefined : trimmedRemarks,
-      pendingNotificationId: null,
-    });
-    
-    // Send notification to Insurance Company
+
+    // Handle scheme submission approval
+    if (!isApproved && !trimmedRemarks) {
+      alert('Please provide a reason for rejecting this Insurance Company submission.');
+      return;
+    }
+
+    const schemeId = notification.schemeId;
+    const insuranceCompanyId = notification.metadata?.insuranceCompanyId as string | undefined;
+
+    if (schemeId && insuranceCompanyId) {
+      // Update scheme in localStorage
+      const storedSchemes = localStorage.getItem('fundSchemes');
+      if (storedSchemes) {
+        const schemes = JSON.parse(storedSchemes);
+        const updatedSchemes = schemes.map((scheme: any) => {
+          if (scheme.id === schemeId) {
+            // Find the most recent pending submission for this IC to update
+            // If submittedAt matches, use that; otherwise find the most recent pending one
+            const notificationSubmittedAt = (notification.applicationData as any)?.submittedAt;
+            const updatedSubmissions = (scheme.insuranceCompanySubmissions || []).map((sub: any) => {
+              const matchesSubmittedAt = notificationSubmittedAt && sub.submittedAt === notificationSubmittedAt;
+              const isPendingForThisIC = sub.insuranceCompanyId === insuranceCompanyId && sub.status === 'pending';
+
+              // Match by submittedAt if available, otherwise match most recent pending submission
+              if (sub.insuranceCompanyId === insuranceCompanyId && (matchesSubmittedAt || (isPendingForThisIC && !notificationSubmittedAt))) {
+                return {
+                  ...sub,
+                  status: isApproved ? 'approved' : 'rejected',
+                  reviewedAt: new Date().toISOString(),
+                  reviewNotes: trimmedRemarks || undefined
+                };
+              }
+              return sub;
+            });
+
+            const updatedScheme: any = {
+              ...scheme,
+              insuranceCompanySubmissions: updatedSubmissions
+            };
+
+            // If approved, check if this is the first approved IC for this scheme
+            // If so, notify CA that scheme is ready to open for PFIs
+            if (isApproved) {
+              updatedScheme.approvedInsuranceCompanyId = insuranceCompanyId;
+
+              // Check if this is the first approved IC (scheme becomes eligible for PFIs)
+              const approvedICCount = updatedSubmissions.filter((sub: any) => sub.status === 'approved').length;
+              const wasFirstApproval = approvedICCount === 1;
+
+              if (wasFirstApproval) {
+                // Notify CA that scheme is ready to open for PFIs
+                addNotification({
+                  role: '🏛️ Coordinating Agency',
+                  targetRole: 'coordinating-agency',
+                  message: `A scheme is now ready to open for PFI applications.`,
+                  schemeId: schemeId,
+                  schemeName: scheme.name,
+                  metadata: {
+                    type: 'schemeReadyForPFIs',
+                    schemeId: schemeId,
+                    actionType: 'open_for_pfis'
+                  }
+                });
+              }
+            }
+
+            return updatedScheme;
+          }
+          return scheme;
+        });
+        localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
+      }
+    }
+
+    updateNotificationStatus(notificationId, isApproved ? 'approved' : 'rejected');
+
+    // Notify Insurance Company
     const message = isApproved
-      ? 'Your registration has been approved. You now have full access.'
-      : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
-    
+      ? `Your insurance submission for scheme "${notification.schemeName}" has been approved. The scheme will now proceed to PFI applications.`
+      : `Your insurance submission for scheme "${notification.schemeName}" has been rejected. ${trimmedRemarks ? `Reason: ${trimmedRemarks}` : ''}`;
+
     addNotification({
       role: '🏛️ Coordinating Agency',
       targetRole: 'insurance',
       message,
+      schemeId: notification.schemeId,
+      schemeName: notification.schemeName,
       metadata: {
-        type: 'insuranceCompanyRegistrationResponse',
-        insuranceCompanyId: user.record.id,
+        type: 'insuranceCompanySubmissionResponse',
+        insuranceCompanyId,
+        relatedNotificationId: notification.id,
       },
     });
-    
+
     refreshInsuranceCompanies();
     setShowApprovalModal(null);
     setApprovalDecision('');
@@ -477,62 +875,66 @@ const InsuranceCompanyApplicants: React.FC = () => {
     setShowFullApplication(false);
     setShowApprovalConfirmation(false);
     setShowRejectionConfirmation(false);
-    setFinalApprovalNotice(`✅ Decision ${isApproved ? 'Approved' : 'Rejected'} submitted for ${user.name}`);
+    setFinalApprovalNotice(`✅ Decision ${isApproved ? 'Approved' : 'Rejected'} submitted for ${notification.schemeName}`);
     setTimeout(() => setFinalApprovalNotice(null), 3000);
   };
-  
+
   const handleApprovalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!showApprovalModal || !approvalDecision) return;
-    
+
+    // Check if this is a scheme submission or registration
+    const notification = schemeSubmissionNotifications.find(n => n.id === showApprovalModal);
+    const isSchemeSubmission = !!notification;
+
     if (approvalDecision === 'approve' && !showApprovalConfirmation) {
       setShowApprovalConfirmation(true);
       return;
     }
-    
+
     if (approvalDecision === 'reject' && !showRejectionConfirmation) {
       setShowRejectionConfirmation(true);
       return;
     }
-    
+
     processApproval(showApprovalModal);
   };
-  
+
   const handleConfirmApproval = () => {
     setShowApprovalConfirmation(false);
     if (showApprovalModal) {
       processApproval(showApprovalModal);
     }
   };
-  
+
   const handleConfirmRejection = () => {
     setShowRejectionConfirmation(false);
     if (showApprovalModal) {
       processApproval(showApprovalModal);
     }
   };
-  
+
   const handleCancelApproval = () => {
     setShowApprovalConfirmation(false);
     setApprovalDecision('');
   };
-  
+
   const handleCancelRejection = () => {
     setShowRejectionConfirmation(false);
     setApprovalDecision('');
   };
-  
+
   // Handle restrict access
   const handleRestrictAccess = (userId: string) => {
     const user = insuranceApplicants.find(u => u.id === userId);
     if (!user || !user.record) return;
-    
+
     // Change status from verified to unverified
     updateInsuranceCompanyStatus(user.record.id, 'unverified', {
       rejectionReason: restrictRemarks || 'Access restricted by Coordinating Agency',
       pendingNotificationId: null,
     });
-    
+
     // Send notification
     addNotification({
       role: '🏛️ Coordinating Agency',
@@ -543,7 +945,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
         insuranceCompanyId: user.record.id,
       },
     });
-    
+
     refreshInsuranceCompanies();
     setShowRestrictModal(null);
     setRestrictReason('');
@@ -551,17 +953,129 @@ const InsuranceCompanyApplicants: React.FC = () => {
     setRestrictToast(`🚫 Access restricted for ${user.name}`);
     setTimeout(() => setRestrictToast(null), 3000);
   };
-  
+
   const handleMassRestrict = () => {
     if (selectedRestrictUsers.length === 0) return;
-    alert(`Restricted access for ${selectedRestrictUsers.length} Insurance Company users`);
-    setSelectedRestrictUsers([]);
+    setShowBatchRestrictionModal(true);
   };
-  
+
+  const processBatchRestriction = () => {
+    if (!batchRestrictionReason.trim()) {
+      alert('Please provide a reason for restriction.');
+      return;
+    }
+
+    const selectedUsers = filteredRestrictUsers.filter(u => selectedRestrictUsers.includes(u.id));
+
+    selectedUsers.forEach(user => {
+      if (user.record) {
+        const restrictionMessage = `RESTRICTED: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`;
+        updateInsuranceCompanyStatus(user.record.id, 'unverified', {
+          rejectionReason: restrictionMessage,
+          pendingNotificationId: null,
+        });
+
+        addNotification({
+          role: '🏛️ Coordinating Agency',
+          targetRole: 'insurance',
+          message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
+          metadata: {
+            type: 'insuranceCompanyAccessRestricted',
+            insuranceCompanyId: user.record.id,
+            reason: batchRestrictionReason.trim(),
+          },
+        });
+      }
+    });
+
+    setShowBatchRestrictionModal(false);
+    setBatchRestrictionReason('');
+    setBatchRestrictionRemarks('');
+    setSelectedRestrictUsers([]);
+    refreshInsuranceCompanies();
+
+    setRestrictToast(`🚫 Successfully restricted access for ${selectedUsers.length} Insurance Company users`);
+    setTimeout(() => setRestrictToast(null), 3000);
+  };
+
   const handleMassApprovalRights = () => {
     if (selectedApprovalRightsUsers.length === 0) return;
-    alert(`Updated approval rights for ${selectedApprovalRightsUsers.length} Insurance Company users`);
+    setShowBatchApprovalModal(true);
+  };
+
+  const processBatchApproval = () => {
+    if (!batchApprovalRemarks.trim()) {
+      alert('Please provide remarks for batch approval.');
+      return;
+    }
+
+    const selectedUsers = filteredApprovalRightsUsers.filter(u => selectedApprovalRightsUsers.includes(u.id));
+
+    let successCount = 0;
+    const storedSchemes = localStorage.getItem('fundSchemes');
+    if (storedSchemes) {
+      let schemes = JSON.parse(storedSchemes);
+
+      selectedUsers.forEach(user => {
+        const notification = user.notification;
+        if (!notification) return;
+
+        const schemeId = notification.schemeId;
+        const insuranceCompanyId = notification.metadata?.insuranceCompanyId;
+
+        if (schemeId && insuranceCompanyId) {
+          schemes = schemes.map((scheme: any) => {
+            if (scheme.id === schemeId) {
+              const updatedSubmissions = (scheme.insuranceCompanySubmissions || []).map((sub: any) => {
+                if (sub.insuranceCompanyId === insuranceCompanyId && sub.status === 'pending') {
+                  return {
+                    ...sub,
+                    status: 'approved',
+                    reviewedAt: new Date().toISOString(),
+                    reviewNotes: batchApprovalRemarks.trim()
+                  };
+                }
+                return sub;
+              });
+
+              return {
+                ...scheme,
+                insuranceCompanySubmissions: updatedSubmissions
+              };
+            }
+            return scheme;
+          });
+
+          updateNotificationStatus(notification.id, 'approved');
+
+          addNotification({
+            role: '🏛️ Coordinating Agency',
+            targetRole: 'insurance',
+            message: `Your submission for scheme "${notification.schemeName}" has been approved.`,
+            schemeId: notification.schemeId,
+            schemeName: notification.schemeName,
+            metadata: {
+              type: 'insuranceCompanySubmissionResponse',
+              insuranceCompanyId,
+              relatedNotificationId: notification.id,
+              isApproved: true,
+            },
+          });
+
+          successCount++;
+        }
+      });
+
+      localStorage.setItem('fundSchemes', JSON.stringify(schemes));
+    }
+
+    setShowBatchApprovalModal(false);
+    setBatchApprovalRemarks('');
     setSelectedApprovalRightsUsers([]);
+    refreshInsuranceCompanies();
+
+    setFinalApprovalNotice(`✅ Successfully approved ${successCount} Insurance Company submissions`);
+    setTimeout(() => setFinalApprovalNotice(null), 3000);
   };
 
   return (
@@ -615,7 +1129,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
             {selectedApproveUsers.length > 0 && (
               <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md">
                 <span className="text-sm text-gray-200 font-sans">{selectedApproveUsers.length} selected</span>
-                <button 
+                <button
                   onClick={handleMassApprove}
                   className="btn-primary text-xs px-3 py-1"
                 >
@@ -624,7 +1138,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
               </div>
             )}
           </div>
-            
+
           <div className="flex-1 flex flex-col">
             <div className="space-y-3 flex-1">
               {paginatedApproveUsers.length > 0 ? (
@@ -653,11 +1167,10 @@ const InsuranceCompanyApplicants: React.FC = () => {
                               <p className="text-sm font-medium text-gray-100 font-sans">{user.name}</p>
                               <p className="text-xs text-gray-400 font-serif">{user.email}</p>
                             </div>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              user.status === 'verified' 
-                                ? 'bg-green-500 text-white' 
-                                : 'bg-yellow-500 text-white'
-                            }`}>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'verified'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-yellow-500 text-white'
+                              }`}>
                               {user.status === 'verified' ? 'Approved' : 'Pending'}
                             </span>
                           </div>
@@ -673,13 +1186,13 @@ const InsuranceCompanyApplicants: React.FC = () => {
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            <button 
+                            <button
                               onClick={() => setShowApproveMoreInfo(user.id)}
                               className="text-xs text-accent-400 hover:text-accent-300 font-medium"
                             >
                               📋 More Info
                             </button>
-                            <button 
+                            <button
                               onClick={() => setShowApprovalModal(user.id)}
                               className="text-xs bg-accent-600 hover:bg-accent-700 text-white px-3 py-1 rounded transition-colors font-medium"
                             >
@@ -702,16 +1215,16 @@ const InsuranceCompanyApplicants: React.FC = () => {
             {/* Pagination */}
             {filteredApproveUsers.length > pageSize && (
               <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                <button 
-                  onClick={() => setApprovePage(prev => Math.max(prev - 1, 1))} 
+                <button
+                  onClick={() => setApprovePage(prev => Math.max(prev - 1, 1))}
                   disabled={approvePage === 1}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ←
                 </button>
                 <span className="text-xs text-gray-400">{approvePage} of {totalApprovePages}</span>
-                <button 
-                  onClick={() => setApprovePage(prev => Math.min(prev + 1, totalApprovePages))} 
+                <button
+                  onClick={() => setApprovePage(prev => Math.min(prev + 1, totalApprovePages))}
                   disabled={approvePage === totalApprovePages}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -740,7 +1253,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
                     </div>
                     <button onClick={() => setShowApproveMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   {/* Application Details Section */}
                   <div className="space-y-4 mb-6">
                     <div className="bg-primary-800 rounded-md p-4">
@@ -770,7 +1283,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Contact Person Information */}
                     <div className="bg-primary-800 rounded-md p-4">
                       <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -802,7 +1315,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* View Full Application Section */}
                   {user.applicationData && (
                     <div className="mb-6 border-t border-primary-700 pt-4">
@@ -817,11 +1330,11 @@ const InsuranceCompanyApplicants: React.FC = () => {
                           {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                         </span>
                       </button>
-                      
+
                       {showFullApplication && renderFullApplicationView(user.applicationData)}
                     </div>
                   )}
-                  
+
                   <div className="flex justify-end">
                     <button
                       onClick={() => { setShowApproveMoreInfo(null); setShowApprovalModal(user.id); }}
@@ -838,7 +1351,142 @@ const InsuranceCompanyApplicants: React.FC = () => {
 
         {/* Review & Approve Modal - Full Application View with Decision Form */}
         {showApprovalModal && (() => {
+          // Check if this is a scheme submission notification
+          // First check in filtered list, then check all notifications
+          let notification = schemeSubmissionNotifications.find(n => n.id === showApprovalModal);
+          if (!notification) {
+            // Fallback: check all notifications (in case status changed or filter excluded it)
+            const allNotifications = getNotificationsByRole('coordinating-agency');
+            notification = allNotifications.find(n =>
+              n.id === showApprovalModal &&
+              (n.metadata?.type === 'insuranceCompanySubmission' || n.metadata?.type === 'insuranceCompanySchemeApplication')
+            );
+          }
           const user = insuranceApplicants.find(u => u.id === showApprovalModal);
+
+          if (notification) {
+            // Render scheme submission review modal
+            // Store in const to help TypeScript with type narrowing
+            const foundNotification = notification;
+            const submissionData = foundNotification.applicationData as any;
+            const icRecord = insuranceRecords.find(r => r.id === foundNotification.metadata?.insuranceCompanyId);
+
+            return (
+              <div className="fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto" onClick={() => setShowApprovalModal(null)}>
+                <div className="min-h-screen flex items-center justify-center py-8">
+                  <div className="w-full max-w-3xl bg-primary-900 rounded-lg border border-primary-700 p-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold font-sans text-gray-100">Insurance Company Scheme Submission Review</h3>
+                        <div className="mt-2 p-3 bg-primary-800 rounded-md">
+                          <p className="text-xs text-accent-400 font-sans font-medium mb-1">🛡️ Insurance Company - Scheme Submission</p>
+                          <p className="text-sm text-gray-200">{foundNotification.schemeName || 'Scheme Application'}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setShowApprovalModal(null)} className="text-gray-400 hover:text-gray-200">✖</button>
+                    </div>
+
+                    {/* Scheme Submission Details */}
+                    <div className="space-y-4 mb-6">
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Scheme Information</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-gray-400 font-serif mb-1">Scheme Name</p>
+                            <p className="text-sm text-gray-100 font-sans">{foundNotification.schemeName || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400 font-serif mb-1">Insurance Company</p>
+                            <p className="text-sm text-gray-100 font-sans">{foundNotification.companyName || icRecord?.formData?.organizationName || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {submissionData && (
+                        <div className="bg-primary-800 rounded-md p-4">
+                          <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Submission Details</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {submissionData.premiumRate && (
+                              <div>
+                                <p className="text-xs text-gray-400 font-serif mb-1">Premium Rate</p>
+                                <p className="text-sm text-gray-100 font-sans">{submissionData.premiumRate}%</p>
+                              </div>
+                            )}
+                            {submissionData.premiumFixedAmount && (
+                              <div>
+                                <p className="text-xs text-gray-400 font-serif mb-1">Premium Fixed Amount</p>
+                                <p className="text-sm text-gray-100 font-sans">₦{Number(submissionData.premiumFixedAmount).toLocaleString()}</p>
+                              </div>
+                            )}
+                            {submissionData.insurancePolicies && (
+                              <div className="md:col-span-2">
+                                <p className="text-xs text-gray-400 font-serif mb-1">Insurance Policies</p>
+                                <p className="text-sm text-gray-100 font-sans whitespace-pre-wrap">{submissionData.insurancePolicies}</p>
+                              </div>
+                            )}
+                            {submissionData.documents && submissionData.documents.length > 0 && (
+                              <div className="md:col-span-2">
+                                <p className="text-xs text-gray-400 font-serif mb-1">Documents</p>
+                                <div className="space-y-1">
+                                  {submissionData.documents.map((doc: any, idx: number) => (
+                                    <p key={idx} className="text-sm text-gray-100 font-sans">• {doc.fileName} {doc.description ? `- ${doc.description}` : ''}</p>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Approval Form */}
+                    <form onSubmit={handleApprovalSubmit} className="space-y-4 border-t border-primary-700 pt-4">
+                      <div>
+                        <label className="block text-sm text-gray-300 font-serif mb-1">Decision</label>
+                        <select
+                          value={approvalDecision}
+                          onChange={(e) => setApprovalDecision(e.target.value)}
+                          className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                          required
+                        >
+                          <option value="">Select decision</option>
+                          <option value="approve">Approve</option>
+                          <option value="reject">Reject</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-300 font-serif mb-1">
+                          {approvalDecision === 'reject' ? 'Reason for Rejection' : 'Remarks'}
+                        </label>
+                        <textarea
+                          value={approvalRemarks}
+                          onChange={(e) => setApprovalRemarks(e.target.value)}
+                          rows={3}
+                          className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                          placeholder={approvalDecision === 'reject' ? 'Provide the reason for rejection' : 'Add remarks (optional)'}
+                          required={approvalDecision === 'reject'}
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowApprovalModal(null);
+                            setShowFullApplication(false);
+                          }}
+                          className="btn-secondary"
+                        >
+                          Cancel
+                        </button>
+                        <button type="submit" className="btn-primary">Submit Decision</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
           return user ? (
             <div className="fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto" onClick={() => setShowApprovalModal(null)}>
               <div className="min-h-screen flex items-center justify-center py-8">
@@ -853,7 +1501,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
                     </div>
                     <button onClick={() => setShowApprovalModal(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   {/* Application Details Section */}
                   <div className="space-y-4 mb-6">
                     <div className="bg-primary-800 rounded-md p-4">
@@ -883,7 +1531,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Contact Person Information */}
                     <div className="bg-primary-800 rounded-md p-4">
                       <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -915,7 +1563,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* View Full Application Section */}
                   {user.applicationData && (
                     <div className="mb-6 border-t border-primary-700 pt-4">
@@ -930,18 +1578,18 @@ const InsuranceCompanyApplicants: React.FC = () => {
                           {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                         </span>
                       </button>
-                      
+
                       {showFullApplication && renderFullApplicationView(user.applicationData)}
                     </div>
                   )}
-                  
+
                   {/* Approval Form */}
                   <form onSubmit={handleApprovalSubmit} className="space-y-4 border-t border-primary-700 pt-4">
                     <div>
                       <label className="block text-sm text-gray-300 font-serif mb-1">Decision</label>
-                      <select 
-                        value={approvalDecision} 
-                        onChange={(e) => setApprovalDecision(e.target.value)} 
+                      <select
+                        value={approvalDecision}
+                        onChange={(e) => setApprovalDecision(e.target.value)}
                         className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
                         required
                       >
@@ -954,22 +1602,22 @@ const InsuranceCompanyApplicants: React.FC = () => {
                       <label className="block text-sm text-gray-300 font-serif mb-1">
                         {approvalDecision === 'reject' ? 'Reason for Rejection' : 'Remarks'}
                       </label>
-                      <textarea 
-                        value={approvalRemarks} 
-                        onChange={(e) => setApprovalRemarks(e.target.value)} 
-                        rows={3} 
-                        className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600" 
-                        placeholder={approvalDecision === 'reject' ? 'Provide the reason for rejection' : 'Add remarks (optional)'} 
+                      <textarea
+                        value={approvalRemarks}
+                        onChange={(e) => setApprovalRemarks(e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                        placeholder={approvalDecision === 'reject' ? 'Provide the reason for rejection' : 'Add remarks (optional)'}
                         required={approvalDecision === 'reject'}
                       />
                     </div>
                     <div className="flex justify-end gap-2">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           setShowApprovalModal(null);
                           setShowFullApplication(false);
-                        }} 
+                        }}
                         className="btn-secondary"
                       >
                         Cancel
@@ -984,7 +1632,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
         })()}
 
         {finalApprovalNotice && (<div className="fixed right-4 bottom-4 sm:right-6 z-50 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg">{finalApprovalNotice}</div>)}
-        
+
         {/* Approval Confirmation Dialogs */}
         {showApprovalConfirmation && showApprovalModal && (
           <div
@@ -999,7 +1647,9 @@ const InsuranceCompanyApplicants: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-100 font-sans">Confirm Approval</h3>
                   <p className="text-sm text-gray-300 font-serif mt-2">
-                    Are you sure you want to approve this registration? This action will grant the user full access to the portal.
+                    {schemeSubmissionNotifications.find(n => n.id === showApprovalModal)
+                      ? 'Are you sure you want to approve this Insurance Company submission? The scheme will move to Stage 1 and become visible to PFIs.'
+                      : 'Are you sure you want to approve this registration? This action will grant the user full access to the portal.'}
                   </p>
                 </div>
                 <button
@@ -1030,7 +1680,9 @@ const InsuranceCompanyApplicants: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-100 font-sans">Confirm Rejection</h3>
                   <p className="text-sm text-gray-300 font-serif mt-2">
-                    Are you sure you want to reject this registration? The user will need to update their details and resubmit for approval.
+                    {schemeSubmissionNotifications.find(n => n.id === showApprovalModal)
+                      ? 'Are you sure you want to reject this Insurance Company submission? The Insurance Company will receive a notification with the rejection reason and can reapply.'
+                      : 'Are you sure you want to reject this registration? The user will need to update their details and resubmit for approval.'}
                   </p>
                 </div>
                 <button
@@ -1078,56 +1730,79 @@ const InsuranceCompanyApplicants: React.FC = () => {
             </select>
           </div>
 
+          {selectedRestrictUsers.length > 0 && (
+            <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md mb-4">
+              <span className="text-sm text-gray-200 font-sans">{selectedRestrictUsers.length} selected</span>
+              <button
+                onClick={handleMassRestrict}
+                className="btn-primary text-xs px-3 py-1"
+              >
+                🚫 Restrict All Selected
+              </button>
+            </div>
+          )}
+
           <div className="flex-grow overflow-y-auto custom-scrollbar">
             {paginatedRestrictUsers.length > 0 ? (
-              <div className="space-y-4">
-                {paginatedRestrictUsers.map((user) => (
-                  <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedRestrictUsers.includes(user.id)}
-                      onChange={() => handleRestrictCheckboxChange(user.id)}
-                      className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
-                    />
-                    <div className="flex-grow">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
-                          <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+              <>
+                <div className="flex items-center gap-2 p-2 bg-primary-700 rounded-md mb-3">
+                  <input
+                    type="checkbox"
+                    checked={restrictAllOnPageSelected}
+                    onChange={toggleRestrictSelectAll}
+                    className="w-4 h-4 accent-accent-500"
+                  />
+                  <span className="text-xs text-gray-400 font-sans">Select All</span>
+                </div>
+                <div className="space-y-4">
+                  {paginatedRestrictUsers.map((user) => (
+                    <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedRestrictUsers.includes(user.id)}
+                        onChange={() => handleRestrictCheckboxChange(user.id)}
+                        className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
+                      />
+                      <div className="flex-grow">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                            <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                          </div>
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500 text-white">
+                            Approved
+                          </span>
                         </div>
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500 text-white">
-                          Approved
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
-                        <span className="flex items-center gap-1">
-                          <span>👤</span> {user.role}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>📍</span> {user.state}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>🏢</span> {user.organization}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => setShowRestrictMoreInfo(user.id)} 
-                          className="btn-secondary text-sm px-3 py-1"
-                        >
-                          📋 More Info
-                        </button>
-                        <button 
-                          onClick={() => setShowRestrictModal(user.id)} 
-                          className="btn-primary text-sm px-3 py-1"
-                        >
-                          🚫 Restrict Access
-                        </button>
+                        <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                          <span className="flex items-center gap-1">
+                            <span>👤</span> {user.role}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>📍</span> {user.state}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>🏢</span> {user.organization}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => setShowRestrictMoreInfo(user.id)}
+                            className="btn-secondary text-sm px-3 py-1"
+                          >
+                            📋 More Info
+                          </button>
+                          <button
+                            onClick={() => setShowRestrictModal(user.id)}
+                            className="btn-primary text-sm px-3 py-1"
+                          >
+                            🚫 Restrict Access
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-10">
                 <div className="text-4xl mb-2">✅</div>
@@ -1135,20 +1810,20 @@ const InsuranceCompanyApplicants: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Pagination */}
           {filteredRestrictUsers.length > pageSize && (
             <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-              <button 
-                onClick={() => setRestrictPage(prev => Math.max(prev - 1, 1))} 
+              <button
+                onClick={() => setRestrictPage(prev => Math.max(prev - 1, 1))}
                 disabled={restrictPage === 1}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ←
               </button>
               <span className="text-xs text-gray-400">{restrictPage} of {totalRestrictPages}</span>
-              <button 
-                onClick={() => setRestrictPage(prev => Math.min(prev + 1, totalRestrictPages))} 
+              <button
+                onClick={() => setRestrictPage(prev => Math.min(prev + 1, totalRestrictPages))}
                 disabled={restrictPage === totalRestrictPages}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -1188,64 +1863,101 @@ const InsuranceCompanyApplicants: React.FC = () => {
             </select>
           </div>
 
+          {selectedApprovalRightsUsers.length > 0 && (
+            <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md mb-4">
+              <span className="text-sm text-gray-200 font-sans">{selectedApprovalRightsUsers.length} selected</span>
+              <button
+                onClick={handleMassApprovalRights}
+                className="btn-primary text-xs px-3 py-1"
+              >
+                ✅ Approve All Selected
+              </button>
+            </div>
+          )}
+
           <div className="flex-grow overflow-y-auto custom-scrollbar">
             {filteredApprovalRightsUsers.length > 0 ? (
-              <div className="space-y-4">
-                {filteredApprovalRightsUsers.map((user) => (
-                  <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedApprovalRightsUsers.includes(user.id)}
-                      onChange={() => handleApprovalRightsCheckboxChange(user.id)}
-                      className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
-                    />
-                    <div className="flex-grow">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
-                          <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+              <>
+                <div className="flex items-center gap-2 p-2 bg-primary-700 rounded-md mb-3">
+                  <input
+                    type="checkbox"
+                    checked={rightsAllOnPageSelected}
+                    onChange={toggleRightsSelectAll}
+                    className="w-4 h-4 accent-accent-500"
+                  />
+                  <span className="text-xs text-gray-400 font-sans">Select All</span>
+                </div>
+                <div className="space-y-4">
+                  {filteredApprovalRightsUsers.map((user) => (
+                    <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedApprovalRightsUsers.includes(user.id)}
+                        onChange={() => handleApprovalRightsCheckboxChange(user.id)}
+                        className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
+                      />
+                      <div className="flex-grow">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                            <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.submissionStatus === 'Approved'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-yellow-500 text-white'
+                            }`}>
+                            {user.submissionStatus || 'Pending'}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                          <span className="flex items-center gap-1">
+                            <span>👤</span> {user.role}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>📍</span> {user.state}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>🏢</span> {user.organization}
+                          </span>
+                          {user.notification?.schemeName && (
+                            <span className="flex items-center gap-1">
+                              <span>💼</span> Scheme: {user.notification.schemeName}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {user.notification ? (
+                            <button
+                              onClick={() => {
+                                setShowApprovalModal(user.notification.id);
+                                setShowApprovalRightsMoreInfo(user.id);
+                              }}
+                              className="btn-primary text-sm px-3 py-1"
+                            >
+                              📋 Review Submission
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setShowApprovalRightsMoreInfo(user.id)}
+                                className="btn-secondary text-sm px-3 py-1"
+                              >
+                                📋 More Info
+                              </button>
+                              <button
+                                onClick={() => setShowRightsModal(user.id)}
+                                className="btn-primary text-sm px-3 py-1"
+                              >
+                                ✅ Apply Changes
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
-                        <span className="flex items-center gap-1">
-                          <span>👤</span> {user.role}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>📍</span> {user.state}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span>🏢</span> {user.organization}
-                        </span>
-                      </div>
-                      <div className="bg-primary-700 p-2 rounded-md mb-2">
-                        <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={user.canApprove}
-                            onChange={() => {/* toggleApprovalRights(user.id) */}}
-                            className="accent-accent-500 w-4 h-4"
-                          />
-                          <span>Grant Approval Rights</span>
-                        </label>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => setShowApprovalRightsMoreInfo(user.id)} 
-                          className="btn-secondary text-sm px-3 py-1"
-                        >
-                          📋 More Info
-                        </button>
-                        <button 
-                          onClick={() => setShowRightsModal(user.id)} 
-                          className="btn-primary text-sm px-3 py-1"
-                        >
-                          ✅ Apply Changes
-                        </button>
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-10">
                 <div className="text-4xl mb-2">📋</div>
@@ -1254,20 +1966,20 @@ const InsuranceCompanyApplicants: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Pagination */}
           {filteredApprovalRightsUsers.length > pageSize && (
             <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-              <button 
-                onClick={() => setApprovalRightsPage(prev => Math.max(prev - 1, 1))} 
+              <button
+                onClick={() => setApprovalRightsPage(prev => Math.max(prev - 1, 1))}
                 disabled={approvalRightsPage === 1}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ←
               </button>
               <span className="text-xs text-gray-400">{approvalRightsPage} of {totalApprovalRightsPages}</span>
-              <button 
-                onClick={() => setApprovalRightsPage(prev => Math.min(prev + 1, totalApprovalRightsPages))} 
+              <button
+                onClick={() => setApprovalRightsPage(prev => Math.min(prev + 1, totalApprovalRightsPages))}
                 disabled={approvalRightsPage === totalApprovalRightsPages}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -1449,28 +2161,174 @@ const InsuranceCompanyApplicants: React.FC = () => {
             <div className="min-h-screen flex items-center justify-center py-8">
               <div className="w-full max-w-3xl bg-primary-900 rounded-lg border border-primary-700 p-6" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-lg font-semibold font-sans text-gray-100">Approval Rights History</h3>
+                  <h3 className="text-lg font-semibold font-sans text-gray-100">Insurance Company Submission History</h3>
                   <button onClick={() => setShowApprovalRightsHistory(false)} className="text-gray-400 hover:text-gray-200">✖</button>
                 </div>
-                <div className="space-y-3">
-                  {[
-                    { date: '2024-10-12 10:15', user: 'Leadway Assurance', action: 'Granted', by: 'Admin User', remarks: 'Approval rights granted for platform activities' },
-                    { date: '2024-10-07 15:45', user: 'AIICO Insurance', action: 'Revoked', by: 'Admin User', remarks: 'Approval rights revoked due to policy changes' },
-                    { date: '2024-10-02 11:30', user: 'NEM Insurance', action: 'Granted', by: 'Admin User', remarks: 'Approval rights granted after compliance verification' }
-                  ].map((entry, idx) => (
-                    <div key={idx} className="bg-primary-800 rounded p-3">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-sm text-gray-400">{entry.date}</span>
-                        <span className={`px-2 py-1 rounded text-xs ${entry.action === 'Granted' ? 'bg-green-600' : 'bg-red-600'} text-white`}>{entry.action}</span>
+                <div className="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                  {submissionHistory.length > 0 ? (
+                    submissionHistory.map((entry, idx) => (
+                      <div key={idx} className="bg-primary-800 rounded p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-sm text-gray-400">{entry.date}</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${entry.action === 'Approved'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-red-500 text-white'
+                            }`}>
+                            {entry.action}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-200 mb-1">
+                          <strong>{entry.insuranceCompanyName}</strong> - {entry.action} for scheme <strong>{entry.schemeName}</strong>
+                        </p>
+                        {entry.rejectionReason && (
+                          <p className="text-xs text-gray-400 mt-2 p-2 bg-primary-700 rounded">
+                            <span className="font-semibold">Rejection Reason:</span> {entry.rejectionReason}
+                          </p>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-200"><strong>{entry.user}</strong> - {entry.action} by {entry.by}</p>
-                      <p className="text-xs text-gray-400 mt-1">Remarks: {entry.remarks}</p>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400 font-sans">No submission history available</p>
+                      <p className="text-xs text-gray-500 mt-2">Submission decisions will appear here once actions are taken</p>
                     </div>
-                  ))}
+                  )}
                 </div>
                 <div className="flex justify-end mt-4">
                   <button onClick={() => setShowApprovalRightsHistory(false)} className="btn-primary">Close</button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Batch Restriction Modal */}
+        {showBatchRestrictionModal && (
+          <div className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center" onClick={() => setShowBatchRestrictionModal(false)}>
+            <div className="w-full max-w-md bg-primary-900 border border-primary-700 rounded-lg p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-100 font-sans">Batch Restriction</h3>
+                  <p className="text-sm text-gray-300 font-serif mt-2">
+                    Restrict access for {selectedRestrictUsers.length} selected Insurance Company users
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowBatchRestrictionModal(false)}
+                  className="text-gray-400 hover:text-gray-200"
+                >
+                  ✖
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-300 font-serif mb-1">
+                    Reason for Restriction <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={batchRestrictionReason}
+                    onChange={(e) => setBatchRestrictionReason(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                    required
+                  >
+                    <option value="">Select reason</option>
+                    <option value="Fraudulent Activity">Fraudulent Activity</option>
+                    <option value="Policy Violation">Policy Violation</option>
+                    <option value="Suspicious Behavior">Suspicious Behavior</option>
+                    <option value="Non-compliance">Non-compliance</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-300 font-serif mb-1">
+                    Additional Remarks (Optional)
+                  </label>
+                  <textarea
+                    value={batchRestrictionRemarks}
+                    onChange={(e) => setBatchRestrictionRemarks(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                    placeholder="Add additional remarks (optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowBatchRestrictionModal(false);
+                    setBatchRestrictionReason('');
+                    setBatchRestrictionRemarks('');
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={processBatchRestriction}
+                  className="btn-primary bg-red-600 hover:bg-red-700"
+                >
+                  🚫 Restrict All ({selectedRestrictUsers.length})
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Batch Approval Modal */}
+        {showBatchApprovalModal && (
+          <div className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center" onClick={() => setShowBatchApprovalModal(false)}>
+            <div className="w-full max-w-md bg-primary-900 border border-primary-700 rounded-lg p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-100 font-sans">Batch Approval</h3>
+                  <p className="text-sm text-gray-300 font-serif mt-2">
+                    Approve {selectedApprovalRightsUsers.length} selected Insurance Company scheme submissions
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowBatchApprovalModal(false)}
+                  className="text-gray-400 hover:text-gray-200"
+                >
+                  ✖
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-300 font-serif mb-1">
+                    Remarks <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={batchApprovalRemarks}
+                    onChange={(e) => setBatchApprovalRemarks(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                    placeholder="Add remarks for batch approval"
+                    required
+                  />
+                  <p className="text-xs text-gray-400 mt-1 font-serif">These remarks will be applied to all selected submissions.</p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowBatchApprovalModal(false);
+                    setBatchApprovalRemarks('');
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={processBatchApproval}
+                  className="btn-primary"
+                >
+                  ✅ Approve All ({selectedApprovalRightsUsers.length})
+                </button>
               </div>
             </div>
           </div>
@@ -1484,5 +2342,6 @@ const InsuranceCompanyApplicants: React.FC = () => {
 };
 
 export default InsuranceCompanyApplicants;
+
 
 

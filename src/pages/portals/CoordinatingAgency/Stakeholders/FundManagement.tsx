@@ -3,10 +3,10 @@ import PortalLayout from '../../../../components/PortalLayout';
 
 const FundManagement: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -16,16 +16,16 @@ const FundManagement: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'state-monitoring', 
-      name: 'State Monitoring Team', 
-      icon: '🗺️', 
+    {
+      id: 'me-team',
+      name: 'M&E Team',
+      icon: '📋',
       href: '/portal/coordinating-agency/monitoring/state'
     },
-    { 
-      id: 'representative-body', 
-      name: 'Representative Body', 
-      icon: '🏛️', 
+    {
+      id: 'representative-body',
+      name: 'Representative Body',
+      icon: '🏛️',
       href: '/portal/coordinating-agency/representative',
       hasDropdown: true,
       dropdownItems: [
@@ -34,20 +34,20 @@ const FundManagement: React.FC = () => {
         { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
       ]
     },
-    { 
-      id: 'applicants', 
-      name: 'Applicants', 
-      icon: '📝', 
+    {
+      id: 'applicants',
+      name: 'Applicants',
+      icon: '📝',
       href: '/portal/coordinating-agency/applicants',
       hasDropdown: true,
       dropdownItems: [
         { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
         { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
         { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-        { 
-          id: 'fund-beneficiaries', 
-          name: 'Fund Beneficiaries', 
-          icon: '👥', 
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
           href: '/portal/coordinating-agency/fund-beneficiaries',
           hasDropdown: true,
           dropdownItems: [
@@ -59,10 +59,10 @@ const FundManagement: React.FC = () => {
         }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Department', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Department',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -114,7 +114,7 @@ const FundManagement: React.FC = () => {
   const filteredReports = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return reports;
-    return reports.filter(report => 
+    return reports.filter(report =>
       `${report.title} ${report.teamName} ${report.id}`.toLowerCase().includes(q)
     );
   }, [searchTerm]);
@@ -236,7 +236,7 @@ const FundManagement: React.FC = () => {
         {/* Main Content Card */}
         <div className="bg-primary-800 rounded-lg shadow-lg p-4 sm:p-6">
           <h2 className="text-xl font-semibold font-sans text-gray-100 mb-4">User Access Management</h2>
-          
+
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="relative flex-1">
@@ -314,16 +314,16 @@ const FundManagement: React.FC = () => {
             {/* Pagination */}
             {filteredReports.length > itemsPerPage && (
               <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                <button 
-                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))} 
+                <button
+                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
                   disabled={currentPage === 1}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ←
                 </button>
                 <span className="text-xs text-gray-400">{currentPage} of {totalPages}</span>
-                <button 
-                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))} 
+                <button
+                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
                   disabled={currentPage === totalPages}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -439,4 +439,5 @@ const FundManagement: React.FC = () => {
 };
 
 export default FundManagement;
+
 

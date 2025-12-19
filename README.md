@@ -2,18 +2,34 @@
 
 A comprehensive digital platform designed to facilitate the efficient flow of funds and resources within Nigeria's agricultural ecosystem. The system provides role-based portals for all stakeholders in the agricultural value chain, enabling seamless coordination, financial management, and data-driven decision making.
 
+## 🌟 Project Overview
+
+The **Agricultural Finance Coordination Framework (AFCF)** is a full-stack web application built to revolutionize agricultural financing in Nigeria. It connects all stakeholders in the agricultural value chain—from farmers and anchors to financial institutions and government agencies—through a unified, intelligent platform.
+
+### 🎯 Mission
+To streamline agricultural finance coordination, enhance transparency, and drive data-driven decision-making across Nigeria's agricultural ecosystem.
+
 ## ✨ Key Features
 
-- **12 Role-Based Portals** - Dedicated dashboards for each stakeholder type
-- **Interconnected Ecosystem** - Real-time data sharing between all stakeholders
-- **Dark Theme UI** - Modern, professional interface with custom color scheme
+### Core Capabilities
+- **12 Role-Based Portals** - Dedicated dashboards for each stakeholder type with specialized features
+- **Complete Relationship Management System** - Comprehensive producer-anchor relationship workflows (100% implemented)
+- **Scheme Application & Approval System** - Multi-stage approval process with M&E integration
+- **User Registration & Verification** - Role-specific registration with CA approval and verification
+- **Real-time Notifications** - Context-aware notification system for all stakeholder actions
+- **Advanced Data Visualization** - Interactive charts (line, bar, pie, donut) with native SVG
+- **M&E Project Integration** - Monitoring & Evaluation workflow for relationship verification
+- **Batch Operations** - Bulk approval and restriction management for beneficiaries
+- **Communication System** - Inter-stakeholder messaging and notifications
+
+### Technical Excellence
+- **Dark Theme UI** - Modern, professional interface with custom color scheme (#036572)
 - **Fully Responsive Design** - Mobile-first approach optimized for all screen sizes
-- **Real-time Notifications** - Custom notification system for all actions
-- **Advanced Data Visualization** - Interactive charts (bar, pie, donut) with native SVG
 - **Smart Search & Pagination** - Searchable data cards with carousel navigation
-- **Multi-step Registration** - Role-specific registration with validation
+- **Multi-step Forms** - Role-specific registration and application forms with validation
 - **Lazy Loading** - Optimized performance with intersection observer
-- **Functional Quick Actions** - Interactive buttons with real feedback
+- **Type-Safe Development** - Full TypeScript implementation with strict type checking
+- **Local Data Persistence** - localStorage-based data management for demo purposes
 - **Professional Branding** - Powered by Mc. George across all portals
 
 ## 🚀 Quick Start
@@ -24,9 +40,10 @@ A comprehensive digital platform designed to facilitate the efficient flow of fu
 
 ### Installation & Setup
 
-1. **Navigate to Development Directory**
+1. **Clone the Repository**
    ```bash
-   cd "C:\Users\HP\AFCF Project\DEVELOPMENT"
+   git clone https://github.com/TOLUWALASE007/Agricultural-Finance-Coordination-Framework-.git
+   cd Agricultural-Finance-Coordination-Framework-
    ```
 
 2. **Install Dependencies**
@@ -43,6 +60,10 @@ A comprehensive digital platform designed to facilitate the efficient flow of fu
    - The server will automatically open your browser to `http://localhost:3000`
    - If it doesn't open automatically, manually navigate to `http://localhost:3000`
    - The application will automatically reload when you make changes
+
+### Alternative: Use Convenience Scripts
+- **Windows**: Double-click `start-dev.bat`
+- **Mac/Linux**: Run `./start-dev.sh`
 
 ### 🛠️ Troubleshooting
 
@@ -85,44 +106,98 @@ A comprehensive digital platform designed to facilitate the efficient flow of fu
 ## 📁 Project Structure
 
 ```
-DEVELOPMENT/
-├── public/                    # Static assets and images
-│   └── images/               # Project images and assets
-│       └── logo/             # AFCF logo files
-├── src/                      # Frontend source code
-│   ├── components/           # Reusable React components
-│   │   ├── Navbar.tsx        # Navigation component
-│   │   ├── Footer.tsx        # Footer component
-│   │   ├── PortalLayout.tsx  # Portal layout wrapper
-│   │   └── LazySection.tsx   # Lazy loading component
-│   ├── pages/                # Page components
-│   │   ├── Home.tsx          # Landing page
-│   │   ├── About.tsx         # About page
-│   │   ├── ELearning.tsx     # E-Learning page
-│   │   ├── Contact.tsx       # Contact page
-│   │   ├── Login.tsx         # Login page
-│   │   ├── Register.tsx      # Registration page
-│   │   └── portals/          # Role-based portal pages
-│   │       ├── FundProviderPortal.tsx
-│   │       ├── ProducerPortal.tsx
-│   │       ├── PFIPortal.tsx
-│   │       ├── CoordinatingAgencyPortal.tsx
-│   │       ├── InsurancePortal.tsx
-│   │       ├── PMTPortal.tsx
-│   │       ├── AnchorPortal.tsx
-│   │       ├── LeadFirmPortal.tsx
-│   │       ├── CooperativePortal.tsx
-│   │       ├── DeRiskingPortal.tsx
-│   │       ├── ExtensionPortal.tsx
-│   │       └── ResearcherPortal.tsx
-│   ├── hooks/                # Custom React hooks
+afcf/
+├── public/                         # Static assets
+│   ├── images/                     # Project images and assets
+│   │   └── logo/                   # AFCF logo files
+│   └── index.html                  # HTML template
+├── src/                            # Frontend source code
+│   ├── components/                 # Reusable React components
+│   │   ├── Navbar.tsx              # Navigation component
+│   │   ├── Footer.tsx              # Footer component
+│   │   ├── PortalLayout.tsx        # Portal layout wrapper
+│   │   └── LazySection.tsx         # Lazy loading component
+│   ├── pages/                      # Page components
+│   │   ├── Home.tsx                # Landing page
+│   │   ├── About.tsx               # About page
+│   │   ├── ELearning.tsx           # E-Learning page
+│   │   ├── Contact.tsx             # Contact page
+│   │   ├── Login.tsx               # Login page
+│   │   ├── Register.tsx            # Registration page
+│   │   └── portals/                # Role-based portal pages
+│   │       ├── Anchor/             # Anchor portal
+│   │       │   ├── AnchorPortal.tsx
+│   │       │   └── ProducerManagement/  # Producer relationship management
+│   │       │       ├── CreateProducer.tsx
+│   │       │       ├── InviteProducers.tsx
+│   │       │       ├── ManageProducers.tsx
+│   │       │       ├── ActivityLogs.tsx
+│   │       │       └── JoinRequests.tsx
+│   │       ├── Producer/           # Producer portal
+│   │       │   ├── ProducerPortal.tsx
+│   │       │   └── AnchorRelationships/  # Anchor relationship management
+│   │       │       ├── CurrentAnchors.tsx
+│   │       │       ├── Invitations.tsx
+│   │       │       ├── LeaveRequest.tsx
+│   │       │       ├── Communication.tsx
+│   │       │       └── RelationshipHistory.tsx
+│   │       ├── CoordinatingAgency/ # CA portal
+│   │       │   ├── CoordinatingAgencyPortal.tsx
+│   │       │   ├── Beneficiaries/  # Beneficiary management
+│   │       │   ├── Applicants/     # Applicant approval
+│   │       │   ├── Relationships/  # Relationship oversight
+│   │       │   │   ├── ProducerCreationRequests.tsx
+│   │       │   │   ├── InvitationRequests.tsx
+│   │       │   │   └── LeaveRequests.tsx
+│   │       │   └── Reporting/      # Reports and analytics
+│   │       ├── MEMember/           # M&E Member portal
+│   │       │   └── MEMemberPortal.tsx
+│   │       ├── FundProvider/       # Fund Provider portal
+│   │       │   └── FundProviderPortal.tsx
+│   │       ├── PFI/                # PFI portal
+│   │       │   └── PFIPortal.tsx
+│   │       ├── Insurance/          # Insurance Company portal
+│   │       │   └── InsurancePortal.tsx
+│   │       ├── PMT/                # PMT portal
+│   │       │   └── PMTPortal.tsx
+│   │       ├── LeadFirm/           # Lead Firm portal
+│   │       │   └── LeadFirmPortal.tsx
+│   │       ├── Cooperative/        # Cooperative portal
+│   │       │   └── CooperativePortal.tsx
+│   │       ├── DeRisking/          # De-risking Institution portal
+│   │       │   └── DeRiskingPortal.tsx
+│   │       ├── Extension/          # Extension Organization portal
+│   │       │   └── ExtensionPortal.tsx
+│   │       └── Researcher/         # Researcher portal
+│   │           └── ResearcherPortal.tsx
+│   ├── context/                    # React Context
+│   │   └── NotificationContext.tsx # Notification system
+│   ├── hooks/                      # Custom React hooks
 │   │   └── useIntersectionObserver.ts
-│   └── utils/                # Utility functions
-│       └── quickActions.ts   # Quick action handlers
-├── package.json              # Dependencies and scripts
-├── tailwind.config.js        # Tailwind CSS configuration
-├── tsconfig.json             # TypeScript configuration
-└── README.md                 # Project documentation
+│   ├── utils/                      # Utility functions
+│   │   ├── localDatabase.ts        # User data management
+│   │   ├── relationshipDatabase.ts # Relationship management
+│   │   ├── meProjectDatabase.ts    # M&E project management
+│   │   ├── schemeDatabase.ts       # Scheme management
+│   │   └── quickActions.ts         # Quick action handlers
+│   ├── App.tsx                     # Main app component with routing
+│   ├── index.tsx                   # App entry point
+│   └── index.css                   # Global styles
+├── backend/                        # Backend (Node.js/Express - in development)
+├── IMAGES/                         # Documentation images
+├── Documentation/                  # Project documentation
+│   ├── FINAL_COMPLETION_REPORT.md
+│   ├── FRONTEND_DOCUMENTATION.md
+│   ├── IMPLEMENTATION_STATUS.md
+│   ├── SCHEME_CREATION_AND_APPLICATION_FLOW.md
+│   ├── USER_REGISTRATION_AND_APPROVAL_FLOW.md
+│   └── [other documentation files]
+├── package.json                    # Dependencies and scripts
+├── tailwind.config.js              # Tailwind CSS configuration
+├── tsconfig.json                   # TypeScript configuration
+├── start-dev.bat                   # Windows dev server script
+├── start-dev.sh                    # Unix dev server script
+└── README.md                       # This file
 ```
 
 ## 🎨 Design System
@@ -158,6 +233,100 @@ DEVELOPMENT/
 - Advanced search and pagination with carousel controls
 - Dynamic data visualization with native charts
 - Mobile-responsive search inputs with icon buttons
+
+## 🤝 Relationship Management System (100% Complete)
+
+### Overview
+The **Producer-Anchor Relationship Management System** is a comprehensive workflow that enables anchors to onboard producers and manage their relationships with full oversight from the Coordinating Agency (CA) and Monitoring & Evaluation (M&E) integration.
+
+### System Statistics
+- **15 Complete Pages** - All relationship management pages fully implemented
+- **3 Complete Workflows** - Create, Invite, and Leave workflows
+- **8,000+ Lines of Code** - Production-ready TypeScript implementation
+- **Full Type Safety** - Comprehensive TypeScript interfaces and type checking
+- **Complete Notification Integration** - Context-aware notifications for all actions
+
+### Workflow 1: Anchor Creates New Producer ✅
+
+**Process Flow:**
+1. **Anchor** fills comprehensive producer creation form
+2. **System** sends notification to CA
+3. **CA** reviews request and creates M&E project
+4. **M&E Member** conducts verification
+5. **CA** approves/rejects based on M&E findings
+6. **System** creates producer account and establishes relationship
+7. **All parties** receive notifications
+
+**Pages Involved:**
+- Anchor: `CreateProducer.tsx` (650+ lines)
+- CA: `ProducerCreationRequests.tsx` (880+ lines)
+- M&E: Integrated in M&E Member Portal
+
+### Workflow 2: Anchor Invites Existing Producer ✅
+
+**Process Flow:**
+1. **Anchor** selects verified producers to invite
+2. **System** sends notification to CA
+3. **CA** approves invitation (initial approval)
+4. **System** sends invitation to producer
+5. **Producer** accepts/declines invitation
+6. **CA** performs final approval (if accepted)
+7. **System** establishes relationship
+8. **All parties** receive notifications
+
+**Pages Involved:**
+- Anchor: `InviteProducers.tsx` (550+ lines)
+- Producer: `Invitations.tsx` (550+ lines)
+- CA: `InvitationRequests.tsx` (650+ lines)
+
+### Workflow 3: Producer Leaves Anchor ✅
+
+**Process Flow:**
+1. **Producer** submits leave request with reason
+2. **System** sends notification to CA
+3. **CA** creates M&E project for verification
+4. **M&E Member** conducts verification
+5. **CA** approves/rejects based on M&E findings
+6. **System** terminates relationship
+7. **All parties** receive notifications
+
+**Pages Involved:**
+- Producer: `LeaveRequest.tsx` (450+ lines)
+- CA: `LeaveRequests.tsx` (700+ lines)
+- M&E: Integrated in M&E Member Portal
+
+### Additional Features ✅
+
+**Relationship Management:**
+- `ManageProducers.tsx` (700+ lines) - View and manage all producer relationships
+- `CurrentAnchors.tsx` (450+ lines) - View all anchor relationships
+- `RelationshipHistory.tsx` (450+ lines) - Complete relationship timeline
+
+**Communication & Tracking:**
+- `Communication.tsx` (250+ lines) - Inter-stakeholder messaging
+- `ActivityLogs.tsx` (400+ lines) - Complete activity timeline
+- `JoinRequests.tsx` (250+ lines) - Placeholder for future producer-initiated joins
+
+### Database Layer
+**File:** `src/utils/relationshipDatabase.ts` (366 lines)
+
+**Functions:**
+- Relationship CRUD operations
+- Invitation management
+- Leave request handling
+- Activity logging
+- Status tracking
+- Notification integration
+
+### M&E Integration
+**File:** `src/utils/meProjectDatabase.ts`
+
+**Features:**
+- Project creation for verification
+- Assignment to M&E members
+- Status tracking (pending, in-progress, completed)
+- Verification checklist management
+- Integration with relationship workflows
 
 ## 📱 Responsive Design Features
 
@@ -203,11 +372,12 @@ All data cards include:
 
 #### Starting the Server
 ```bash
-# Navigate to the DEVELOPMENT directory
-cd "C:\Users\HP\AFCF Project\DEVELOPMENT"
-
 # Start the development server
 npm start
+
+# Or use convenience scripts
+# Windows: Double-click start-dev.bat
+# Mac/Linux: ./start-dev.sh
 ```
 
 #### Stopping the Server
@@ -451,18 +621,38 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🌐 Deployment
 
-### GitHub Pages
-The application is deployed on GitHub Pages and can be accessed at:
+### Live Application
+The application is deployed and accessible at:
 - **Live URL**: [https://TOLUWALASE007.github.io/Agricultural-Finance-Coordination-Framework-/](https://TOLUWALASE007.github.io/Agricultural-Finance-Coordination-Framework-/)
+- **Repository**: [https://github.com/TOLUWALASE007/Agricultural-Finance-Coordination-Framework-](https://github.com/TOLUWALASE007/Agricultural-Finance-Coordination-Framework-)
 
 ### Deployment Process
-To deploy updates to GitHub Pages:
 
+#### First-Time Setup
 ```bash
-# Navigate to the DEVELOPMENT directory
-cd "C:\Users\HP\AFCF Project\DEVELOPMENT"
+# 1. Initialize git repository (if not already done)
+git init
 
-# Build and deploy
+# 2. Add remote repository
+git remote add origin https://github.com/TOLUWALASE007/Agricultural-Finance-Coordination-Framework-.git
+
+# 3. Install gh-pages package (already in package.json)
+npm install
+
+# 4. Build and deploy
+npm run deploy
+```
+
+#### Updating the Deployment
+```bash
+# 1. Commit your changes
+git add .
+git commit -m "Your commit message"
+
+# 2. Push to main branch
+git push origin main
+
+# 3. Build and deploy to GitHub Pages
 npm run deploy
 ```
 
@@ -473,9 +663,28 @@ This will:
 
 ### Configuration
 - **Router**: Uses HashRouter for GitHub Pages compatibility
-- **Base URL**: Configured with `process.env.PUBLIC_URL`
+- **Base URL**: Configured with `process.env.PUBLIC_URL` in package.json
 - **Assets**: All images and static files use absolute paths
-- **404 Handling**: Custom 404.html redirects to index.html for client-side routing
+- **404 Handling**: Client-side routing handles all routes
+
+### Alternative Deployment Options
+
+#### Netlify
+The project includes `netlify.toml` for Netlify deployment:
+```bash
+# Deploy to Netlify
+npm run build
+# Then drag and drop the build folder to Netlify
+```
+
+#### Vercel
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
 
 ## 📞 Support
 
@@ -488,41 +697,150 @@ For support and inquiries:
 
 ## 🎯 Roadmap
 
-### ✅ Completed Features
+### ✅ Completed Features (v1.0)
+
+#### Core Infrastructure
 - [x] Complete portal structure for all 12 stakeholder roles
 - [x] Dark theme implementation with custom color palette (#036572)
 - [x] Fully responsive design (mobile, tablet, desktop)
 - [x] Lazy loading and performance optimization
+- [x] TypeScript implementation with full type safety
+- [x] React Router with HashRouter for GitHub Pages compatibility
+
+#### User Management
+- [x] Multi-step registration forms for all roles
+- [x] Role-specific registration with validation
+- [x] User approval and verification workflow
+- [x] Coordinating Agency oversight and approval
+- [x] Batch approval and restriction operations
+- [x] User status management (pending, verified, restricted)
+
+#### Relationship Management System (100% Complete)
+- [x] **Anchor Creates New Producer Workflow**
+  - Producer creation form with comprehensive fields
+  - CA review and M&E project creation
+  - M&E verification process
+  - Producer account creation and relationship establishment
+- [x] **Anchor Invites Existing Producer Workflow**
+  - Producer selection and invitation system
+  - Two-stage CA approval process
+  - Producer acceptance/decline functionality
+  - Relationship establishment
+- [x] **Producer Leaves Anchor Workflow**
+  - Leave request submission with reasons
+  - M&E verification integration
+  - Relationship termination process
+- [x] **15 Complete Pages** for relationship management
+- [x] **Complete database layer** (`relationshipDatabase.ts`)
+- [x] **Activity logging and history tracking**
+- [x] **Inter-stakeholder communication**
+
+#### Scheme Application & Approval System
+- [x] Multi-step scheme creation forms
+- [x] Role-specific application processes (Producer, Anchor, Lead Firm)
+- [x] PFI and Insurance Company selection
+- [x] Multi-stage approval workflow
+- [x] CA review and approval interface
+- [x] Application status tracking
+- [x] Notification integration for all stages
+
+#### M&E Integration
+- [x] M&E project creation and management
+- [x] Project assignment to M&E members
+- [x] Verification checklist system
+- [x] Status tracking (pending, in-progress, completed)
+- [x] Integration with relationship workflows
+- [x] Lead M&E designation and indicators
+- [x] M&E Member Portal with project management
+
+#### Data Visualization & Analytics
 - [x] Interactive quick actions with notifications
-- [x] Multi-step registration forms
-- [x] Comprehensive settings pages
 - [x] Advanced search functionality across all data cards
 - [x] Smart pagination with carousel navigation
-- [x] Data visualization with native SVG charts
+- [x] Native SVG charts (line, horizontal bar, vertical bar, pie/donut)
+- [x] Mobile-responsive data visualization
+- [x] State-level reports and analytics
+- [x] Regional distribution analysis
+- [x] Stakeholder impact metrics
+
+#### UI/UX Features
+- [x] Comprehensive settings pages for all portals
+- [x] Custom notification system with context awareness
+- [x] FAQ accordion sections
+- [x] Modal dialogs for detailed information
+- [x] Status badges and visual indicators
+- [x] Empty states with helpful messages
+- [x] Loading states and error handling
 - [x] Mobile-responsive search inputs with icon buttons
 - [x] Nigerian Naira (₦) currency integration
-- [x] Fund Provider portal fully enhanced with:
-  - Active Schemes tracking
-  - Fund Management with recovery metrics
-  - Schemes management system
-  - Reports & Analytics with interactive charts
-  - Mobile-responsive layouts
 - [x] Professional branding (Powered by Mc. George)
-- [x] GitHub Pages deployment
 
-### 🚧 In Progress
-- [ ] Backend API integration
-- [ ] Database implementation
-- [ ] User authentication system
+#### Deployment
+- [x] GitHub Pages deployment configuration
+- [x] Netlify deployment support
+- [x] Production build optimization
+- [x] Environment configuration
 
-### 📋 Planned Features
+### 🚧 In Progress (v1.1)
+
+- [ ] Backend API development (Node.js/Express)
+- [ ] Database implementation (MongoDB/PostgreSQL)
+- [ ] User authentication with JWT
+- [ ] Real-time WebSocket integration
+- [ ] Email notification system
+- [ ] SMS notification integration
+
+### 📋 Planned Features (v2.0)
+
+#### Backend & Infrastructure
+- [ ] RESTful API for all operations
+- [ ] Database migration from localStorage
+- [ ] User session management
+- [ ] Role-based access control (RBAC)
+- [ ] API rate limiting and security
+- [ ] Data backup and recovery
+
+#### Advanced Features
 - [ ] Real-time data synchronization
 - [ ] Advanced analytics dashboard for all portals
-- [ ] Mobile app development (React Native)
-- [ ] Multi-language support (English, Hausa, Yoruba, Igbo)
-- [ ] Blockchain integration for transparency
-- [ ] SMS/Email notification system
-- [ ] Document management system
+- [ ] Document management system with file uploads
 - [ ] Payment gateway integration
+- [ ] Blockchain integration for transparency
 - [ ] Geolocation tracking for field monitoring
 - [ ] AI-powered risk assessment
+- [ ] Predictive analytics for loan defaults
+
+#### Mobile & Accessibility
+- [ ] Mobile app development (React Native)
+- [ ] Progressive Web App (PWA) support
+- [ ] Offline functionality
+- [ ] Multi-language support (English, Hausa, Yoruba, Igbo)
+- [ ] Accessibility improvements (WCAG 2.1 compliance)
+
+#### Communication & Collaboration
+- [ ] Full messaging system with threading
+- [ ] File attachments in messages
+- [ ] Read receipts and typing indicators
+- [ ] Video conferencing integration
+- [ ] Group chat functionality
+- [ ] Email integration
+
+#### Reporting & Export
+- [ ] PDF report generation
+- [ ] Excel export functionality
+- [ ] Custom report builder
+- [ ] Scheduled reports
+- [ ] Data export API
+
+### 🔮 Future Vision (v3.0+)
+
+- [ ] Machine learning for fraud detection
+- [ ] Automated loan approval recommendations
+- [ ] Integration with government databases
+- [ ] Satellite imagery for farm monitoring
+- [ ] Weather data integration
+- [ ] Market price prediction
+- [ ] Supply chain tracking
+- [ ] Digital wallet integration
+- [ ] Microfinance integration
+- [ ] Cooperative management tools

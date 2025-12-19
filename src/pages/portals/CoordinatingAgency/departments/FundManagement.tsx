@@ -3,10 +3,10 @@ import PortalLayout from '../../../../components/PortalLayout';
 
 const FundManagement: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -16,10 +16,10 @@ const FundManagement: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Stakeholders', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Stakeholders',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -30,10 +30,10 @@ const FundManagement: React.FC = () => {
         { id: 'legal', name: 'Legal Department', icon: '⚖️', href: '/portal/coordinating-agency/stakeholders/legal' },
         { id: 'it', name: 'IT Department', icon: '💻', href: '/portal/coordinating-agency/stakeholders/it' },
         { id: 'training', name: 'Training Department', icon: '📚', href: '/portal/coordinating-agency/stakeholders/training' },
-        { 
-          id: 'monitoring-dept', 
-          name: 'Monitoring Department', 
-          icon: '📈', 
+        {
+          id: 'monitoring-dept',
+          name: 'Monitoring Department',
+          icon: '📈',
           href: '/portal/coordinating-agency/stakeholders/monitoring',
           hasDropdown: true,
           dropdownItems: [
@@ -191,9 +191,8 @@ const FundManagement: React.FC = () => {
                     <td className="py-3 px-2 text-xs sm:text-sm text-green-400 font-sans">{item.recovered}</td>
                     <td className="py-3 px-2 text-xs sm:text-sm text-gray-300 font-sans">{item.state}</td>
                     <td className="py-3 px-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.status === 'Active' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
-                      }`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status === 'Active' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
+                        }`}>
                         {item.status}
                       </span>
                     </td>
@@ -206,8 +205,8 @@ const FundManagement: React.FC = () => {
           {/* Pagination */}
           {allocationTotalPages > 1 && (
             <div className="flex items-center justify-center space-x-2 mt-4">
-              <button 
-                onClick={() => setAllocationPage(Math.max(allocationPage - 1, 1))} 
+              <button
+                onClick={() => setAllocationPage(Math.max(allocationPage - 1, 1))}
                 disabled={allocationPage === 1}
                 className="btn-secondary text-sm p-2 disabled:opacity-50"
               >
@@ -216,8 +215,8 @@ const FundManagement: React.FC = () => {
               <span className="text-sm text-gray-300 font-sans">
                 Page {allocationPage} of {allocationTotalPages}
               </span>
-              <button 
-                onClick={() => setAllocationPage(Math.min(allocationPage + 1, allocationTotalPages))} 
+              <button
+                onClick={() => setAllocationPage(Math.min(allocationPage + 1, allocationTotalPages))}
                 disabled={allocationPage === allocationTotalPages}
                 className="btn-secondary text-sm p-2 disabled:opacity-50"
               >
@@ -253,11 +252,10 @@ const FundManagement: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-4">
                   <p className="text-lg font-bold text-accent-400 font-sans">{item.amount}</p>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    item.status === 'Approved' ? 'bg-green-500 text-white' :
-                    item.status === 'Processing' ? 'bg-yellow-500 text-white' :
-                    'bg-gray-500 text-white'
-                  }`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${item.status === 'Approved' ? 'bg-green-500 text-white' :
+                      item.status === 'Processing' ? 'bg-yellow-500 text-white' :
+                        'bg-gray-500 text-white'
+                    }`}>
                     {item.status}
                   </span>
                 </div>
@@ -268,8 +266,8 @@ const FundManagement: React.FC = () => {
           {/* Pagination */}
           {disbursementTotalPages > 1 && (
             <div className="flex items-center justify-center space-x-2 mt-4">
-              <button 
-                onClick={() => setDisbursementPage(Math.max(disbursementPage - 1, 1))} 
+              <button
+                onClick={() => setDisbursementPage(Math.max(disbursementPage - 1, 1))}
                 disabled={disbursementPage === 1}
                 className="btn-secondary text-sm p-2 disabled:opacity-50"
               >
@@ -278,8 +276,8 @@ const FundManagement: React.FC = () => {
               <span className="text-sm text-gray-300 font-sans">
                 Page {disbursementPage} of {disbursementTotalPages}
               </span>
-              <button 
-                onClick={() => setDisbursementPage(Math.min(disbursementPage + 1, disbursementTotalPages))} 
+              <button
+                onClick={() => setDisbursementPage(Math.min(disbursementPage + 1, disbursementTotalPages))}
                 disabled={disbursementPage === disbursementTotalPages}
                 className="btn-secondary text-sm p-2 disabled:opacity-50"
               >
@@ -318,4 +316,5 @@ const FundManagement: React.FC = () => {
 };
 
 export default FundManagement;
+
 

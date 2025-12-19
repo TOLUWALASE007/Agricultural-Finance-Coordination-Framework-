@@ -4,10 +4,10 @@ import { generateReport, processAction, addNewRecord } from '../../../utils/quic
 
 const Activities: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -17,16 +17,16 @@ const Activities: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'state-monitoring', 
-      name: 'State Monitoring Team', 
-      icon: '🗺️', 
+    {
+      id: 'me-team',
+      name: 'M&E Team',
+      icon: '📋',
       href: '/portal/coordinating-agency/monitoring/state'
     },
-    { 
-      id: 'representative-body', 
-      name: 'Representative Body', 
-      icon: '🏛️', 
+    {
+      id: 'representative-body',
+      name: 'Representative Body',
+      icon: '🏛️',
       href: '/portal/coordinating-agency/representative',
       hasDropdown: true,
       dropdownItems: [
@@ -35,20 +35,20 @@ const Activities: React.FC = () => {
         { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
       ]
     },
-    { 
-      id: 'applicants', 
-      name: 'Applicants', 
-      icon: '📝', 
+    {
+      id: 'applicants',
+      name: 'Applicants',
+      icon: '📝',
       href: '/portal/coordinating-agency/applicants',
       hasDropdown: true,
       dropdownItems: [
         { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
         { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
         { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-        { 
-          id: 'fund-beneficiaries', 
-          name: 'Fund Beneficiaries', 
-          icon: '👥', 
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
           href: '/portal/coordinating-agency/fund-beneficiaries',
           hasDropdown: true,
           dropdownItems: [
@@ -60,10 +60,10 @@ const Activities: React.FC = () => {
         }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Department', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Department',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -227,17 +227,17 @@ const Activities: React.FC = () => {
       workAddress: 'Institute for Agricultural Research, Ahmadu Bello University, Zaria, Kaduna State, Nigeria',
       documentUrl: '#',
     },
-    
+
   ]), []);
 
 
   // Demo access data - Enhanced with more details
-  type User = { 
-    id: string; 
-    name: string; 
-    email: string; 
-    roleRequested: string; 
-    state: string; 
+  type User = {
+    id: string;
+    name: string;
+    email: string;
+    roleRequested: string;
+    state: string;
     created?: boolean;
     phone: string;
     organization: string;
@@ -254,16 +254,16 @@ const Activities: React.FC = () => {
     registrationDate: string;
     documents: string[];
   };
-  
-  type AccessUser = { 
-    id: string; 
-    name: string; 
+
+  type AccessUser = {
+    id: string;
+    name: string;
     email: string;
-    role: string; 
+    role: string;
     state: string;
     organization: string;
-    accessScope: 'Basic' | 'Standard' | 'Full'; 
-    restricted: boolean; 
+    accessScope: 'Basic' | 'Standard' | 'Full';
+    restricted: boolean;
     canApprove: boolean;
     phone: string;
     registrationDate: string;
@@ -286,28 +286,28 @@ const Activities: React.FC = () => {
   };
 
   const [newRegistrations, setNewRegistrations] = useState<User[]>([
-    { 
-      id: 'u1', 
-      name: 'Adeola Adebayo', 
-      email: 'adeola@example.com', 
-      roleRequested: 'Producer', 
-      state: 'Ogun', 
-      phone: '+234 802 345 6789', 
-      organization: 'Adebayo Farms Ltd', 
+    {
+      id: 'u1',
+      name: 'Adeola Adebayo',
+      email: 'adeola@example.com',
+      roleRequested: 'Producer',
+      state: 'Ogun',
+      phone: '+234 802 345 6789',
+      organization: 'Adebayo Farms Ltd',
       organizationProfile: 'Smallholder farm specializing in cassava production with 2 hectares of cultivated land',
       organizationType: 'Individual',
       fullAddress: 'Plot 45, Abeokuta Road, Odeda, Ogun State, Nigeria',
-      registrationDate: '2024-10-20', 
-      documents: ['CAC Document', 'Tax ID', 'Bank Statement'] 
+      registrationDate: '2024-10-20',
+      documents: ['CAC Document', 'Tax ID', 'Bank Statement']
     },
-    { 
-      id: 'u2', 
-      name: 'Chioma Okeke', 
-      email: 'chioma@accessbank.com', 
-      roleRequested: 'PFI', 
-      state: 'Lagos', 
-      phone: '+234 803 456 7890', 
-      organization: 'Access Bank PLC', 
+    {
+      id: 'u2',
+      name: 'Chioma Okeke',
+      email: 'chioma@accessbank.com',
+      roleRequested: 'PFI',
+      state: 'Lagos',
+      phone: '+234 803 456 7890',
+      organization: 'Access Bank PLC',
       organizationProfile: 'Leading commercial bank providing agricultural finance with over 2,450 active loans',
       organizationType: 'Company',
       fullAddress: 'Access Tower, 999A Danmole Street, Victoria Island, Lagos State, Nigeria',
@@ -318,17 +318,17 @@ const Activities: React.FC = () => {
         email: 'chioma.okeke@accessbank.com',
         phone: '+234 803 456 7890'
       },
-      registrationDate: '2024-10-19', 
-      documents: ['Banking License', 'CBN Approval', 'Compliance Certificate'] 
+      registrationDate: '2024-10-19',
+      documents: ['Banking License', 'CBN Approval', 'Compliance Certificate']
     },
-    { 
-      id: 'u3', 
-      name: 'Fatima Musa', 
-      email: 'fatima@insureco.ng', 
-      roleRequested: 'Insurance', 
-      state: 'Kano', 
-      phone: '+234 804 567 8901', 
-      organization: 'Fatima Insurance Ltd', 
+    {
+      id: 'u3',
+      name: 'Fatima Musa',
+      email: 'fatima@insureco.ng',
+      roleRequested: 'Insurance',
+      state: 'Kano',
+      phone: '+234 804 567 8901',
+      organization: 'Fatima Insurance Ltd',
       organizationProfile: 'Agricultural insurance provider covering 2,000 hectares with 95% claim settlement rate',
       organizationType: 'Company',
       fullAddress: '12 Ahmadu Bello Way, Fagge, Kano, Kano State, Nigeria',
@@ -339,17 +339,17 @@ const Activities: React.FC = () => {
         email: 'fatima.musa@insureco.ng',
         phone: '+234 804 567 8901'
       },
-      registrationDate: '2024-10-18', 
-      documents: ['NAICOM License', 'Tax Clearance', 'Financial Statement'] 
+      registrationDate: '2024-10-18',
+      documents: ['NAICOM License', 'Tax Clearance', 'Financial Statement']
     },
-    { 
-      id: 'u4', 
-      name: 'Dangote Rice Ops', 
-      email: 'ops@dangoterice.com', 
-      roleRequested: 'Anchor', 
-      state: 'Kano', 
-      phone: '+234 805 678 9012', 
-      organization: 'Dangote Rice Limited', 
+    {
+      id: 'u4',
+      name: 'Dangote Rice Ops',
+      email: 'ops@dangoterice.com',
+      roleRequested: 'Anchor',
+      state: 'Kano',
+      phone: '+234 805 678 9012',
+      organization: 'Dangote Rice Limited',
       organizationProfile: 'Major rice processing company with 10,000 tons/year capacity and 500 contracted farmers',
       organizationType: 'Company',
       fullAddress: 'Dangote Industries Complex, Obajana, Kogi State, Nigeria',
@@ -360,17 +360,17 @@ const Activities: React.FC = () => {
         email: 'ibrahim.s@dangoterice.com',
         phone: '+234 805 678 9012'
       },
-      registrationDate: '2024-10-17', 
-      documents: ['CAC Document', 'NAFDAC Approval', 'Quality Certificate'] 
+      registrationDate: '2024-10-17',
+      documents: ['CAC Document', 'NAFDAC Approval', 'Quality Certificate']
     },
-    { 
-      id: 'u5', 
-      name: 'Notore Fertilizer Ltd', 
-      email: 'sales@notore.com', 
-      roleRequested: 'Lead Firm', 
-      state: 'Rivers', 
-      phone: '+234 806 789 0123', 
-      organization: 'Notore Fertilizer Limited', 
+    {
+      id: 'u5',
+      name: 'Notore Fertilizer Ltd',
+      email: 'sales@notore.com',
+      roleRequested: 'Lead Firm',
+      state: 'Rivers',
+      phone: '+234 806 789 0123',
+      organization: 'Notore Fertilizer Limited',
       organizationProfile: 'Leading fertilizer supplier providing NPK and urea with credit facilities to 200+ farmers',
       organizationType: 'Company',
       fullAddress: 'Onne Port Industrial Complex, Onne, Rivers State, Nigeria',
@@ -381,17 +381,17 @@ const Activities: React.FC = () => {
         email: 'adewale.j@notore.com',
         phone: '+234 806 789 0123'
       },
-      registrationDate: '2024-10-16', 
-      documents: ['Operating License', 'Environmental Clearance', 'Tax ID'] 
+      registrationDate: '2024-10-16',
+      documents: ['Operating License', 'Environmental Clearance', 'Tax ID']
     },
-    { 
-      id: 'u6', 
-      name: 'IITA Research Team', 
-      email: 'research@iita.org', 
-      roleRequested: 'Researcher', 
-      state: 'Oyo', 
-      phone: '+234 807 890 1234', 
-      organization: 'International Institute of Tropical Agriculture', 
+    {
+      id: 'u6',
+      name: 'IITA Research Team',
+      email: 'research@iita.org',
+      roleRequested: 'Researcher',
+      state: 'Oyo',
+      phone: '+234 807 890 1234',
+      organization: 'International Institute of Tropical Agriculture',
       organizationProfile: 'International research organization focused on tropical agriculture and food security',
       organizationType: 'Company',
       fullAddress: 'PMB 5320, Oyo Road, Ibadan, Oyo State, Nigeria',
@@ -402,17 +402,17 @@ const Activities: React.FC = () => {
         email: 'y.akinlade@iita.org',
         phone: '+234 807 890 1234'
       },
-      registrationDate: '2024-10-15', 
-      documents: ['Research License', 'MOU with FMARD', 'Project Proposal'] 
+      registrationDate: '2024-10-15',
+      documents: ['Research License', 'MOU with FMARD', 'Project Proposal']
     },
-    { 
-      id: 'u7', 
-      name: 'Oyo ADP Extension', 
-      email: 'extension@oyoadp.ng', 
-      roleRequested: 'Extension', 
-      state: 'Oyo', 
-      phone: '+234 808 901 2345', 
-      organization: 'Oyo State ADP', 
+    {
+      id: 'u7',
+      name: 'Oyo ADP Extension',
+      email: 'extension@oyoadp.ng',
+      roleRequested: 'Extension',
+      state: 'Oyo',
+      phone: '+234 808 901 2345',
+      organization: 'Oyo State ADP',
       organizationProfile: 'State agricultural development program providing extension services to farmers',
       organizationType: 'Company',
       fullAddress: 'Secretariat Road, Agodi GRA, Ibadan, Oyo State, Nigeria',
@@ -423,17 +423,17 @@ const Activities: React.FC = () => {
         email: 'amina.b@oyoadp.ng',
         phone: '+234 808 901 2345'
       },
-      registrationDate: '2024-10-14', 
-      documents: ['Government ID', 'Posting Letter', 'Professional License'] 
+      registrationDate: '2024-10-14',
+      documents: ['Government ID', 'Posting Letter', 'Professional License']
     },
-    { 
-      id: 'u8', 
-      name: 'NIRSAL Risk Manager', 
-      email: 'risk@nirsal.com', 
-      roleRequested: 'PFI', 
-      state: 'FCT', 
-      phone: '+234 809 012 3456', 
-      organization: 'NIRSAL Plc', 
+    {
+      id: 'u8',
+      name: 'NIRSAL Risk Manager',
+      email: 'risk@nirsal.com',
+      roleRequested: 'PFI',
+      state: 'FCT',
+      phone: '+234 809 012 3456',
+      organization: 'NIRSAL Plc',
       organizationProfile: 'Commercial bank risk unit supporting agricultural guarantees',
       organizationType: 'Company',
       fullAddress: 'NIRSAL House, Plot 1347, Cadastral Zone B06, Central Business District, Abuja, FCT, Nigeria',
@@ -444,17 +444,17 @@ const Activities: React.FC = () => {
         email: 'mohammed.a@nirsal.com',
         phone: '+234 809 012 3456'
       },
-      registrationDate: '2024-10-13', 
-      documents: ['Corporate License', 'CBN Approval', 'Risk Management Framework'] 
+      registrationDate: '2024-10-13',
+      documents: ['Corporate License', 'CBN Approval', 'Risk Management Framework']
     },
-    { 
-      id: 'u9', 
-      name: 'Ibadan Cooperative', 
-      email: 'info@ibadancoop.ng', 
-      roleRequested: 'Cooperative', 
-      state: 'Oyo', 
-      phone: '+234 810 123 4567', 
-      organization: 'Ibadan Cassava Growers Cooperative', 
+    {
+      id: 'u9',
+      name: 'Ibadan Cooperative',
+      email: 'info@ibadancoop.ng',
+      roleRequested: 'Cooperative',
+      state: 'Oyo',
+      phone: '+234 810 123 4567',
+      organization: 'Ibadan Cassava Growers Cooperative',
       organizationProfile: 'Farmers cooperative with 300 members focused on cassava value chain development',
       organizationType: 'Company',
       fullAddress: 'Cooperative House, Ring Road, Bodija, Ibadan, Oyo State, Nigeria',
@@ -465,17 +465,17 @@ const Activities: React.FC = () => {
         email: 'samuel.o@ibadancoop.ng',
         phone: '+234 810 123 4567'
       },
-      registrationDate: '2024-10-12', 
-      documents: ['Cooperative Registration', 'Member List', 'Financial Records'] 
+      registrationDate: '2024-10-12',
+      documents: ['Cooperative Registration', 'Member List', 'Financial Records']
     },
-    { 
-      id: 'u10', 
-      name: 'Kwara Farmers Union', 
-      email: 'union@kwara.ng', 
-      roleRequested: 'Producer', 
-      state: 'Kwara', 
-      phone: '+234 811 234 5678', 
-      organization: 'Kwara Farmers Union', 
+    {
+      id: 'u10',
+      name: 'Kwara Farmers Union',
+      email: 'union@kwara.ng',
+      roleRequested: 'Producer',
+      state: 'Kwara',
+      phone: '+234 811 234 5678',
+      organization: 'Kwara Farmers Union',
       organizationProfile: 'Farmers union representing smallholder farmers in Kwara State across multiple crops',
       organizationType: 'Company',
       fullAddress: 'KM 18, Ilorin-Ajase-Ipo Road, Ilorin, Kwara State, Nigeria',
@@ -486,8 +486,8 @@ const Activities: React.FC = () => {
         email: 'abubakar.m@kwara.ng',
         phone: '+234 811 234 5678'
       },
-      registrationDate: '2024-10-11', 
-      documents: ['Union Registration', 'Land Documentation', 'Farm Records'] 
+      registrationDate: '2024-10-11',
+      documents: ['Union Registration', 'Land Documentation', 'Farm Records']
     },
   ]);
 
@@ -573,7 +573,7 @@ const Activities: React.FC = () => {
   const [accessUsers, setAccessUsers] = useState<AccessUser[]>([
     { id: 'a1', name: 'Dangote Rice Operations', email: 'ops@dangoterice.com', role: 'Anchor', state: 'Kano', organization: 'Dangote Rice Limited', accessScope: 'Standard', restricted: false, canApprove: true, phone: '+234 805 678 9012', registrationDate: '2024-09-15', contactPersonName: 'Alhaji Musa Ibrahim', contactPersonEmail: 'musa.ibrahim@dangoterice.com', companyEmail: 'info@dangoterice.com', companyId: 'DRL-2024-001', fullAddress: 'Plot 45, Industrial Layout, Kano-Zaria Road, Kano State, Nigeria', organizationProfile: 'Leading rice producer and processor in Northern Nigeria with over 10,000 hectares under cultivation' },
     { id: 'a2', name: 'Access Bank Agricultural Finance', email: 'agric@accessbank.com', role: 'PFI', state: 'Lagos', organization: 'Access Bank PLC', accessScope: 'Full', restricted: false, canApprove: true, phone: '+234 803 456 7890', registrationDate: '2024-09-10', contactPersonName: 'Mrs. Chioma Nwosu', contactPersonEmail: 'chioma.nwosu@accessbankplc.com', companyEmail: 'info@accessbankplc.com', companyId: 'AB-PFI-2024-002', fullAddress: '999C Danmole Street, Victoria Island, Lagos State, Nigeria', organizationProfile: 'Tier-1 commercial bank providing agricultural financing solutions across Nigeria' },
-    
+
     { id: 'a4', name: 'Notore Fertilizer Ltd', email: 'sales@notore.com', role: 'Lead Firm', state: 'Rivers', organization: 'Notore Fertilizer Limited', accessScope: 'Basic', restricted: true, canApprove: false, phone: '+234 806 789 0123', registrationDate: '2024-09-05', contactPersonName: 'Engr. Tunde Akinola', contactPersonEmail: 'tunde.akinola@notore.com', companyEmail: 'info@notore.com', companyId: 'NFL-2024-004', fullAddress: 'Onne Industrial Park, Port Harcourt, Rivers State, Nigeria', organizationProfile: 'Major fertilizer manufacturer and distributor supporting Nigerian agriculture' },
     { id: 'a5', name: 'AIICO Insurance', email: 'agric@aiico.com', role: 'Insurance', state: 'Lagos', organization: 'AIICO Insurance PLC', accessScope: 'Full', restricted: false, canApprove: true, phone: '+234 801 234 5678', registrationDate: '2024-09-01', contactPersonName: 'Mr. Emeka Okafor', contactPersonEmail: 'emeka.okafor@aiico.com', companyEmail: 'info@aiico.com', companyId: 'AIICO-2024-005', fullAddress: 'AIICO Plaza, Plot 479A, Constitution Avenue, Central Business District, Abuja, FCT, Nigeria', organizationProfile: 'Leading insurance company providing agricultural and crop insurance solutions' },
     { id: 'a6', name: 'IITA Research Institute', email: 'research@iita.org', role: 'Researcher', state: 'Oyo', organization: 'International Institute of Tropical Agriculture', accessScope: 'Standard', restricted: false, canApprove: false, phone: '+234 807 890 1234', registrationDate: '2024-08-28', contactPersonName: 'Prof. Ngozi Okonjo', contactPersonEmail: 'n.okonjo@iita.org', companyEmail: 'iita@cgiar.org', companyId: 'IITA-2024-006', fullAddress: 'PMB 5320, Oyo Road, Ibadan, Oyo State, Nigeria', organizationProfile: 'International agricultural research institute focused on tropical agriculture and food security' },
@@ -589,7 +589,7 @@ const Activities: React.FC = () => {
   const [showMoreInfo, setShowMoreInfo] = useState<string | null>(null);
   const [showApprovalModal, setShowApprovalModal] = useState<User | null>(null);
   const [showLogsModal, setShowLogsModal] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState<{user: User, action: 'approve' | 'reject'} | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState<{ user: User, action: 'approve' | 'reject' } | null>(null);
   const [approvalConfirm, setApprovalConfirm] = useState<string | null>(null);
 
   const [editSearch, setEditSearch] = useState('');
@@ -598,14 +598,14 @@ const Activities: React.FC = () => {
   const [selectedEditUsers, setSelectedEditUsers] = useState<string[]>([]);
   const [showEditMoreInfo, setShowEditMoreInfo] = useState<string | null>(null);
   const [showEditLogsModal, setShowEditLogsModal] = useState(false);
-  
+
   const [restrictSearch, setRestrictSearch] = useState('');
   const [restrictPage, setRestrictPage] = useState(1);
   const [restrictStateFilter, setRestrictStateFilter] = useState('All');
   const [selectedRestrictUsers, setSelectedRestrictUsers] = useState<string[]>([]);
   const [showRestrictMoreInfo, setShowRestrictMoreInfo] = useState<string | null>(null);
   const [showRestrictLogsModal, setShowRestrictLogsModal] = useState(false);
-  
+
   const [approvalSearch, setApprovalSearch] = useState('');
   const [approvalPage, setApprovalPage] = useState(1);
   const [approvalStateFilter, setApprovalStateFilter] = useState('All');
@@ -774,7 +774,7 @@ const Activities: React.FC = () => {
 
   const handleMassEditApply = () => {
     if (selectedEditUsers.length === 0) return;
-    
+
     const newLog: ApprovalLog = {
       id: `edit${Date.now()}`,
       userId: 'multiple',
@@ -784,7 +784,7 @@ const Activities: React.FC = () => {
       date: new Date().toISOString().split('T')[0],
       remarks: 'Mass access update applied'
     };
-    
+
     setEditLogs(prev => [newLog, ...prev]);
     setSelectedEditUsers([]);
     alert(`✅ Access updated for ${selectedEditUsers.length} user(s)!`);
@@ -800,7 +800,7 @@ const Activities: React.FC = () => {
       date: new Date().toISOString().split('T')[0],
       remarks: `Access scope: ${user.accessScope}, Role: ${user.role}`
     };
-    
+
     setEditLogs(prev => [newLog, ...prev]);
     alert(`✅ Access updated for ${user.name}!`);
   };
@@ -814,7 +814,7 @@ const Activities: React.FC = () => {
 
   const handleMassRestrict = () => {
     if (selectedRestrictUsers.length === 0) return;
-    
+
     const newLog: ApprovalLog = {
       id: `restrict${Date.now()}`,
       userId: 'multiple',
@@ -824,7 +824,7 @@ const Activities: React.FC = () => {
       date: new Date().toISOString().split('T')[0],
       remarks: 'Mass restriction status update applied'
     };
-    
+
     setRestrictLogs(prev => [newLog, ...prev]);
     setSelectedRestrictUsers([]);
     alert(`✅ Restriction updated for ${selectedRestrictUsers.length} user(s)!`);
@@ -840,7 +840,7 @@ const Activities: React.FC = () => {
       date: new Date().toISOString().split('T')[0],
       remarks: user.restricted ? 'Access restricted' : 'Access restored'
     };
-    
+
     setRestrictLogs(prev => [newLog, ...prev]);
     alert(`✅ Restriction status updated for ${user.name}!`);
   };
@@ -854,7 +854,7 @@ const Activities: React.FC = () => {
 
   const handleMassApprovalRights = () => {
     if (selectedApprovalUsers.length === 0) return;
-    
+
     const newLog: ApprovalLog = {
       id: `approval${Date.now()}`,
       userId: 'multiple',
@@ -864,7 +864,7 @@ const Activities: React.FC = () => {
       date: new Date().toISOString().split('T')[0],
       remarks: 'Mass approval rights update applied'
     };
-    
+
     setApprovalRightsLogs(prev => [newLog, ...prev]);
     setSelectedApprovalUsers([]);
     alert(`✅ Approval rights updated for ${selectedApprovalUsers.length} user(s)!`);
@@ -880,7 +880,7 @@ const Activities: React.FC = () => {
       date: new Date().toISOString().split('T')[0],
       remarks: user.canApprove ? 'Approval rights granted' : 'Approval rights revoked'
     };
-    
+
     setApprovalRightsLogs(prev => [newLog, ...prev]);
     alert(`✅ Approval rights updated for ${user.name}!`);
   };
@@ -899,7 +899,7 @@ const Activities: React.FC = () => {
                     <h3 className="text-lg font-semibold font-sans text-gray-100">Application Details</h3>
                     <button onClick={() => setShowMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-primary-800 rounded-md p-3">
@@ -907,8 +907,8 @@ const Activities: React.FC = () => {
                           {user.organizationType === 'Company' ? 'Contact Person Name' : 'Full Name'}
                         </p>
                         <p className="text-sm text-gray-100 font-sans">
-                          {user.organizationType === 'Company' && user.contactPerson 
-                            ? user.contactPerson.name 
+                          {user.organizationType === 'Company' && user.contactPerson
+                            ? user.contactPerson.name
                             : user.name}
                         </p>
                       </div>
@@ -923,8 +923,8 @@ const Activities: React.FC = () => {
                           {user.organizationType === 'Company' ? 'Contact Person Phone' : 'Phone Number'}
                         </p>
                         <p className="text-sm text-gray-100 font-sans">
-                          {user.organizationType === 'Company' && user.contactPerson 
-                            ? user.contactPerson.phone 
+                          {user.organizationType === 'Company' && user.contactPerson
+                            ? user.contactPerson.phone
                             : user.phone}
                         </p>
                       </div>
@@ -949,22 +949,22 @@ const Activities: React.FC = () => {
                         <p className="text-sm text-gray-100 font-sans">{user.registrationDate}</p>
                       </div>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Organization</p>
                       <p className="text-sm text-gray-100 font-sans">{user.organization}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Full Address</p>
                       <p className="text-sm text-gray-100 font-sans">{user.fullAddress}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Organization Profile</p>
                       <p className="text-sm text-gray-100 font-sans">{user.organizationProfile}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-2">Submitted Documents</p>
                       <div className="flex flex-wrap gap-2">
@@ -985,7 +985,7 @@ const Activities: React.FC = () => {
 
                   <div className="flex justify-end gap-3 mt-6">
                     <button onClick={() => setShowMoreInfo(null)} className="btn-secondary">Close</button>
-                    <button 
+                    <button
                       onClick={() => {
                         setShowMoreInfo(null);
                         setShowApprovalModal(user);
@@ -1038,7 +1038,7 @@ const Activities: React.FC = () => {
 
                   <div>
                     <label className="block text-sm text-gray-300 font-serif mb-2">Remarks (Optional)</label>
-                    <textarea 
+                    <textarea
                       name="remarks"
                       rows={3}
                       className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
@@ -1072,13 +1072,13 @@ const Activities: React.FC = () => {
               </div>
 
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => setShowConfirmDialog(null)}
                   className="flex-1 btn-secondary"
                 >
                   No, Cancel
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     if (showConfirmDialog.action === 'approve') {
                       handleApproveAccess(showConfirmDialog.user, 'Approved by admin');
@@ -1113,9 +1113,8 @@ const Activities: React.FC = () => {
                           <p className="text-sm font-semibold text-gray-100 font-sans">{log.userName}</p>
                           <p className="text-xs text-gray-400 font-serif">ID: {log.userId}</p>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          log.action === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${log.action === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                          }`}>
                           {log.action === 'approved' ? '✅ Approved' : '❌ Rejected'}
                         </span>
                       </div>
@@ -1189,11 +1188,10 @@ const Activities: React.FC = () => {
                       <p className="text-sm text-gray-300 font-serif">{activity.description}</p>
                       <p className="text-xs text-gray-400 font-serif">{activity.time}</p>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      activity.status === 'completed' ? 'bg-green-500 text-white' :
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${activity.status === 'completed' ? 'bg-green-500 text-white' :
                       activity.status === 'pending' ? 'bg-yellow-500 text-white' :
-                      'bg-blue-500 text-white'
-                    }`}>
+                        'bg-blue-500 text-white'
+                      }`}>
                       {activity.status}
                     </span>
                   </div>
@@ -1201,15 +1199,15 @@ const Activities: React.FC = () => {
               </div>
               {recentActivities.length > 3 && (
                 <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                  <button 
-                    onClick={() => setActivityPage(Math.max(activityPage - 1, 1))} 
+                  <button
+                    onClick={() => setActivityPage(Math.max(activityPage - 1, 1))}
                     className="btn-secondary text-sm p-1"
                   >
                     ←
                   </button>
                   <span className="text-xs text-gray-400">{activityPage} of {Math.ceil(filteredActivities.length / 3)}</span>
-                  <button 
-                    onClick={() => setActivityPage(Math.min(activityPage + 1, Math.ceil(filteredActivities.length / 3)))} 
+                  <button
+                    onClick={() => setActivityPage(Math.min(activityPage + 1, Math.ceil(filteredActivities.length / 3)))}
                     className="btn-secondary text-sm p-1"
                   >
                     →
@@ -1254,15 +1252,15 @@ const Activities: React.FC = () => {
               </div>
               {stakeholderData.length > 4 && (
                 <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                  <button 
-                    onClick={() => setStakeholderPage(Math.max(stakeholderPage - 1, 1))} 
+                  <button
+                    onClick={() => setStakeholderPage(Math.max(stakeholderPage - 1, 1))}
                     className="btn-secondary text-sm p-1"
                   >
                     ←
                   </button>
                   <span className="text-xs text-gray-400">{stakeholderPage} of {Math.ceil(filteredStakeholders.length / 4)}</span>
-                  <button 
-                    onClick={() => setStakeholderPage(Math.min(stakeholderPage + 1, Math.ceil(filteredStakeholders.length / 4)))} 
+                  <button
+                    onClick={() => setStakeholderPage(Math.min(stakeholderPage + 1, Math.ceil(filteredStakeholders.length / 4)))}
                     className="btn-secondary text-sm p-1"
                   >
                     →
@@ -1297,31 +1295,171 @@ const Activities: React.FC = () => {
 
         {/* Access Management (Super Admin) - Enhanced Approve Access Card */}
         {false && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {/* Approve Access Card (Enhanced) */}
-          <div className="card flex flex-col">
-            <div className="flex flex-col gap-3 mb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-semibold font-sans text-gray-100">Approve Access</h3>
-                  <span className="px-2 py-1 bg-accent-600 text-white text-xs rounded-full font-medium">
-                    {filteredCreateUsers.length} Pending
-                  </span>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Approve Access Card (Enhanced) */}
+            <div className="card flex flex-col">
+              <div className="flex flex-col gap-3 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-semibold font-sans text-gray-100">Approve Access</h3>
+                    <span className="px-2 py-1 bg-accent-600 text-white text-xs rounded-full font-medium">
+                      {filteredCreateUsers.length} Pending
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setShowLogsModal(true)}
+                    className="btn-secondary text-xs px-3 py-1"
+                  >
+                    📜 View History
+                  </button>
                 </div>
-                <button 
-                  onClick={() => setShowLogsModal(true)}
-                  className="btn-secondary text-xs px-3 py-1"
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      value={createSearch}
+                      onChange={(e) => { setCreatePage(1); setCreateSearch(e.target.value); }}
+                      placeholder="Search applications..."
+                      className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                    />
+                    <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                      🔍
+                    </button>
+                  </div>
+                  <select
+                    value={createStateFilter}
+                    onChange={(e) => { setCreateStateFilter(e.target.value); setCreatePage(1); }}
+                    className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                  >
+                    <option value="All">All States</option>
+                    {nigerianStates.map(state => (
+                      <option key={state} value={state}>{state}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedUsers.length > 0 && (
+                  <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md">
+                    <span className="text-sm text-gray-200 font-sans">{selectedUsers.length} selected</span>
+                    <button
+                      onClick={handleMassApproval}
+                      className="btn-primary text-xs px-3 py-1"
+                    >
+                      ✅ Approve All Selected
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 flex flex-col">
+                <div className="space-y-3 flex-1">
+                  {paginatedCreateUsers.length > 0 ? (
+                    <>
+                      <div className="flex items-center gap-2 p-2 bg-primary-700 rounded-md">
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.length === paginatedCreateUsers.length && paginatedCreateUsers.length > 0}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 accent-accent-500"
+                        />
+                        <span className="text-xs text-gray-400 font-sans">Select All</span>
+                      </div>
+                      {paginatedCreateUsers.map((user, index) => (
+                        <div key={index} className="p-3 bg-primary-700 rounded-lg border border-primary-600 hover:border-accent-500 transition-colors">
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedUsers.includes(user.id)}
+                              onChange={() => toggleUserSelection(user.id)}
+                              className="mt-1 w-4 h-4 accent-accent-500"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-100 font-sans">{user.name}</p>
+                                  <p className="text-xs text-gray-400 font-serif">{user.email}</p>
+                                </div>
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-500 text-white">
+                                  Pending
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-2">
+                                <span className="flex items-center gap-1">
+                                  <span>👤</span> {user.roleRequested}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span>📍</span> {user.state}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span>🏢</span> {user.organization}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => setShowMoreInfo(user.id)}
+                                  className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                                >
+                                  📋 More Info
+                                </button>
+                                <button
+                                  onClick={() => setShowApprovalModal(user)}
+                                  className="text-xs bg-accent-600 hover:bg-accent-700 text-white px-3 py-1 rounded transition-colors font-medium"
+                                >
+                                  ✅ Review & Approve
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <div className="text-4xl mb-2">✅</div>
+                      <p className="text-gray-400 font-sans">No pending applications</p>
+                    </div>
+                  )}
+                </div>
+                {/* Pagination */}
+                {filteredCreateUsers.length > 3 && (
+                  <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+                    <button
+                      onClick={() => setCreatePage(Math.max(createPage - 1, 1))}
+                      className="btn-secondary text-sm p-1"
+                    >
+                      ←
+                    </button>
+                    <span className="text-xs text-gray-400">{createPage} of {Math.ceil(filteredCreateUsers.length / 3)}</span>
+                    <button
+                      onClick={() => setCreatePage(Math.min(createPage + 1, Math.ceil(filteredCreateUsers.length / 3)))}
+                      className="btn-secondary text-sm p-1"
+                    >
+                      →
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Edit Access Card - FULLY ENHANCED VERSION */}
+            <div className="card flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold font-sans text-gray-100">Edit Access</h3>
+                <button
+                  onClick={() => setShowEditLogsModal(true)}
+                  className="text-xs text-accent-400 hover:text-accent-300 font-medium flex items-center gap-1"
                 >
                   📜 View History
                 </button>
               </div>
-              
-              <div className="flex flex-col sm:flex-row gap-2">
+
+              {/* Filters and Mass Action */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
                 <div className="relative flex-1">
                   <input
-                    value={createSearch}
-                    onChange={(e) => { setCreatePage(1); setCreateSearch(e.target.value); }}
-                    placeholder="Search applications..."
+                    value={editSearch}
+                    onChange={(e) => { setEditPage(1); setEditSearch(e.target.value); }}
+                    placeholder="Search users..."
                     className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
                   />
                   <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
@@ -1329,111 +1467,413 @@ const Activities: React.FC = () => {
                   </button>
                 </div>
                 <select
-                  value={createStateFilter}
-                  onChange={(e) => { setCreateStateFilter(e.target.value); setCreatePage(1); }}
-                  className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                  value={editStateFilter}
+                  onChange={(e) => { setEditStateFilter(e.target.value); setEditPage(1); }}
+                  className="input-field w-full sm:w-auto"
                 >
-                  <option value="All">All States</option>
+                  <option value="All">Filter by State</option>
                   {nigerianStates.map(state => (
                     <option key={state} value={state}>{state}</option>
                   ))}
                 </select>
+                <button
+                  onClick={() => {
+                    if (selectedEditUsers.length === paginatedEditUsers.length) {
+                      setSelectedEditUsers([]);
+                    } else {
+                      setSelectedEditUsers(paginatedEditUsers.map(u => u.id));
+                    }
+                  }}
+                  className="btn-secondary w-full sm:w-auto"
+                >
+                  {selectedEditUsers.length === paginatedEditUsers.length ? '☐ Deselect All' : '☑ Select All'}
+                </button>
               </div>
 
-              {selectedUsers.length > 0 && (
-                <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md">
-                  <span className="text-sm text-gray-200 font-sans">{selectedUsers.length} selected</span>
-                  <button 
-                    onClick={handleMassApproval}
-                    className="btn-primary text-xs px-3 py-1"
-                  >
-                    ✅ Approve All Selected
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex-1 flex flex-col">
-              <div className="space-y-3 flex-1">
-                {paginatedCreateUsers.length > 0 ? (
-                  <>
-                    <div className="flex items-center gap-2 p-2 bg-primary-700 rounded-md">
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers.length === paginatedCreateUsers.length && paginatedCreateUsers.length > 0}
-                        onChange={toggleSelectAll}
-                        className="w-4 h-4 accent-accent-500"
-                      />
-                      <span className="text-xs text-gray-400 font-sans">Select All</span>
-                    </div>
-                    {paginatedCreateUsers.map((user, index) => (
-                      <div key={index} className="p-3 bg-primary-700 rounded-lg border border-primary-600 hover:border-accent-500 transition-colors">
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedUsers.includes(user.id)}
-                            onChange={() => toggleUserSelection(user.id)}
-                            className="mt-1 w-4 h-4 accent-accent-500"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <p className="text-sm font-medium text-gray-100 font-sans">{user.name}</p>
-                                <p className="text-xs text-gray-400 font-serif">{user.email}</p>
-                              </div>
-                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-500 text-white">
-                                Pending
-                              </span>
+              <div className="flex-grow overflow-y-auto custom-scrollbar">
+                {paginatedEditUsers.length > 0 ? (
+                  <div className="space-y-4">
+                    {paginatedEditUsers.map((user) => (
+                      <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedEditUsers.includes(user.id)}
+                          onChange={() => handleEditCheckboxChange(user.id)}
+                          className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
+                        />
+                        <div className="flex-grow">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                              <p className="text-gray-400 text-sm font-serif">{user.email}</p>
                             </div>
-                            <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-2">
-                              <span className="flex items-center gap-1">
-                                <span>👤</span> {user.roleRequested}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span>📍</span> {user.state}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span>🏢</span> {user.organization}
-                              </span>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <button 
-                                onClick={() => setShowMoreInfo(user.id)}
-                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
-                              >
-                                📋 More Info
-                              </button>
-                              <button 
-                                onClick={() => setShowApprovalModal(user)}
-                                className="text-xs bg-accent-600 hover:bg-accent-700 text-white px-3 py-1 rounded transition-colors font-medium"
-                              >
-                                ✅ Review & Approve
-                              </button>
-                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                            <span className="flex items-center gap-1">
+                              <span>👤</span> {user.role}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span>📍</span> {user.state}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span>🏢</span> {user.organization}
+                            </span>
+                          </div>
+
+                          {/* Edit Controls */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                            <select
+                              value={user.role}
+                              onChange={(e) => updateRole(user.id, e.target.value)}
+                              className="input-field text-sm"
+                            >
+                              <option value="Producer">Producer</option>
+                              <option value="PFI">PFI</option>
+                              <option value="Anchor">Anchor</option>
+                              <option value="Insurance">Insurance</option>
+                              <option value="Lead Firm">Lead Firm</option>
+                              <option value="Cooperative">Cooperative</option>
+
+                              <option value="Extension">Extension</option>
+                              <option value="Researcher">Researcher</option>
+                              <option value="Coordinating">Coordinating</option>
+                            </select>
+                            <select
+                              value={user.accessScope}
+                              onChange={(e) => updateScope(user.id, e.target.value as any)}
+                              className="input-field text-sm"
+                            >
+                              <option value="Basic">Basic Access</option>
+                              <option value="Standard">Standard Access</option>
+                              <option value="Full">Full Access</option>
+                            </select>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => setShowEditMoreInfo(user.id)}
+                              className="btn-secondary text-sm px-3 py-1"
+                            >
+                              📋 More Info
+                            </button>
+                            <button
+                              onClick={() => handleEditUserAction(user)}
+                              className="btn-primary text-sm px-3 py-1"
+                            >
+                              ✅ Apply Changes
+                            </button>
                           </div>
                         </div>
                       </div>
                     ))}
-                  </>
+                  </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <div className="text-4xl mb-2">✅</div>
-                    <p className="text-gray-400 font-sans">No pending applications</p>
+                  <div className="text-center py-10">
+                    <div className="text-4xl mb-2">🔍</div>
+                    <p className="text-gray-400 font-sans">No users found</p>
                   </div>
                 )}
               </div>
+
               {/* Pagination */}
-              {filteredCreateUsers.length > 3 && (
+              {filteredEditUsers.length > 2 && (
                 <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                  <button 
-                    onClick={() => setCreatePage(Math.max(createPage - 1, 1))} 
+                  <button
+                    onClick={() => setEditPage(Math.max(editPage - 1, 1))}
                     className="btn-secondary text-sm p-1"
                   >
                     ←
                   </button>
-                  <span className="text-xs text-gray-400">{createPage} of {Math.ceil(filteredCreateUsers.length / 3)}</span>
-                  <button 
-                    onClick={() => setCreatePage(Math.min(createPage + 1, Math.ceil(filteredCreateUsers.length / 3)))} 
+                  <span className="text-xs text-gray-400">{editPage} of {Math.ceil(filteredEditUsers.length / 2)}</span>
+                  <button
+                    onClick={() => setEditPage(Math.min(editPage + 1, Math.ceil(filteredEditUsers.length / 2)))}
+                    className="btn-secondary text-sm p-1"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Restrict Access Card - FULLY ENHANCED VERSION */}
+            <div className="card flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold font-sans text-gray-100">Restrict Access</h3>
+                <button
+                  onClick={() => setShowRestrictLogsModal(true)}
+                  className="text-xs text-accent-400 hover:text-accent-300 font-medium flex items-center gap-1"
+                >
+                  📜 View History
+                </button>
+              </div>
+
+              {/* Filters and Mass Action */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <div className="relative flex-1">
+                  <input
+                    value={restrictSearch}
+                    onChange={(e) => { setRestrictPage(1); setRestrictSearch(e.target.value); }}
+                    placeholder="Search users..."
+                    className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                  />
+                  <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                    🔍
+                  </button>
+                </div>
+                <select
+                  value={restrictStateFilter}
+                  onChange={(e) => { setRestrictStateFilter(e.target.value); setRestrictPage(1); }}
+                  className="input-field w-full sm:w-auto"
+                >
+                  <option value="All">Filter by State</option>
+                  {nigerianStates.map(state => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => {
+                    if (selectedRestrictUsers.length === paginatedRestrictUsers.length) {
+                      setSelectedRestrictUsers([]);
+                    } else {
+                      setSelectedRestrictUsers(paginatedRestrictUsers.map(u => u.id));
+                    }
+                  }}
+                  className="btn-secondary w-full sm:w-auto"
+                >
+                  {selectedRestrictUsers.length === paginatedRestrictUsers.length ? '☐ Deselect All' : '☑ Select All'}
+                </button>
+              </div>
+
+              <div className="flex-grow overflow-y-auto custom-scrollbar">
+                {paginatedRestrictUsers.length > 0 ? (
+                  <div className="space-y-4">
+                    {paginatedRestrictUsers.map((user) => (
+                      <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedRestrictUsers.includes(user.id)}
+                          onChange={() => handleRestrictCheckboxChange(user.id)}
+                          className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
+                        />
+                        <div className="flex-grow">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                              <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                            </div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.restricted ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                              }`}>
+                              {user.restricted ? 'Restricted' : 'Active'}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                            <span className="flex items-center gap-1">
+                              <span>👤</span> {user.role}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span>📍</span> {user.state}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span>🏢</span> {user.organization}
+                            </span>
+                          </div>
+
+                          {/* Restriction Control */}
+                          <div className="bg-primary-700 p-2 rounded-md mb-2">
+                            <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={!user.restricted}
+                                onChange={() => toggleRestrict(user.id)}
+                                className="accent-accent-500 w-4 h-4"
+                              />
+                              <span>Grant Active Access (Unrestrict User)</span>
+                            </label>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => setShowRestrictMoreInfo(user.id)}
+                              className="btn-secondary text-sm px-3 py-1"
+                            >
+                              📋 More Info
+                            </button>
+                            <button
+                              onClick={() => handleRestrictUserAction(user)}
+                              className="btn-primary text-sm px-3 py-1"
+                            >
+                              ✅ Apply Changes
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-10">
+                    <div className="text-4xl mb-2">🔍</div>
+                    <p className="text-gray-400 font-sans">No users found</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {filteredRestrictUsers.length > 3 && (
+                <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+                  <button
+                    onClick={() => setRestrictPage(Math.max(restrictPage - 1, 1))}
+                    className="btn-secondary text-sm p-1"
+                  >
+                    ←
+                  </button>
+                  <span className="text-xs text-gray-400">{restrictPage} of {Math.ceil(filteredRestrictUsers.length / 3)}</span>
+                  <button
+                    onClick={() => setRestrictPage(Math.min(restrictPage + 1, Math.ceil(filteredRestrictUsers.length / 3)))}
+                    className="btn-secondary text-sm p-1"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Approval Rights Card - FULLY ENHANCED VERSION */}
+            <div className="card flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold font-sans text-gray-100">Approval Rights</h3>
+                <button
+                  onClick={() => setShowApprovalLogsModal(true)}
+                  className="text-xs text-accent-400 hover:text-accent-300 font-medium flex items-center gap-1"
+                >
+                  📜 View History
+                </button>
+              </div>
+
+              {/* Filters and Mass Action */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <div className="relative flex-1">
+                  <input
+                    value={approvalSearch}
+                    onChange={(e) => { setApprovalPage(1); setApprovalSearch(e.target.value); }}
+                    placeholder="Search users..."
+                    className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                  />
+                  <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                    🔍
+                  </button>
+                </div>
+                <select
+                  value={approvalStateFilter}
+                  onChange={(e) => { setApprovalStateFilter(e.target.value); setApprovalPage(1); }}
+                  className="input-field w-full sm:w-auto"
+                >
+                  <option value="All">Filter by State</option>
+                  {nigerianStates.map(state => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => {
+                    if (selectedApprovalUsers.length === paginatedApprovalUsers.length) {
+                      setSelectedApprovalUsers([]);
+                    } else {
+                      setSelectedApprovalUsers(paginatedApprovalUsers.map(u => u.id));
+                    }
+                  }}
+                  className="btn-secondary w-full sm:w-auto"
+                >
+                  {selectedApprovalUsers.length === paginatedApprovalUsers.length ? '☐ Deselect All' : '☑ Select All'}
+                </button>
+              </div>
+
+              <div className="flex-grow overflow-y-auto custom-scrollbar">
+                {paginatedApprovalUsers.length > 0 ? (
+                  <div className="space-y-4">
+                    {paginatedApprovalUsers.map((user) => (
+                      <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedApprovalUsers.includes(user.id)}
+                          onChange={() => handleApprovalCheckboxChange(user.id)}
+                          className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
+                        />
+                        <div className="flex-grow">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
+                              <p className="text-gray-400 text-sm font-serif">{user.email}</p>
+                            </div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.canApprove ? 'bg-purple-500 text-white' : 'bg-gray-500 text-white'
+                              }`}>
+                              {user.canApprove ? '⭐ Can Approve' : 'No Rights'}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
+                            <span className="flex items-center gap-1">
+                              <span>👤</span> {user.role}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span>📍</span> {user.state}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <span>🏢</span> {user.organization}
+                            </span>
+                          </div>
+
+                          {/* Approval Rights Control */}
+                          <div className="bg-primary-700 p-2 rounded-md mb-2">
+                            <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={user.canApprove}
+                                onChange={() => toggleApprovalRight(user.id)}
+                                className="accent-accent-500 w-4 h-4"
+                              />
+                              <span>Grant Approval Rights (Can approve platform activities)</span>
+                            </label>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => setShowApprovalMoreInfo(user.id)}
+                              className="btn-secondary text-sm px-3 py-1"
+                            >
+                              📋 More Info
+                            </button>
+                            <button
+                              onClick={() => handleApprovalRightsAction(user)}
+                              className="btn-primary text-sm px-3 py-1"
+                            >
+                              ✅ Apply Changes
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-10">
+                    <div className="text-4xl mb-2">🔍</div>
+                    <p className="text-gray-400 font-sans">No users found</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {filteredApprovalUsers.length > 3 && (
+                <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
+                  <button
+                    onClick={() => setApprovalPage(Math.max(approvalPage - 1, 1))}
+                    className="btn-secondary text-sm p-1"
+                  >
+                    ←
+                  </button>
+                  <span className="text-xs text-gray-400">{approvalPage} of {Math.ceil(filteredApprovalUsers.length / 3)}</span>
+                  <button
+                    onClick={() => setApprovalPage(Math.min(approvalPage + 1, Math.ceil(filteredApprovalUsers.length / 3)))}
                     className="btn-secondary text-sm p-1"
                   >
                     →
@@ -1442,469 +1882,25 @@ const Activities: React.FC = () => {
               )}
             </div>
           </div>
-
-          {/* Edit Access Card - FULLY ENHANCED VERSION */}
-          <div className="card flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold font-sans text-gray-100">Edit Access</h3>
-              <button 
-                onClick={() => setShowEditLogsModal(true)}
-                className="text-xs text-accent-400 hover:text-accent-300 font-medium flex items-center gap-1"
-              >
-                📜 View History
-              </button>
-            </div>
-            
-            {/* Filters and Mass Action */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <div className="relative flex-1">
-                <input
-                  value={editSearch}
-                  onChange={(e) => { setEditPage(1); setEditSearch(e.target.value); }}
-                  placeholder="Search users..."
-                  className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-                />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
-                  🔍
-                </button>
-              </div>
-              <select
-                value={editStateFilter}
-                onChange={(e) => { setEditStateFilter(e.target.value); setEditPage(1); }}
-                className="input-field w-full sm:w-auto"
-              >
-                <option value="All">Filter by State</option>
-                {nigerianStates.map(state => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
-              <button 
-                onClick={() => {
-                  if (selectedEditUsers.length === paginatedEditUsers.length) {
-                    setSelectedEditUsers([]);
-                  } else {
-                    setSelectedEditUsers(paginatedEditUsers.map(u => u.id));
-                  }
-                }}
-                className="btn-secondary w-full sm:w-auto"
-              >
-                {selectedEditUsers.length === paginatedEditUsers.length ? '☐ Deselect All' : '☑ Select All'}
-              </button>
-            </div>
-
-            <div className="flex-grow overflow-y-auto custom-scrollbar">
-              {paginatedEditUsers.length > 0 ? (
-                <div className="space-y-4">
-                  {paginatedEditUsers.map((user) => (
-                    <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
-                      <input
-                        type="checkbox"
-                        checked={selectedEditUsers.includes(user.id)}
-                        onChange={() => handleEditCheckboxChange(user.id)}
-                        className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
-                      />
-                      <div className="flex-grow">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
-                            <p className="text-gray-400 text-sm font-serif">{user.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
-                          <span className="flex items-center gap-1">
-                            <span>👤</span> {user.role}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span>📍</span> {user.state}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span>🏢</span> {user.organization}
-                          </span>
-                        </div>
-                        
-                        {/* Edit Controls */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                          <select 
-                            value={user.role} 
-                            onChange={(e) => updateRole(user.id, e.target.value)} 
-                            className="input-field text-sm"
-                          >
-                            <option value="Producer">Producer</option>
-                            <option value="PFI">PFI</option>
-                            <option value="Anchor">Anchor</option>
-                            <option value="Insurance">Insurance</option>
-                            <option value="Lead Firm">Lead Firm</option>
-                            <option value="Cooperative">Cooperative</option>
-                            
-                            <option value="Extension">Extension</option>
-                            <option value="Researcher">Researcher</option>
-                            <option value="Coordinating">Coordinating</option>
-                          </select>
-                          <select 
-                            value={user.accessScope} 
-                            onChange={(e) => updateScope(user.id, e.target.value as any)} 
-                            className="input-field text-sm"
-                          >
-                            <option value="Basic">Basic Access</option>
-                            <option value="Standard">Standard Access</option>
-                            <option value="Full">Full Access</option>
-                          </select>
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex flex-wrap gap-2">
-                          <button 
-                            onClick={() => setShowEditMoreInfo(user.id)} 
-                            className="btn-secondary text-sm px-3 py-1"
-                          >
-                            📋 More Info
-                          </button>
-                          <button 
-                            onClick={() => handleEditUserAction(user)} 
-                            className="btn-primary text-sm px-3 py-1"
-                          >
-                            ✅ Apply Changes
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <div className="text-4xl mb-2">🔍</div>
-                  <p className="text-gray-400 font-sans">No users found</p>
-                </div>
-              )}
-            </div>
-            
-            {/* Pagination */}
-            {filteredEditUsers.length > 2 && (
-              <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                <button 
-                  onClick={() => setEditPage(Math.max(editPage - 1, 1))} 
-                  className="btn-secondary text-sm p-1"
-                >
-                  ←
-                </button>
-                <span className="text-xs text-gray-400">{editPage} of {Math.ceil(filteredEditUsers.length / 2)}</span>
-                <button 
-                  onClick={() => setEditPage(Math.min(editPage + 1, Math.ceil(filteredEditUsers.length / 2)))} 
-                  className="btn-secondary text-sm p-1"
-                >
-                  →
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Restrict Access Card - FULLY ENHANCED VERSION */}
-          <div className="card flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold font-sans text-gray-100">Restrict Access</h3>
-              <button 
-                onClick={() => setShowRestrictLogsModal(true)}
-                className="text-xs text-accent-400 hover:text-accent-300 font-medium flex items-center gap-1"
-              >
-                📜 View History
-              </button>
-            </div>
-            
-            {/* Filters and Mass Action */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <div className="relative flex-1">
-                <input
-                  value={restrictSearch}
-                  onChange={(e) => { setRestrictPage(1); setRestrictSearch(e.target.value); }}
-                  placeholder="Search users..."
-                  className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-                />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
-                  🔍
-                </button>
-              </div>
-              <select
-                value={restrictStateFilter}
-                onChange={(e) => { setRestrictStateFilter(e.target.value); setRestrictPage(1); }}
-                className="input-field w-full sm:w-auto"
-              >
-                <option value="All">Filter by State</option>
-                {nigerianStates.map(state => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
-              <button 
-                onClick={() => {
-                  if (selectedRestrictUsers.length === paginatedRestrictUsers.length) {
-                    setSelectedRestrictUsers([]);
-                  } else {
-                    setSelectedRestrictUsers(paginatedRestrictUsers.map(u => u.id));
-                  }
-                }}
-                className="btn-secondary w-full sm:w-auto"
-              >
-                {selectedRestrictUsers.length === paginatedRestrictUsers.length ? '☐ Deselect All' : '☑ Select All'}
-              </button>
-            </div>
-
-            <div className="flex-grow overflow-y-auto custom-scrollbar">
-              {paginatedRestrictUsers.length > 0 ? (
-                <div className="space-y-4">
-                  {paginatedRestrictUsers.map((user) => (
-                    <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
-                      <input
-                        type="checkbox"
-                        checked={selectedRestrictUsers.includes(user.id)}
-                        onChange={() => handleRestrictCheckboxChange(user.id)}
-                        className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
-                      />
-                      <div className="flex-grow">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
-                            <p className="text-gray-400 text-sm font-serif">{user.email}</p>
-                          </div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            user.restricted ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
-                          }`}>
-                            {user.restricted ? 'Restricted' : 'Active'}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
-                          <span className="flex items-center gap-1">
-                            <span>👤</span> {user.role}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span>📍</span> {user.state}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span>🏢</span> {user.organization}
-                          </span>
-                        </div>
-                        
-                        {/* Restriction Control */}
-                        <div className="bg-primary-700 p-2 rounded-md mb-2">
-                          <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={!user.restricted}
-                              onChange={() => toggleRestrict(user.id)}
-                              className="accent-accent-500 w-4 h-4"
-                            />
-                            <span>Grant Active Access (Unrestrict User)</span>
-                          </label>
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex flex-wrap gap-2">
-                          <button 
-                            onClick={() => setShowRestrictMoreInfo(user.id)} 
-                            className="btn-secondary text-sm px-3 py-1"
-                          >
-                            📋 More Info
-                          </button>
-                          <button 
-                            onClick={() => handleRestrictUserAction(user)} 
-                            className="btn-primary text-sm px-3 py-1"
-                          >
-                            ✅ Apply Changes
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <div className="text-4xl mb-2">🔍</div>
-                  <p className="text-gray-400 font-sans">No users found</p>
-                </div>
-              )}
-            </div>
-            
-            {/* Pagination */}
-            {filteredRestrictUsers.length > 3 && (
-              <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                <button 
-                  onClick={() => setRestrictPage(Math.max(restrictPage - 1, 1))} 
-                  className="btn-secondary text-sm p-1"
-                >
-                  ←
-                </button>
-                <span className="text-xs text-gray-400">{restrictPage} of {Math.ceil(filteredRestrictUsers.length / 3)}</span>
-                <button 
-                  onClick={() => setRestrictPage(Math.min(restrictPage + 1, Math.ceil(filteredRestrictUsers.length / 3)))} 
-                  className="btn-secondary text-sm p-1"
-                >
-                  →
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Approval Rights Card - FULLY ENHANCED VERSION */}
-          <div className="card flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold font-sans text-gray-100">Approval Rights</h3>
-              <button 
-                onClick={() => setShowApprovalLogsModal(true)}
-                className="text-xs text-accent-400 hover:text-accent-300 font-medium flex items-center gap-1"
-              >
-                📜 View History
-              </button>
-            </div>
-            
-            {/* Filters and Mass Action */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <div className="relative flex-1">
-                <input
-                  value={approvalSearch}
-                  onChange={(e) => { setApprovalPage(1); setApprovalSearch(e.target.value); }}
-                  placeholder="Search users..."
-                  className="w-full px-3 py-2 pr-10 rounded-md bg-primary-700 text-gray-100 placeholder-gray-400 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-                />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
-                  🔍
-                </button>
-              </div>
-              <select
-                value={approvalStateFilter}
-                onChange={(e) => { setApprovalStateFilter(e.target.value); setApprovalPage(1); }}
-                className="input-field w-full sm:w-auto"
-              >
-                <option value="All">Filter by State</option>
-                {nigerianStates.map(state => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
-              <button 
-                onClick={() => {
-                  if (selectedApprovalUsers.length === paginatedApprovalUsers.length) {
-                    setSelectedApprovalUsers([]);
-                  } else {
-                    setSelectedApprovalUsers(paginatedApprovalUsers.map(u => u.id));
-                  }
-                }}
-                className="btn-secondary w-full sm:w-auto"
-              >
-                {selectedApprovalUsers.length === paginatedApprovalUsers.length ? '☐ Deselect All' : '☑ Select All'}
-              </button>
-            </div>
-
-            <div className="flex-grow overflow-y-auto custom-scrollbar">
-              {paginatedApprovalUsers.length > 0 ? (
-                <div className="space-y-4">
-                  {paginatedApprovalUsers.map((user) => (
-                    <div key={user.id} className="flex items-start bg-primary-800 p-3 rounded-lg shadow-sm">
-                      <input
-                        type="checkbox"
-                        checked={selectedApprovalUsers.includes(user.id)}
-                        onChange={() => handleApprovalCheckboxChange(user.id)}
-                        className="form-checkbox h-5 w-5 text-accent-500 rounded mr-3 mt-1"
-                      />
-                      <div className="flex-grow">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
-                            <p className="text-gray-400 text-sm font-serif">{user.email}</p>
-                          </div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            user.canApprove ? 'bg-purple-500 text-white' : 'bg-gray-500 text-white'
-                          }`}>
-                            {user.canApprove ? '⭐ Can Approve' : 'No Rights'}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs text-gray-300 font-serif mb-3">
-                          <span className="flex items-center gap-1">
-                            <span>👤</span> {user.role}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span>📍</span> {user.state}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span>🏢</span> {user.organization}
-                          </span>
-                        </div>
-                        
-                        {/* Approval Rights Control */}
-                        <div className="bg-primary-700 p-2 rounded-md mb-2">
-                          <label className="flex items-center gap-2 text-sm text-gray-300 font-serif cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={user.canApprove}
-                              onChange={() => toggleApprovalRight(user.id)}
-                              className="accent-accent-500 w-4 h-4"
-                            />
-                            <span>Grant Approval Rights (Can approve platform activities)</span>
-                          </label>
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex flex-wrap gap-2">
-                          <button 
-                            onClick={() => setShowApprovalMoreInfo(user.id)} 
-                            className="btn-secondary text-sm px-3 py-1"
-                          >
-                            📋 More Info
-                          </button>
-                          <button 
-                            onClick={() => handleApprovalRightsAction(user)} 
-                            className="btn-primary text-sm px-3 py-1"
-                          >
-                            ✅ Apply Changes
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <div className="text-4xl mb-2">🔍</div>
-                  <p className="text-gray-400 font-sans">No users found</p>
-                </div>
-              )}
-            </div>
-            
-            {/* Pagination */}
-            {filteredApprovalUsers.length > 3 && (
-              <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                <button 
-                  onClick={() => setApprovalPage(Math.max(approvalPage - 1, 1))} 
-                  className="btn-secondary text-sm p-1"
-                >
-                  ←
-                </button>
-                <span className="text-xs text-gray-400">{approvalPage} of {Math.ceil(filteredApprovalUsers.length / 3)}</span>
-                <button 
-                  onClick={() => setApprovalPage(Math.min(approvalPage + 1, Math.ceil(filteredApprovalUsers.length / 3)))} 
-                  className="btn-secondary text-sm p-1"
-                >
-                  →
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
         )}
 
         {/* Quick Actions */}
         <div className="card">
           <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button 
+            <button
               className="btn-primary"
               onClick={() => addNewRecord('Program Launch')}
             >
               🏛️ Launch Program
             </button>
-            <button 
+            <button
               className="btn-secondary"
               onClick={() => generateReport('Program Progress Report', 'PDF')}
             >
               📊 Generate Report
             </button>
-            <button 
+            <button
               className="btn-secondary"
               onClick={() => processAction('Stakeholder Meeting')}
             >
@@ -1929,7 +1925,7 @@ const Activities: React.FC = () => {
                     <h3 className="text-lg font-semibold font-sans text-gray-100">User Details</h3>
                     <button onClick={() => setShowEditMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-primary-800 rounded-md p-3">
@@ -1961,41 +1957,39 @@ const Activities: React.FC = () => {
                         <p className="text-sm text-gray-100 font-sans">{user.registrationDate}</p>
                       </div>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Organization</p>
                       <p className="text-sm text-gray-100 font-sans">{user.organization}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Full Address</p>
                       <p className="text-sm text-gray-100 font-sans">{user.fullAddress}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Organization Profile</p>
                       <p className="text-sm text-gray-100 font-sans">{user.organizationProfile}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Access Scope</p>
                       <p className="text-sm text-gray-100 font-sans">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.accessScope === 'Full' ? 'bg-green-500 text-white' :
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.accessScope === 'Full' ? 'bg-green-500 text-white' :
                           user.accessScope === 'Standard' ? 'bg-blue-500 text-white' :
-                          'bg-gray-500 text-white'
-                        }`}>
+                            'bg-gray-500 text-white'
+                          }`}>
                           {user.accessScope} Access
                         </span>
                       </p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Status</p>
                       <p className="text-sm text-gray-100 font-sans">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.restricted ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.restricted ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                          }`}>
                           {user.restricted ? 'Restricted' : 'Active'}
                         </span>
                         {user.canApprove && (
@@ -2005,10 +1999,10 @@ const Activities: React.FC = () => {
                         )}
                       </p>
                     </div>
-                    
+
                     <div className="flex justify-end gap-2 mt-4">
-                      <button 
-                        onClick={() => setShowEditMoreInfo(null)} 
+                      <button
+                        onClick={() => setShowEditMoreInfo(null)}
                         className="btn-secondary"
                       >
                         Close
@@ -2030,7 +2024,7 @@ const Activities: React.FC = () => {
                   <h3 className="text-lg font-semibold font-sans text-gray-100">Edit Access History</h3>
                   <button onClick={() => setShowEditLogsModal(false)} className="text-gray-400 hover:text-gray-200">✖</button>
                 </div>
-                
+
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
                   {editLogs.length > 0 ? (
                     editLogs.map((log) => (
@@ -2040,9 +2034,8 @@ const Activities: React.FC = () => {
                             <p className="text-sm font-semibold text-gray-100 font-sans">{log.userName}</p>
                             <p className="text-xs text-gray-400 font-serif">Modified by {log.approvedBy}</p>
                           </div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            log.action === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${log.action === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                            }`}>
                             {log.action === 'approved' ? '✅ Updated' : '❌ Rejected'}
                           </span>
                         </div>
@@ -2057,7 +2050,7 @@ const Activities: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex justify-end mt-4">
                   <button onClick={() => setShowEditLogsModal(false)} className="btn-primary">
                     Close
@@ -2079,7 +2072,7 @@ const Activities: React.FC = () => {
                     <h3 className="text-lg font-semibold font-sans text-gray-100">User Details</h3>
                     <button onClick={() => setShowRestrictMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-primary-800 rounded-md p-3">
@@ -2111,41 +2104,39 @@ const Activities: React.FC = () => {
                         <p className="text-sm text-gray-100 font-sans">{user.registrationDate}</p>
                       </div>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Organization</p>
                       <p className="text-sm text-gray-100 font-sans">{user.organization}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Full Address</p>
                       <p className="text-sm text-gray-100 font-sans">{user.fullAddress}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Organization Profile</p>
                       <p className="text-sm text-gray-100 font-sans">{user.organizationProfile}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Access Scope</p>
                       <p className="text-sm text-gray-100 font-sans">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.accessScope === 'Full' ? 'bg-green-500 text-white' :
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.accessScope === 'Full' ? 'bg-green-500 text-white' :
                           user.accessScope === 'Standard' ? 'bg-blue-500 text-white' :
-                          'bg-gray-500 text-white'
-                        }`}>
+                            'bg-gray-500 text-white'
+                          }`}>
                           {user.accessScope} Access
                         </span>
                       </p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Restriction Status</p>
                       <p className="text-sm text-gray-100 font-sans">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.restricted ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.restricted ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                          }`}>
                           {user.restricted ? '🚫 Restricted' : '✅ Active'}
                         </span>
                         {user.canApprove && (
@@ -2155,10 +2146,10 @@ const Activities: React.FC = () => {
                         )}
                       </p>
                     </div>
-                    
+
                     <div className="flex justify-end gap-2 mt-4">
-                      <button 
-                        onClick={() => setShowRestrictMoreInfo(null)} 
+                      <button
+                        onClick={() => setShowRestrictMoreInfo(null)}
                         className="btn-secondary"
                       >
                         Close
@@ -2180,7 +2171,7 @@ const Activities: React.FC = () => {
                   <h3 className="text-lg font-semibold font-sans text-gray-100">Restrict Access History</h3>
                   <button onClick={() => setShowRestrictLogsModal(false)} className="text-gray-400 hover:text-gray-200">✖</button>
                 </div>
-                
+
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
                   {restrictLogs.length > 0 ? (
                     restrictLogs.map((log) => (
@@ -2190,9 +2181,8 @@ const Activities: React.FC = () => {
                             <p className="text-sm font-semibold text-gray-100 font-sans">{log.userName}</p>
                             <p className="text-xs text-gray-400 font-serif">Modified by {log.approvedBy}</p>
                           </div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            log.action === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${log.action === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                            }`}>
                             {log.action === 'approved' ? '✅ Updated' : '❌ Rejected'}
                           </span>
                         </div>
@@ -2207,7 +2197,7 @@ const Activities: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex justify-end mt-4">
                   <button onClick={() => setShowRestrictLogsModal(false)} className="btn-primary">
                     Close
@@ -2229,7 +2219,7 @@ const Activities: React.FC = () => {
                     <h3 className="text-lg font-semibold font-sans text-gray-100">User Details</h3>
                     <button onClick={() => setShowApprovalMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-primary-800 rounded-md p-3">
@@ -2261,41 +2251,39 @@ const Activities: React.FC = () => {
                         <p className="text-sm text-gray-100 font-sans">{user.registrationDate}</p>
                       </div>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Organization</p>
                       <p className="text-sm text-gray-100 font-sans">{user.organization}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Full Address</p>
                       <p className="text-sm text-gray-100 font-sans">{user.fullAddress}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Organization Profile</p>
                       <p className="text-sm text-gray-100 font-sans">{user.organizationProfile}</p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Access Scope</p>
                       <p className="text-sm text-gray-100 font-sans">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.accessScope === 'Full' ? 'bg-green-500 text-white' :
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.accessScope === 'Full' ? 'bg-green-500 text-white' :
                           user.accessScope === 'Standard' ? 'bg-blue-500 text-white' :
-                          'bg-gray-500 text-white'
-                        }`}>
+                            'bg-gray-500 text-white'
+                          }`}>
                           {user.accessScope} Access
                         </span>
                       </p>
                     </div>
-                    
+
                     <div className="bg-primary-800 rounded-md p-3">
                       <p className="text-xs text-gray-400 font-serif mb-1">Approval Rights</p>
                       <p className="text-sm text-gray-100 font-sans">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.canApprove ? 'bg-purple-500 text-white' : 'bg-gray-500 text-white'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.canApprove ? 'bg-purple-500 text-white' : 'bg-gray-500 text-white'
+                          }`}>
                           {user.canApprove ? '⭐ Can Approve Activities' : '⛔ No Approval Rights'}
                         </span>
                         {user.restricted && (
@@ -2305,10 +2293,10 @@ const Activities: React.FC = () => {
                         )}
                       </p>
                     </div>
-                    
+
                     <div className="flex justify-end gap-2 mt-4">
-                      <button 
-                        onClick={() => setShowApprovalMoreInfo(null)} 
+                      <button
+                        onClick={() => setShowApprovalMoreInfo(null)}
                         className="btn-secondary"
                       >
                         Close
@@ -2330,7 +2318,7 @@ const Activities: React.FC = () => {
                   <h3 className="text-lg font-semibold font-sans text-gray-100">Approval Rights History</h3>
                   <button onClick={() => setShowApprovalLogsModal(false)} className="text-gray-400 hover:text-gray-200">✖</button>
                 </div>
-                
+
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
                   {approvalRightsLogs.length > 0 ? (
                     approvalRightsLogs.map((log) => (
@@ -2340,9 +2328,8 @@ const Activities: React.FC = () => {
                             <p className="text-sm font-semibold text-gray-100 font-sans">{log.userName}</p>
                             <p className="text-xs text-gray-400 font-serif">Modified by {log.approvedBy}</p>
                           </div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            log.action === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${log.action === 'approved' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                            }`}>
                             {log.action === 'approved' ? '✅ Updated' : '❌ Rejected'}
                           </span>
                         </div>
@@ -2357,7 +2344,7 @@ const Activities: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex justify-end mt-4">
                   <button onClick={() => setShowApprovalLogsModal(false)} className="btn-primary">
                     Close
@@ -2380,3 +2367,4 @@ const Activities: React.FC = () => {
 };
 
 export default Activities;
+

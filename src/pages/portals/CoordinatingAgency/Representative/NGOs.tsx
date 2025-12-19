@@ -3,10 +3,10 @@ import PortalLayout from '../../../../components/PortalLayout';
 
 const RepresentativeNGOs: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -16,16 +16,16 @@ const RepresentativeNGOs: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'state-monitoring', 
-      name: 'State Monitoring Team', 
-      icon: '🗺️', 
+    {
+      id: 'me-team',
+      name: 'M&E Team',
+      icon: '📋',
       href: '/portal/coordinating-agency/monitoring/state'
     },
-    { 
-      id: 'representative-body', 
-      name: 'Representative Body', 
-      icon: '🏛️', 
+    {
+      id: 'representative-body',
+      name: 'Representative Body',
+      icon: '🏛️',
       href: '/portal/coordinating-agency/representative',
       hasDropdown: true,
       dropdownItems: [
@@ -34,20 +34,20 @@ const RepresentativeNGOs: React.FC = () => {
         { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
       ]
     },
-    { 
-      id: 'applicants', 
-      name: 'Applicants', 
-      icon: '📝', 
+    {
+      id: 'applicants',
+      name: 'Applicants',
+      icon: '📝',
       href: '/portal/coordinating-agency/applicants',
       hasDropdown: true,
       dropdownItems: [
         { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
         { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
         { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-        { 
-          id: 'fund-beneficiaries', 
-          name: 'Fund Beneficiaries', 
-          icon: '👥', 
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
           href: '/portal/coordinating-agency/fund-beneficiaries',
           hasDropdown: true,
           dropdownItems: [
@@ -59,10 +59,10 @@ const RepresentativeNGOs: React.FC = () => {
         }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Department', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Department',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -95,7 +95,7 @@ const RepresentativeNGOs: React.FC = () => {
   const [reportTitle, setReportTitle] = useState('');
 
   const nigerianStates = [
-    'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara','FCT Abuja'
+    'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'FCT Abuja'
   ];
 
   const reports = [
@@ -138,7 +138,7 @@ const RepresentativeNGOs: React.FC = () => {
             </div>
             <div>
               <label className="block text-xs text-gray-300 mb-1">State</label>
-              <select value={stateFilter} onChange={(e)=>{ setStateFilter(e.target.value); setPage(1); }} className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500">
+              <select value={stateFilter} onChange={(e) => { setStateFilter(e.target.value); setPage(1); }} className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500">
                 <option value="All">All</option>
                 {nigerianStates.map(st => (<option key={st} value={st}>{st}</option>))}
               </select>
@@ -179,7 +179,7 @@ const RepresentativeNGOs: React.FC = () => {
 
           <div className="flex items-center justify-center gap-2 mt-4">
             <button onClick={() => setPage(Math.max(1, page - 1))} className="btn-secondary text-sm p-1" disabled={page === 1}>←</button>
-            <span className="text-gray-300 text-sm">Page {page} of {Math.max(totalPages,1)}</span>
+            <span className="text-gray-300 text-sm">Page {page} of {Math.max(totalPages, 1)}</span>
             <button onClick={() => setPage(page + 1)} className="btn-secondary text-sm p-1" disabled={page >= totalPages}>→</button>
           </div>
         </div>
@@ -249,5 +249,6 @@ const RepresentativeNGOs: React.FC = () => {
 };
 
 export default RepresentativeNGOs;
+
 
 

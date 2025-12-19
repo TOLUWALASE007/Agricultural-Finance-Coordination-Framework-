@@ -55,9 +55,11 @@ import CooperativeGroups from './pages/portals/CoordinatingAgency/FundBeneficiar
 import ProducersFarmers from './pages/portals/CoordinatingAgency/FundBeneficiaries/ProducersFarmers';
 // Monitoring Team sub-pages
 import CentralMonitoring from './pages/portals/CoordinatingAgency/CentralMonitoring';
-import StateMonitoring from './pages/portals/CoordinatingAgency/StateMonitoring';
 import LocalMonitoring from './pages/portals/CoordinatingAgency/LocalMonitoring';
 import WardMonitoring from './pages/portals/CoordinatingAgency/WardMonitoring';
+// M&E Team pages (replaces old State Monitoring)
+import METeamPortal from './pages/portals/CoordinatingAgency/METeamPortal';
+import MEMemberPortal from './pages/portals/CoordinatingAgency/MEMemberPortal';
 // Stakeholder Department sub-pages
 import FundManagementDept from './pages/portals/CoordinatingAgency/Stakeholders/FundManagement';
 import CreditRiskDept from './pages/portals/CoordinatingAgency/Stakeholders/CreditRisk';
@@ -109,119 +111,154 @@ import ResearcherCollaborations from './pages/portals/Researcher/Collaborations'
 import ResearcherFunding from './pages/portals/Researcher/Funding';
 import ResearcherConferences from './pages/portals/Researcher/Conferences';
 import ResearcherReports from './pages/portals/Researcher/Reports';
+// Anchor Producer Management sub-pages
+import CreateProducer from './pages/portals/Anchor/ProducerManagement/CreateProducer';
+import InviteProducers from './pages/portals/Anchor/ProducerManagement/InviteProducers';
+import ManageProducers from './pages/portals/Anchor/ProducerManagement/ManageProducers';
+import ActivityLogs from './pages/portals/Anchor/ProducerManagement/ActivityLogs';
+import JoinRequests from './pages/portals/Anchor/ProducerManagement/JoinRequests';
+// Producer Anchor Relationships sub-pages
+import CurrentAnchors from './pages/portals/Producer/AnchorRelationships/CurrentAnchors';
+import LeaveRequest from './pages/portals/Producer/AnchorRelationships/LeaveRequest';
+import Invitations from './pages/portals/Producer/AnchorRelationships/Invitations';
+import Communication from './pages/portals/Producer/AnchorRelationships/Communication';
+import RelationshipHistory from './pages/portals/Producer/AnchorRelationships/RelationshipHistory';
+// Coordinating Agency Relationships sub-pages
+import ProducerCreationRequests from './pages/portals/CoordinatingAgency/Relationships/ProducerCreationRequests';
+import InvitationRequests from './pages/portals/CoordinatingAgency/Relationships/InvitationRequests';
+import LeaveRequests from './pages/portals/CoordinatingAgency/Relationships/LeaveRequests';
+
 
 function App() {
   return (
     <NotificationProvider>
       <Router>
-      <Routes>
-        {/* Public Routes with Navbar and Footer */}
-        <Route path="/*" element={
-          <div className="min-h-screen flex flex-col">
-            <Navbar />
-            <main className="flex-grow">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/elearning" element={<ELearning />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        } />
-        
-        {/* Portal Routes without Navbar and Footer */}
-        <Route path="/portal/fund-provider" element={<FundProviderPortal />} />
-        <Route path="/portal/fund-provider/scheme-application" element={<SchemeApplication />} />
-        <Route path="/portal/fund-provider/settings" element={<FundProviderSettings />} />
-        <Route path="/portal/coordinating-agency" element={<CoordinatingAgencyPortal />} />
-        <Route path="/portal/coordinating-agency/activities" element={<CoordinatingAgencyActivities />} />
-        <Route path="/portal/coordinating-agency/fund-schemes" element={<CoordinatingAgencyFundSchemes />} />
-        <Route path="/portal/coordinating-agency/reportings" element={<CoordinatingAgencyReportings />} />
-        <Route path="/portal/coordinating-agency/stakeholders" element={<CoordinatingAgencyStakeholders />} />
-        {/* Representative Body */}
-        <Route path="/portal/coordinating-agency/representative/insurance-companies" element={<RepresentativeInsurance />} />
-        <Route path="/portal/coordinating-agency/representative/extension-organizations" element={<RepresentativeExtension />} />
-        <Route path="/portal/coordinating-agency/representative/ngos" element={<RepresentativeNGOs />} />
-        {/* Publications / Blog / FAQs */}
-        <Route path="/portal/coordinating-agency/publications" element={<Publications />} />
-        <Route path="/portal/coordinating-agency/blog" element={<Blog />} />
-        <Route path="/portal/coordinating-agency/faqs" element={<FAQs />} />
-        {/* Coordinating Agency Applicants */}
-        <Route path="/portal/coordinating-agency/applicants/fund-provider" element={<FundProviderApplicants />} />
-        <Route path="/portal/coordinating-agency/applicants/pfis" element={<PFIApplicants />} />
-        <Route path="/portal/coordinating-agency/applicants/insurance-companies" element={<InsuranceCompanyApplicants />} />
-        {/* Fund Beneficiaries */}
-        <Route path="/portal/coordinating-agency/fund-beneficiaries/lead-firms" element={<LeadFirms />} />
-        <Route path="/portal/coordinating-agency/fund-beneficiaries/anchors" element={<Anchors />} />
-        <Route path="/portal/coordinating-agency/fund-beneficiaries/cooperative-groups" element={<CooperativeGroups />} />
-        <Route path="/portal/coordinating-agency/fund-beneficiaries/producers-farmers" element={<ProducersFarmers />} />
-        <Route path="/portal/coordinating-agency/stakeholders/fund-management" element={<FundManagementDept />} />
-        <Route path="/portal/coordinating-agency/stakeholders/credit-risk" element={<CreditRiskDept />} />
-        <Route path="/portal/coordinating-agency/stakeholders/insurance" element={<InsuranceDept />} />
-        <Route path="/portal/coordinating-agency/stakeholders/finance" element={<FinanceDept />} />
-        <Route path="/portal/coordinating-agency/stakeholders/legal" element={<LegalDept />} />
-        <Route path="/portal/coordinating-agency/stakeholders/it" element={<ITDept />} />
-        <Route path="/portal/coordinating-agency/stakeholders/training" element={<TrainingDept />} />
-        <Route path="/portal/coordinating-agency/stakeholders/monitoring" element={<MonitoringDept />} />
-        <Route path="/portal/coordinating-agency/monitoring/central" element={<CentralMonitoring />} />
-        <Route path="/portal/coordinating-agency/monitoring/state" element={<StateMonitoring />} />
-        <Route path="/portal/coordinating-agency/monitoring/local" element={<LocalMonitoring />} />
-        <Route path="/portal/coordinating-agency/monitoring/ward" element={<WardMonitoring />} />
-        <Route path="/portal/coordinating-agency/trainings" element={<CoordinatingAgencyTrainings />} />
-        <Route path="/portal/coordinating-agency/settings" element={<CoordinatingAgencySettings />} />
-        <Route path="/portal/pfi" element={<PFIPortal />} />
-        <Route path="/portal/pfi/scheme-application" element={<PFISchemeApplication />} />
-        <Route path="/portal/pfi/settings" element={<PFISettings />} />
-        <Route path="/portal/insurance" element={<InsurancePortal />} />
-        <Route path="/portal/insurance/scheme-application" element={<InsuranceSchemeApplication />} />
-        <Route path="/portal/cooperative/scheme-application" element={<CooperativeSchemeApplication />} />
-        <Route path="/portal/insurance/policies" element={<InsurancePolicies />} />
-        <Route path="/portal/insurance/claims" element={<InsuranceClaimsPage />} />
-        <Route path="/portal/insurance/risk" element={<InsuranceRiskAssessment />} />
-        <Route path="/portal/insurance/reports" element={<InsuranceReports />} />
-        <Route path="/portal/insurance/settings" element={<InsuranceSettings />} />
-        <Route path="/portal/anchor" element={<AnchorPortal />} />
-        <Route path="/portal/anchor/scheme-application" element={<AnchorSchemeApplication />} />
-        <Route path="/portal/anchor/settings" element={<AnchorSettings />} />
-        <Route path="/portal/lead-firm" element={<LeadFirmPortal />} />
-        <Route path="/portal/lead-firm/scheme-application" element={<LeadFirmSchemeApplication />} />
-        <Route path="/portal/lead-firm/settings" element={<LeadFirmSettings />} />
-        <Route path="/portal/producer" element={<ProducerPortal />} />
-        <Route path="/portal/producer/scheme-application" element={<ProducerSchemeApplication />} />
-        <Route path="/portal/producer/settings" element={<ProducerSettings />} />
-        <Route path="/portal/cooperative" element={<CooperativePortal />} />
-        <Route path="/portal/cooperative/members" element={<CooperativeMembers />} />
-        <Route path="/portal/cooperative/loans" element={<CooperativeGroupLoans />} />
-        <Route path="/portal/cooperative/savings" element={<CooperativeSavings />} />
-               <Route path="/portal/cooperative/settings" element={<CooperativeSettings />} />
-               <Route path="/portal/cooperative/reports" element={<CooperativeReports />} />
-               <Route path="/portal/cooperative/extension" element={<CooperativeExtensionServices />} />
-               <Route path="/portal/cooperative/market" element={<CooperativeMarketAccess />} />
-               <Route path="/portal/cooperative/training" element={<CooperativeTraining />} />
-        <Route path="/portal/extension" element={<ExtensionPortal />} />
-        <Route path="/portal/extension/scheme-application" element={<ExtensionSchemeApplication />} />
-        <Route path="/portal/extension/farmers" element={<ExtensionFarmers />} />
-        <Route path="/portal/extension/training" element={<ExtensionTrainingPrograms />} />
-               <Route path="/portal/extension/settings" element={<ExtensionSettings />} />
-               <Route path="/portal/extension/advisory" element={<ExtensionAdvisoryServices />} />
-               <Route path="/portal/extension/tech" element={<ExtensionTechnologyTransfer />} />
-               <Route path="/portal/extension/monitoring" element={<ExtensionFieldMonitoring />} />
-               <Route path="/portal/extension/reports" element={<ExtensionReports />} />
-        <Route path="/portal/researcher" element={<ResearcherPortal />} />
-        <Route path="/portal/researcher/scheme-application" element={<ResearcherSchemeApplication />} />
-        <Route path="/portal/researcher/projects" element={<ResearcherResearchProjects />} />
-        <Route path="/portal/researcher/data" element={<ResearcherDataCollection />} />
-               <Route path="/portal/researcher/settings" element={<ResearcherSettings />} />
-               <Route path="/portal/researcher/publications" element={<ResearcherPublications />} />
-               <Route path="/portal/researcher/collaborations" element={<ResearcherCollaborations />} />
-               <Route path="/portal/researcher/funding" element={<ResearcherFunding />} />
-               <Route path="/portal/researcher/conferences" element={<ResearcherConferences />} />
-               <Route path="/portal/researcher/reports" element={<ResearcherReports />} />
-      </Routes>
+        <Routes>
+          {/* Public Routes with Navbar and Footer */}
+          <Route path="/*" element={
+            <div className="min-h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-grow">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/elearning" element={<ELearning />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          } />
+
+          {/* Portal Routes without Navbar and Footer */}
+          <Route path="/portal/fund-provider" element={<FundProviderPortal />} />
+          <Route path="/portal/fund-provider/scheme-application" element={<SchemeApplication />} />
+          <Route path="/portal/fund-provider/settings" element={<FundProviderSettings />} />
+          <Route path="/portal/coordinating-agency" element={<CoordinatingAgencyPortal />} />
+          <Route path="/portal/coordinating-agency/activities" element={<CoordinatingAgencyActivities />} />
+          <Route path="/portal/coordinating-agency/fund-schemes" element={<CoordinatingAgencyFundSchemes />} />
+          <Route path="/portal/coordinating-agency/reportings" element={<CoordinatingAgencyReportings />} />
+          <Route path="/portal/coordinating-agency/stakeholders" element={<CoordinatingAgencyStakeholders />} />
+          {/* Representative Body */}
+          <Route path="/portal/coordinating-agency/representative/insurance-companies" element={<RepresentativeInsurance />} />
+          <Route path="/portal/coordinating-agency/representative/extension-organizations" element={<RepresentativeExtension />} />
+          <Route path="/portal/coordinating-agency/representative/ngos" element={<RepresentativeNGOs />} />
+          {/* Publications / Blog / FAQs */}
+          <Route path="/portal/coordinating-agency/publications" element={<Publications />} />
+          <Route path="/portal/coordinating-agency/blog" element={<Blog />} />
+          <Route path="/portal/coordinating-agency/faqs" element={<FAQs />} />
+          {/* Coordinating Agency Applicants */}
+          <Route path="/portal/coordinating-agency/applicants/fund-provider" element={<FundProviderApplicants />} />
+          <Route path="/portal/coordinating-agency/applicants/pfis" element={<PFIApplicants />} />
+          <Route path="/portal/coordinating-agency/applicants/insurance-companies" element={<InsuranceCompanyApplicants />} />
+          {/* Fund Beneficiaries */}
+          <Route path="/portal/coordinating-agency/fund-beneficiaries/lead-firms" element={<LeadFirms />} />
+          <Route path="/portal/coordinating-agency/fund-beneficiaries/anchors" element={<Anchors />} />
+          <Route path="/portal/coordinating-agency/fund-beneficiaries/cooperative-groups" element={<CooperativeGroups />} />
+          <Route path="/portal/coordinating-agency/fund-beneficiaries/producers-farmers" element={<ProducersFarmers />} />
+          <Route path="/portal/coordinating-agency/stakeholders/fund-management" element={<FundManagementDept />} />
+          <Route path="/portal/coordinating-agency/stakeholders/credit-risk" element={<CreditRiskDept />} />
+          <Route path="/portal/coordinating-agency/stakeholders/insurance" element={<InsuranceDept />} />
+          <Route path="/portal/coordinating-agency/stakeholders/finance" element={<FinanceDept />} />
+          <Route path="/portal/coordinating-agency/stakeholders/legal" element={<LegalDept />} />
+          <Route path="/portal/coordinating-agency/stakeholders/it" element={<ITDept />} />
+          <Route path="/portal/coordinating-agency/stakeholders/training" element={<TrainingDept />} />
+          <Route path="/portal/coordinating-agency/stakeholders/monitoring" element={<MonitoringDept />} />
+          <Route path="/portal/coordinating-agency/monitoring/central" element={<CentralMonitoring />} />
+          {/* M&E Team Portal (replaced old State Monitoring) */}
+          <Route path="/portal/coordinating-agency/monitoring/state" element={<METeamPortal />} />
+          <Route path="/portal/coordinating-agency/monitoring/local" element={<LocalMonitoring />} />
+          <Route path="/portal/coordinating-agency/monitoring/ward" element={<WardMonitoring />} />
+          <Route path="/portal/me-member" element={<MEMemberPortal />} />
+          {/* Coordinating Agency Relationships */}
+          <Route path="/portal/coordinating-agency/relationships/creation-requests" element={<ProducerCreationRequests />} />
+          <Route path="/portal/coordinating-agency/relationships/invitation-requests" element={<InvitationRequests />} />
+          <Route path="/portal/coordinating-agency/relationships/leave-requests" element={<LeaveRequests />} />
+          <Route path="/portal/coordinating-agency/trainings" element={<CoordinatingAgencyTrainings />} />
+          <Route path="/portal/coordinating-agency/settings" element={<CoordinatingAgencySettings />} />
+          <Route path="/portal/pfi" element={<PFIPortal />} />
+          <Route path="/portal/pfi/scheme-application" element={<PFISchemeApplication />} />
+          <Route path="/portal/pfi/settings" element={<PFISettings />} />
+          <Route path="/portal/insurance" element={<InsurancePortal />} />
+          <Route path="/portal/insurance/scheme-application" element={<InsuranceSchemeApplication />} />
+          <Route path="/portal/cooperative/scheme-application" element={<CooperativeSchemeApplication />} />
+          <Route path="/portal/insurance/policies" element={<InsurancePolicies />} />
+          <Route path="/portal/insurance/claims" element={<InsuranceClaimsPage />} />
+          <Route path="/portal/insurance/risk" element={<InsuranceRiskAssessment />} />
+          <Route path="/portal/insurance/reports" element={<InsuranceReports />} />
+          <Route path="/portal/insurance/settings" element={<InsuranceSettings />} />
+          <Route path="/portal/anchor" element={<AnchorPortal />} />
+          <Route path="/portal/anchor/scheme-application" element={<AnchorSchemeApplication />} />
+          <Route path="/portal/anchor/settings" element={<AnchorSettings />} />
+          {/* Anchor Producer Management */}
+          <Route path="/portal/anchor/producer-management/create" element={<CreateProducer />} />
+          <Route path="/portal/anchor/producer-management/invite" element={<InviteProducers />} />
+          <Route path="/portal/anchor/producer-management/manage" element={<ManageProducers />} />
+          <Route path="/portal/anchor/producer-management/logs" element={<ActivityLogs />} />
+          <Route path="/portal/anchor/producer-management/requests" element={<JoinRequests />} />
+          <Route path="/portal/lead-firm" element={<LeadFirmPortal />} />
+          <Route path="/portal/lead-firm/scheme-application" element={<LeadFirmSchemeApplication />} />
+          <Route path="/portal/lead-firm/settings" element={<LeadFirmSettings />} />
+          <Route path="/portal/producer" element={<ProducerPortal />} />
+          <Route path="/portal/producer/scheme-application" element={<ProducerSchemeApplication />} />
+          <Route path="/portal/producer/settings" element={<ProducerSettings />} />
+          {/* Producer Anchor Relationships */}
+          <Route path="/portal/producer/anchor-relationships/current" element={<CurrentAnchors />} />
+          <Route path="/portal/producer/anchor-relationships/invitations" element={<Invitations />} />
+          <Route path="/portal/producer/anchor-relationships/leave" element={<LeaveRequest />} />
+          <Route path="/portal/producer/anchor-relationships/communication" element={<Communication />} />
+          <Route path="/portal/producer/anchor-relationships/history" element={<RelationshipHistory />} />
+          <Route path="/portal/cooperative" element={<CooperativePortal />} />
+          <Route path="/portal/cooperative/members" element={<CooperativeMembers />} />
+          <Route path="/portal/cooperative/loans" element={<CooperativeGroupLoans />} />
+          <Route path="/portal/cooperative/savings" element={<CooperativeSavings />} />
+          <Route path="/portal/cooperative/settings" element={<CooperativeSettings />} />
+          <Route path="/portal/cooperative/reports" element={<CooperativeReports />} />
+          <Route path="/portal/cooperative/extension" element={<CooperativeExtensionServices />} />
+          <Route path="/portal/cooperative/market" element={<CooperativeMarketAccess />} />
+          <Route path="/portal/cooperative/training" element={<CooperativeTraining />} />
+          <Route path="/portal/extension" element={<ExtensionPortal />} />
+          <Route path="/portal/extension/scheme-application" element={<ExtensionSchemeApplication />} />
+          <Route path="/portal/extension/farmers" element={<ExtensionFarmers />} />
+          <Route path="/portal/extension/training" element={<ExtensionTrainingPrograms />} />
+          <Route path="/portal/extension/settings" element={<ExtensionSettings />} />
+          <Route path="/portal/extension/advisory" element={<ExtensionAdvisoryServices />} />
+          <Route path="/portal/extension/tech" element={<ExtensionTechnologyTransfer />} />
+          <Route path="/portal/extension/monitoring" element={<ExtensionFieldMonitoring />} />
+          <Route path="/portal/extension/reports" element={<ExtensionReports />} />
+          <Route path="/portal/researcher" element={<ResearcherPortal />} />
+          <Route path="/portal/researcher/scheme-application" element={<ResearcherSchemeApplication />} />
+          <Route path="/portal/researcher/projects" element={<ResearcherResearchProjects />} />
+          <Route path="/portal/researcher/data" element={<ResearcherDataCollection />} />
+          <Route path="/portal/researcher/settings" element={<ResearcherSettings />} />
+          <Route path="/portal/researcher/publications" element={<ResearcherPublications />} />
+          <Route path="/portal/researcher/collaborations" element={<ResearcherCollaborations />} />
+          <Route path="/portal/researcher/funding" element={<ResearcherFunding />} />
+          <Route path="/portal/researcher/conferences" element={<ResearcherConferences />} />
+          <Route path="/portal/researcher/reports" element={<ResearcherReports />} />
+        </Routes>
       </Router>
     </NotificationProvider>
   );

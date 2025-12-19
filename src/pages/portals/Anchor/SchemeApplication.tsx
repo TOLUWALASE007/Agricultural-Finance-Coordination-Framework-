@@ -4,6 +4,8 @@ import PortalLayout from '../../../components/PortalLayout';
 import { schemeAPI } from '../../../utils/api';
 import { useNotifications } from '../../../context/NotificationContext';
 import { getAnchorStatusSnapshot, AnchorStatus, getActiveAnchorRecord } from '../../../utils/localDatabase';
+import { getInsuranceCompanies, findInsuranceCompanyById } from '../../../utils/localDatabase';
+import { getPFIs, findPFIById } from '../../../utils/localDatabase';
 
 const SchemeApplication: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -19,6 +21,19 @@ const SchemeApplication: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/anchor' },
     { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/anchor/scheme-application' },
+    {
+      id: 'producer-management',
+      name: 'Producer/Farmer Management',
+      icon: '🌾',
+      hasDropdown: true,
+      dropdownItems: [
+        { id: 'create-producer', name: 'Create New Producer/Farmer', icon: '➕', href: '/portal/anchor/producer-management/create' },
+        { id: 'invite-producers', name: 'Invite Existing Producers', icon: '📨', href: '/portal/anchor/producer-management/invite' },
+        { id: 'manage-producers', name: 'Manage Current Producers', icon: '👥', href: '/portal/anchor/producer-management/manage' },
+        { id: 'join-requests', name: 'View Join Requests', icon: '📥', href: '/portal/anchor/producer-management/requests' },
+        { id: 'activity-logs', name: 'Producer Activity Logs', icon: '📋', href: '/portal/anchor/producer-management/logs' },
+      ]
+    },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/anchor/settings' }
   ];
 
@@ -48,26 +63,26 @@ const SchemeApplication: React.FC = () => {
     contactPersonPhone: '',
     companyWebsite: '',
     discussPreviousProjects: '',
-    
+
     // Step 2: Account Profile
     businessType: '',
     maxContractAmount: '',
     targetAudience: '',
     geographicFocus: [] as string[],
     descriptionOfServices: '',
-    
+
     // Step 3: Financial Products and Terms
     financialProductsOffered: [] as string[],
     termsOfReferenceAFCF: '',
     termsOfReferencePFI: '',
     termsOfReferenceBeneficiaries: '',
-    
+
     // Step 4: Reporting and Transparency
     reportingFrequency: '',
     reportingMechanisms: '',
     transparencyMeasures: '',
     monitoringAndEvaluation: '',
-    
+
     // Step 5: Compliance and Documentation
     regulatoryCompliance: '',
     fundSchemeDocumentation: null as File | null,
@@ -108,20 +123,57 @@ const SchemeApplication: React.FC = () => {
   const [availableSchemes, setAvailableSchemes] = useState<any[]>([]);
   const [schemesLoading, setSchemesLoading] = useState(true);
 
+  // Beneficiary Application Form Data (for workflow)
+  const [beneficiaryApplicationData, setBeneficiaryApplicationData] = useState({
+    farmers: [] as Array<{ id: string; name: string; location: string; crops: string; additionalInfo: string }>,
+    selectedPFI: '',
+    selectedInsuranceCompany: '',
+    documents: [] as Array<{ fileName: string; description: string; file: File | null }>
+  });
+
+  // Modal state
+  const [showFullSchemeDetails, setShowFullSchemeDetails] = useState(false);
+  const [expandedInsuranceCompany, setExpandedInsuranceCompany] = useState<string | null>(null);
+  const [expandedPFI, setExpandedPFI] = useState<string | null>(null);
+  const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
+
   // Fetch schemes from API or localStorage
   useEffect(() => {
     const fetchSchemes = async () => {
       try {
         setSchemesLoading(true);
-        
+
+        // Get current Anchor ID
+        if (!activeAnchor) {
+          setAvailableSchemes([]);
+          setSchemesLoading(false);
+          return;
+        }
+
         // First, check if there's localStorage data (from Coordinating Agency portal)
         const storedSchemes = localStorage.getItem('fundSchemes');
         if (storedSchemes) {
           try {
             const parsedSchemes = JSON.parse(storedSchemes);
-            // Filter out deleted and completed schemes - only show Active schemes
-            const activeSchemes = parsedSchemes
-              .filter((scheme: any) => scheme.status === 'Active')
+            // Filter schemes: only show Active schemes in initial stage that are open to beneficiaries
+            // Hide if Anchor has already applied (pending or approved) - no reapplication allowed
+            const relevantSchemes = parsedSchemes
+              .filter((scheme: any) => {
+                const isActive = scheme.status === 'Active';
+                const isInitial = scheme.workflowStage === 'initial';
+                const isOpenToBeneficiaries = scheme.openToBeneficiaries === true;
+                const hasSelectedPFIs = scheme.selectedPFIIds && scheme.selectedPFIIds.length > 0;
+                // Check if Anchor has a rejected or approved application
+                // Rejected and approved schemes must be hidden from Available Schemes
+                // Pending applications should still show the scheme as available
+                const application = scheme.beneficiaryApplications?.find((app: any) =>
+                  app.beneficiaryId === activeAnchor.id &&
+                  app.beneficiaryType === 'Anchor'
+                );
+                const isRejectedOrApproved = application && (application.status === 'rejected' || application.status === 'approved');
+                // Only show if Active, initial stage, open to beneficiaries, has PFIs, and not rejected/approved
+                return isActive && isInitial && isOpenToBeneficiaries && hasSelectedPFIs && !isRejectedOrApproved;
+              })
               .map((scheme: any) => ({
                 id: scheme.id,
                 title: scheme.name || scheme.title || 'Untitled Scheme',
@@ -130,23 +182,27 @@ const SchemeApplication: React.FC = () => {
                 deadline: scheme.applicationDeadline || scheme.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 category: 'Fund Scheme',
                 state: scheme.state || 'Multi-State',
-                status: scheme.status || 'Active' // Include status for filtering
+                status: scheme.status || 'Active',
+                workflowStage: scheme.workflowStage || 'stage2',
+                fullSchemeData: scheme,
+                selectedPFIs: scheme.pfiApplications?.filter((app: any) => scheme.selectedPFIIds?.includes(app.pfiId)) || [],
+                approvedInsuranceCompany: scheme.insuranceCompanySubmissions?.find((sub: any) => sub.status === 'approved')
               }));
-            setAvailableSchemes(activeSchemes);
+            setAvailableSchemes(relevantSchemes);
             setSchemesLoading(false);
             return;
           } catch (e) {
             console.error('Error parsing stored schemes:', e);
           }
         }
-        
+
         // If no localStorage, fetch from API
         const response = await schemeAPI.getAll({
           page: 1,
           limit: 100,
           status: 'Active'
         });
-        
+
         if (response.success && response.data) {
           // Transform API data to match the component's expected format
           // Filter out any schemes with status 'Completed' or 'Inactive'
@@ -179,6 +235,32 @@ const SchemeApplication: React.FC = () => {
     fetchSchemes();
   }, []);
 
+  // Listen for notification clicks to open scheme application modal
+  useEffect(() => {
+    const handleNotificationSchemeClick = (event: CustomEvent) => {
+      const { schemeId } = event.detail;
+      if (schemeId) {
+        handleApplyToScheme(schemeId);
+      }
+    };
+
+    window.addEventListener('notification-scheme-click' as any, handleNotificationSchemeClick as EventListener);
+    return () => {
+      window.removeEventListener('notification-scheme-click' as any, handleNotificationSchemeClick as EventListener);
+    };
+  }, []);
+
+  // Check for schemeId in URL on load (from notification click)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const schemeIdFromUrl = urlParams.get('schemeId');
+    if (schemeIdFromUrl && !selectedScheme && !showForm) {
+      handleApplyToScheme(schemeIdFromUrl);
+      // Clean up URL after opening modal
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   // Filter schemes based on search and state
   // Also exclude any schemes with status 'Completed' (double-check)
   const filteredSchemes = useMemo(() => {
@@ -186,7 +268,7 @@ const SchemeApplication: React.FC = () => {
       // Additional check: only show Active schemes (shouldn't happen if filtering worked above, but double-check)
       return scheme.status === 'Active';
     });
-    
+
     if (schemeSearch.trim()) {
       const searchLower = schemeSearch.toLowerCase();
       filtered = filtered.filter((scheme: any) =>
@@ -196,13 +278,13 @@ const SchemeApplication: React.FC = () => {
         scheme.amount.toLowerCase().includes(searchLower)
       );
     }
-    
+
     if (stateFilter !== 'All') {
       filtered = filtered.filter((scheme: any) =>
         scheme.state === stateFilter || scheme.state?.toLowerCase().includes(stateFilter.toLowerCase())
       );
     }
-    
+
     return filtered;
   }, [availableSchemes, schemeSearch, stateFilter]);
 
@@ -266,7 +348,7 @@ const SchemeApplication: React.FC = () => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    
+
     try {
       // Prepare application data
       const applicationData = {
@@ -305,10 +387,10 @@ const SchemeApplication: React.FC = () => {
       };
 
       const selectedSchemeData = availableSchemes.find(s => s.id === selectedScheme);
-      
+
       // Create notification to CA
       const applicationId = `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       addNotification({
         role: '⚓ Anchor',
         targetRole: 'coordinating-agency',
@@ -346,12 +428,167 @@ const SchemeApplication: React.FC = () => {
     setSelectedScheme(schemeId);
     setShowForm(true);
     setCurrentStep(1);
+    // Reset beneficiary application form
+    setBeneficiaryApplicationData({
+      farmers: [],
+      selectedPFI: '',
+      selectedInsuranceCompany: '',
+      documents: []
+    });
+    // Reset modal states
+    setShowFullSchemeDetails(false);
+    setExpandedInsuranceCompany(null);
+    setExpandedPFI(null);
+  };
+
+  const handleBeneficiaryApplication = async () => {
+    if (!selectedScheme || !activeAnchor) return;
+
+    // Show confirmation modal first
+    setShowSubmitConfirmation(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    if (!selectedScheme || !activeAnchor) return;
+
+    setIsSubmitting(true);
+    setShowSubmitConfirmation(false);
+
+    try {
+      // Get the full scheme data
+      const schemeData = availableSchemes.find(s => s.id === selectedScheme)?.fullSchemeData;
+      if (!schemeData) {
+        alert('Scheme data not found. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create application object
+      const application: any = {
+        beneficiaryId: activeAnchor.id,
+        beneficiaryName: activeAnchor.formData.organizationName || 'Anchor',
+        beneficiaryType: 'Anchor' as const,
+        farmers: beneficiaryApplicationData.farmers,
+        selectedPFI: beneficiaryApplicationData.selectedPFI,
+        selectedInsuranceCompany: beneficiaryApplicationData.selectedInsuranceCompany,
+        documents: beneficiaryApplicationData.documents.map(doc => ({
+          fileName: doc.fileName,
+          description: doc.description
+        })),
+        submittedAt: new Date().toISOString(),
+        status: 'pending' as const
+      };
+
+      // Update scheme in localStorage
+      const storedSchemes = localStorage.getItem('fundSchemes');
+      if (storedSchemes) {
+        const schemes = JSON.parse(storedSchemes);
+        const updatedSchemes = schemes.map((scheme: any) => {
+          if (scheme.id === selectedScheme) {
+            return {
+              ...scheme,
+              beneficiaryApplications: [
+                ...(scheme.beneficiaryApplications || []),
+                application
+              ]
+            };
+          }
+          return scheme;
+        });
+        localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
+
+        // CRITICAL: Notify FundSchemes component that localStorage was updated
+        window.dispatchEvent(new CustomEvent('fundSchemes-updated'));
+      }
+
+      // Send notification to CA
+      addNotification({
+        role: '⚓ Anchor',
+        targetRole: 'coordinating-agency',
+        message: `Anchor "${activeAnchor.formData.organizationName || 'Anchor'}" has applied for scheme "${schemeData.name}". Please review and approve.`,
+        applicantName: activeAnchor.formData.organizationName || 'Anchor',
+        applicantType: 'Company',
+        companyName: activeAnchor.formData.organizationName || 'Anchor',
+        contactPersonName: activeAnchor.formData.fullName,
+        contactPersonEmail: activeAnchor.formData.email,
+        contactPersonPhone: activeAnchor.formData.phone,
+        companyEmail: activeAnchor.formData.officialEmail || activeAnchor.formData.email,
+        schemeId: selectedScheme,
+        schemeName: schemeData.name,
+        applicationId: `anchor_app_${Date.now()}`,
+        applicationData: {
+          farmers: beneficiaryApplicationData.farmers,
+          selectedPFI: beneficiaryApplicationData.selectedPFI,
+          selectedInsuranceCompany: beneficiaryApplicationData.selectedInsuranceCompany,
+          documents: beneficiaryApplicationData.documents.map(d => ({ fileName: d.fileName, description: d.description }))
+        },
+        applicationStatus: 'pending',
+        metadata: {
+          type: 'beneficiarySchemeApplication',
+          beneficiaryId: activeAnchor.id,
+          beneficiaryType: 'Anchor',
+          applicationId: application.beneficiaryId + '_' + Date.now()
+        }
+      });
+
+      // Refresh schemes list
+      const fetchSchemes = async () => {
+        const stored = localStorage.getItem('fundSchemes');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const currentAnchor = activeAnchor;
+          const relevant = parsed
+            .filter((s: any) => {
+              const isActive = s.status === 'Active';
+              const isInitial = s.workflowStage === 'initial';
+              const isOpenToBeneficiaries = s.openToBeneficiaries === true;
+              const hasSelectedPFIs = s.selectedPFIIds && s.selectedPFIIds.length > 0;
+              // Hide if Anchor has already applied (any status - no reapplication)
+              const hasApplied = s.beneficiaryApplications?.some((app: any) =>
+                app.beneficiaryId === currentAnchor.id &&
+                app.beneficiaryType === 'Anchor'
+              );
+              const notYetApplied = !hasApplied;
+              return isActive && isInitial && isOpenToBeneficiaries && hasSelectedPFIs && notYetApplied;
+            })
+            .map((s: any) => ({
+              id: s.id,
+              title: s.name || 'Untitled Scheme',
+              description: s.description || `Fund scheme: ${s.name || 'Untitled'}`,
+              amount: s.amount || 'N/A',
+              deadline: s.applicationDeadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              category: 'Fund Scheme',
+              state: s.state || 'Multi-State',
+              status: s.status || 'Active',
+              workflowStage: s.workflowStage || 'stage2',
+              fullSchemeData: s,
+              selectedPFIs: s.pfiApplications?.filter((app: any) => s.selectedPFIIds?.includes(app.pfiId)) || [],
+              approvedInsuranceCompany: s.insuranceCompanySubmissions?.find((sub: any) => sub.status === 'approved')
+            }));
+          setAvailableSchemes(relevant);
+        }
+      };
+      fetchSchemes();
+
+      setIsSubmitting(false);
+      setShowConfirmation(true);
+      setShowForm(false);
+      setSelectedScheme(null);
+    } catch (error) {
+      console.error('Error submitting Anchor application:', error);
+      alert('Failed to submit. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   const handleCloseForm = () => {
     setShowForm(false);
     setSelectedScheme(null);
     setCurrentStep(1);
+    setShowFullSchemeDetails(false);
+    setExpandedInsuranceCompany(null);
+    setExpandedPFI(null);
+    setShowSubmitConfirmation(false);
   };
 
   const renderStep1 = () => (
@@ -727,7 +964,7 @@ const SchemeApplication: React.FC = () => {
   return (
     <PortalLayout role="Anchor" roleIcon="⚓" sidebarItems={sidebarItems}>
       <div className="space-y-6">
-        {!showForm ? (
+        {!showForm && (
           <>
             {/* Available Schemes Section */}
             <div className="card">
@@ -737,8 +974,8 @@ const SchemeApplication: React.FC = () => {
                   <p className="text-sm text-gray-400 font-serif">Select a scheme below to apply. Complete the multi-step application form to submit your application.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <select 
-                    value={stateFilter} 
+                  <select
+                    value={stateFilter}
                     onChange={(e) => setStateFilter(e.target.value)}
                     className="w-full sm:w-auto px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
                   >
@@ -761,44 +998,44 @@ const SchemeApplication: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {schemesLoading ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-gray-400 font-serif">Loading schemes...</p>
                 </div>
               ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paginatedSchemes.map((scheme) => (
-                  <div key={scheme.id} className="bg-primary-700 rounded-lg border border-primary-600 p-4 hover:border-accent-500 transition-colors flex flex-col">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold font-sans text-gray-100 mb-2">{scheme.title}</h3>
-                        <p className="text-sm text-gray-300 font-serif mb-3">{scheme.description}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedSchemes.map((scheme) => (
+                    <div key={scheme.id} className="bg-primary-700 rounded-lg border border-primary-600 p-4 hover:border-accent-500 transition-colors flex flex-col">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-2">{scheme.title}</h3>
+                          <p className="text-sm text-gray-300 font-serif mb-3">{scheme.description}</p>
+                        </div>
                       </div>
+                      <div className="space-y-2 mb-4 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400 font-serif">Amount:</span>
+                          <span className="text-sm font-medium text-accent-400 font-sans">{scheme.amount}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400 font-serif">Category:</span>
+                          <span className="text-sm text-gray-300 font-serif">{scheme.category}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400 font-serif">Deadline:</span>
+                          <span className="text-sm text-gray-300 font-serif">{new Date(scheme.deadline).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleApplyToScheme(scheme.id)}
+                        className="w-full px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-md font-medium transition-colors mt-auto"
+                      >
+                        Apply Now
+                      </button>
                     </div>
-                    <div className="space-y-2 mb-4 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 font-serif">Amount:</span>
-                        <span className="text-sm font-medium text-accent-400 font-sans">{scheme.amount}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 font-serif">Category:</span>
-                        <span className="text-sm text-gray-300 font-serif">{scheme.category}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 font-serif">Deadline:</span>
-                        <span className="text-sm text-gray-300 font-serif">{new Date(scheme.deadline).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleApplyToScheme(scheme.id)}
-                      className="w-full px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-md font-medium transition-colors mt-auto"
-                    >
-                      Apply Now
-                    </button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
               )}
 
               {!schemesLoading && paginatedSchemes.length === 0 && (
@@ -829,78 +1066,851 @@ const SchemeApplication: React.FC = () => {
               )}
             </div>
           </>
-        ) : (
-          <>
-            {/* Application Form */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-xl sm:text-2xl font-bold font-sans text-gray-100">Scheme Application</h1>
-                <button
-                  onClick={handleCloseForm}
-                  className="px-4 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 font-medium"
-                >
-                  ← Back to Schemes
-                </button>
-              </div>
-              
-              {selectedScheme && (
-                <div className="mb-4 p-3 bg-primary-700 rounded-lg border border-primary-600">
-                  <p className="text-sm text-gray-400 font-serif">Applying for: <span className="text-accent-400 font-medium">{availableSchemes.find(s => s.id === selectedScheme)?.title}</span></p>
-                </div>
-              )}
+        )}
 
-              {/* Progress Bar */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400 font-serif">Step {currentStep} of 5</span>
-                  <span className="text-sm text-gray-400 font-serif">{Math.round((currentStep / 5) * 100)}%</span>
-                </div>
-                <div className="w-full bg-primary-700 rounded-full h-2">
-                  <div
-                    className="bg-accent-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(currentStep / 5) * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Step Content */}
-              <div className="mb-6">
-                {currentStep === 1 && renderStep1()}
-                {currentStep === 2 && renderStep2()}
-                {currentStep === 3 && renderStep3()}
-                {currentStep === 4 && renderStep4()}
-                {currentStep === 5 && renderStep5()}
-              </div>
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between gap-4">
-                <button
-                  onClick={handlePrevious}
-                  disabled={currentStep === 1}
-                  className="px-6 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                  Previous
-                </button>
-                {currentStep < 5 ? (
+        {/* Application Form Modal - Overlay */}
+        {showForm && selectedScheme && (
+          <div className="fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto" onClick={handleCloseForm}>
+            <div className="min-h-screen flex items-center justify-center py-8">
+              <div className="w-full max-w-4xl bg-primary-900 rounded-lg border border-primary-700 p-6" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                  <h1 className="text-xl sm:text-2xl font-bold font-sans text-gray-100">Scheme Application</h1>
                   <button
-                    onClick={handleNext}
-                    disabled={!validateStep(currentStep)}
-                    className="px-6 py-2 rounded-md bg-accent-500 text-white hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    type="button"
+                    onClick={handleCloseForm}
+                    className="text-gray-400 hover:text-gray-200 text-2xl font-bold"
                   >
-                    Next
+                    ✖
                   </button>
-                ) : (
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="px-6 py-2 rounded-md bg-accent-500 text-white hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                  >
-                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
-                  </button>
-                )}
+                </div>
+
+                <div className="max-h-[80vh] overflow-y-auto custom-scrollbar pr-2">
+                  {(() => {
+                    const scheme = availableSchemes.find(s => s.id === selectedScheme);
+
+                    // If scheme not found, show error message
+                    if (!scheme) {
+                      return (
+                        <div className="space-y-4">
+                          <div className="p-4 bg-red-900/30 border border-red-600 rounded-md">
+                            <p className="text-red-300 font-sans">Scheme not found. Please try again.</p>
+                          </div>
+                          <button
+                            onClick={handleCloseForm}
+                            className="px-6 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 font-medium"
+                          >
+                            ← Back to Schemes
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    // For Stage 2 schemes, show beneficiary application form
+                    const workflowStage = scheme?.workflowStage || scheme?.fullSchemeData?.workflowStage;
+                    // Allow schemes in 'stage2' OR 'initial' if explicitly opened to beneficiaries
+                    const isWorkflowScheme = workflowStage === 'stage2' ||
+                      (workflowStage === 'initial' && (scheme?.openToBeneficiaries || scheme?.fullSchemeData?.openToBeneficiaries));
+
+                    // If it's a Stage 2 scheme, show the beneficiary application form
+                    if (isWorkflowScheme) {
+                      const fullScheme = scheme?.fullSchemeData || scheme;
+                      const approvedInsuranceCompanies = fullScheme?.insuranceCompanySubmissions?.filter((sub: any) => sub.status === 'approved') || [];
+                      const approvedPFIs = (fullScheme?.pfiApplications || []).filter((app: any) =>
+                        fullScheme?.selectedPFIIds?.includes(app.pfiId) && app.status === 'approved'
+                      ) || [];
+
+                      // Ensure we have scheme data
+                      if (!fullScheme) {
+                        return (
+                          <div className="space-y-4">
+                            <div className="p-4 bg-red-900/30 border border-red-600 rounded-md">
+                              <p className="text-red-300 font-sans">Unable to load scheme details. Please try again.</p>
+                            </div>
+                            <button
+                              onClick={handleCloseForm}
+                              className="px-6 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 font-medium"
+                            >
+                              ← Back to Schemes
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="space-y-6">
+                          {/* Full Scheme Details */}
+                          <div className="mb-6 p-4 bg-primary-800 rounded-lg border border-primary-600">
+                            <h3 className="text-lg font-semibold font-sans text-gray-100 mb-4">Scheme Information</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                              <div>
+                                <p className="text-xs text-gray-400 font-serif mb-1">Scheme Name</p>
+                                <p className="text-sm font-medium text-gray-100 font-sans">{fullScheme?.name || scheme?.title}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-400 font-serif mb-1">Fund Amount</p>
+                                <p className="text-sm font-medium text-accent-400 font-sans">{fullScheme?.amount || scheme?.amount}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-400 font-serif mb-1">State</p>
+                                <p className="text-sm text-gray-100 font-sans">{fullScheme?.state || scheme?.state}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-400 font-serif mb-1">Status</p>
+                                <p className="text-sm text-gray-100 font-sans">{fullScheme?.status || 'Active'}</p>
+                              </div>
+                              {fullScheme?.description && (
+                                <div className="md:col-span-2">
+                                  <p className="text-xs text-gray-400 font-serif mb-1">Description</p>
+                                  <p className="text-sm text-gray-100 font-sans">{fullScheme.description}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* View Full Scheme Application Details Dropdown */}
+                            <div className="mt-4 pt-4 border-t border-primary-600">
+                              <button
+                                type="button"
+                                onClick={() => setShowFullSchemeDetails(!showFullSchemeDetails)}
+                                className="w-full flex items-center justify-between px-4 py-3 bg-primary-700 hover:bg-primary-600 rounded-md transition-colors"
+                              >
+                                <span className="text-sm font-semibold text-accent-400 font-sans">
+                                  {showFullSchemeDetails ? '▼' : '▶'} View Full Scheme Application Details
+                                </span>
+                                <span className="text-xs text-gray-400 font-serif">
+                                  {showFullSchemeDetails ? 'Hide details' : 'Show full details'}
+                                </span>
+                              </button>
+
+                              {showFullSchemeDetails && fullScheme?.metadata && (
+                                <div className="mt-3 p-4 bg-primary-700 rounded-md space-y-4">
+                                  {/* Scheme Details */}
+                                  {fullScheme.metadata.schemeDetails && (
+                                    <div>
+                                      <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Scheme Details</h5>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                          <p className="text-gray-400 font-serif">Scheme ID</p>
+                                          <p className="text-gray-200 font-sans">{fullScheme.metadata.schemeDetails.schemeId}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-gray-400 font-serif">Start Date</p>
+                                          <p className="text-gray-200 font-sans">{new Date(fullScheme.metadata.schemeDetails.startDate).toLocaleDateString()}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-gray-400 font-serif">Application Deadline</p>
+                                          <p className="text-gray-200 font-sans">{new Date(fullScheme.metadata.schemeDetails.applicationDeadline).toLocaleDateString()}</p>
+                                        </div>
+                                        {fullScheme.metadata.schemeDetails.enterprises && fullScheme.metadata.schemeDetails.enterprises.length > 0 && (
+                                          <div className="md:col-span-2">
+                                            <p className="text-gray-400 font-serif">Enterprises</p>
+                                            <p className="text-gray-200 font-sans">{fullScheme.metadata.schemeDetails.enterprises.join(', ')}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Location Allocation */}
+                                  {fullScheme.metadata.stateAllocation && (
+                                    <div>
+                                      <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Location Allocation</h5>
+                                      <div className="space-y-2 text-xs">
+                                        <div>
+                                          <p className="text-gray-400 font-serif">Location Type</p>
+                                          <p className="text-gray-200 font-sans capitalize">{fullScheme.metadata.stateAllocation.locationType}</p>
+                                        </div>
+                                        {fullScheme.metadata.stateAllocation.selectedStates && fullScheme.metadata.stateAllocation.selectedStates.length > 0 && (
+                                          <div>
+                                            <p className="text-gray-400 font-serif">Selected States</p>
+                                            <p className="text-gray-200 font-sans">{fullScheme.metadata.stateAllocation.selectedStates.join(', ')}</p>
+                                          </div>
+                                        )}
+                                        <div>
+                                          <p className="text-gray-400 font-serif">Allocation Type</p>
+                                          <p className="text-gray-200 font-sans capitalize">{fullScheme.metadata.stateAllocation.allocationType}</p>
+                                        </div>
+                                        {fullScheme.metadata.stateAllocation.amountPerLocation && (
+                                          <div>
+                                            <p className="text-gray-400 font-serif">Amount Per Location</p>
+                                            <p className="text-gray-200 font-sans">₦{parseFloat(fullScheme.metadata.stateAllocation.amountPerLocation).toLocaleString()}</p>
+                                          </div>
+                                        )}
+                                        {fullScheme.metadata.stateAllocation.beneficiariesPerLocation && (
+                                          <div>
+                                            <p className="text-gray-400 font-serif">Beneficiaries Per Location</p>
+                                            <p className="text-gray-200 font-sans">{fullScheme.metadata.stateAllocation.beneficiariesPerLocation}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Fund Allocation */}
+                                  {fullScheme.metadata.fundAllocation && (
+                                    <div>
+                                      <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Fund Allocation</h5>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                          <p className="text-gray-400 font-serif">Loan Amount</p>
+                                          <p className="text-gray-200 font-sans">₦{parseFloat(fullScheme.metadata.fundAllocation.loanAmount || '0').toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-gray-400 font-serif">Loan Tenure</p>
+                                          <p className="text-gray-200 font-sans">{fullScheme.metadata.fundAllocation.loanTenureValue} {fullScheme.metadata.fundAllocation.loanTenureUnit}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-gray-400 font-serif">Deferment Period</p>
+                                          <p className="text-gray-200 font-sans">{fullScheme.metadata.fundAllocation.defermentValue} {fullScheme.metadata.fundAllocation.defermentUnit}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-gray-400 font-serif">Collateral Required</p>
+                                          <p className="text-gray-200 font-sans">{fullScheme.metadata.fundAllocation.collateralRequired}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-gray-400 font-serif">De-Risking Percentage</p>
+                                          <p className="text-gray-200 font-sans">{fullScheme.metadata.fundAllocation.deRiskingPercentage}%</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-gray-400 font-serif">PFI Interest Rate</p>
+                                          <p className="text-gray-200 font-sans">{fullScheme.metadata.fundAllocation.pfiInterestRate}%</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-gray-400 font-serif">Insurance Percentage</p>
+                                          <p className="text-gray-200 font-sans">{fullScheme.metadata.fundAllocation.insurancePercentage}%</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Beneficiaries */}
+                                  {fullScheme.metadata.beneficiaries && (
+                                    <div>
+                                      <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Beneficiaries</h5>
+                                      <div className="space-y-2 text-xs">
+                                        {fullScheme.metadata.beneficiaries.types && fullScheme.metadata.beneficiaries.types.length > 0 && (
+                                          <div>
+                                            <p className="text-gray-400 font-serif">Beneficiary Types</p>
+                                            <p className="text-gray-200 font-sans">{fullScheme.metadata.beneficiaries.types.join(', ')}</p>
+                                          </div>
+                                        )}
+                                        {fullScheme.metadata.beneficiaries.eligibilityNotes && (
+                                          <div>
+                                            <p className="text-gray-400 font-serif">Eligibility Notes</p>
+                                            <p className="text-gray-200 font-sans">{fullScheme.metadata.beneficiaries.eligibilityNotes}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Documents */}
+                                  {fullScheme.metadata.documents && fullScheme.metadata.documents.items && fullScheme.metadata.documents.items.length > 0 && (
+                                    <div>
+                                      <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Required Documents</h5>
+                                      <ul className="space-y-1 text-xs">
+                                        {fullScheme.metadata.documents.items.map((doc: any, idx: number) => (
+                                          <li key={idx} className="text-gray-200 font-sans">
+                                            • {doc.fileName} {doc.description && `- ${doc.description}`}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+
+                                  {/* Insurance Company Requirements */}
+                                  {fullScheme.metadata.insuranceCompanyRequirements?.requirements && (
+                                    <div>
+                                      <h5 className="text-sm font-semibold text-accent-400 font-sans mb-2">Insurance Company Requirements</h5>
+                                      <p className="text-xs text-gray-200 font-sans whitespace-pre-wrap">{fullScheme.metadata.insuranceCompanyRequirements.requirements}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Approved Insurance Companies */}
+                            {approvedInsuranceCompanies.length > 0 && (
+                              <div className="mt-4 pt-4 border-t border-primary-600">
+                                <h4 className="text-sm font-semibold font-sans text-accent-400 mb-3">Approved Insurance Companies</h4>
+                                <div className="space-y-2">
+                                  {approvedInsuranceCompanies.map((ic: any, idx: number) => {
+                                    const icRecord = ic.insuranceCompanyId ? findInsuranceCompanyById(ic.insuranceCompanyId) : null;
+                                    const isExpanded = expandedInsuranceCompany === ic.insuranceCompanyId;
+
+                                    return (
+                                      <div key={idx} className="p-3 bg-primary-700 rounded-md">
+                                        <p className="text-sm font-medium text-gray-100 font-sans">{ic.insuranceCompanyName || 'Insurance Company'}</p>
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                          <div>
+                                            <p className="text-xs text-gray-400 font-serif">Premium Rate</p>
+                                            <p className="text-sm text-gray-200 font-sans">{ic.premiumRate}%</p>
+                                          </div>
+                                          {ic.insurancePolicies && (
+                                            <div>
+                                              <p className="text-xs text-gray-400 font-serif">Policies</p>
+                                              <p className="text-sm text-gray-200 font-sans line-clamp-2">{ic.insurancePolicies}</p>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* View More About Insurance Company Dropdown */}
+                                        <div className="mt-3 pt-3 border-t border-primary-600">
+                                          <button
+                                            type="button"
+                                            onClick={() => setExpandedInsuranceCompany(isExpanded ? null : ic.insuranceCompanyId)}
+                                            className="w-full flex items-center justify-between px-3 py-2 bg-primary-800 hover:bg-primary-600 rounded-md transition-colors"
+                                          >
+                                            <span className="text-xs font-semibold text-accent-400 font-sans">
+                                              {isExpanded ? '▼' : '▶'} View More About This Insurance Company
+                                            </span>
+                                            <span className="text-xs text-gray-400 font-serif">
+                                              {isExpanded ? 'Hide details' : 'Show full details'}
+                                            </span>
+                                          </button>
+
+                                          {isExpanded && (
+                                            <div className="mt-3 p-3 bg-primary-800 rounded-md space-y-3">
+                                              {/* Insurance Company Submission Details */}
+                                              <div>
+                                                <h6 className="text-xs font-semibold text-accent-400 font-sans mb-2">Scheme Submission Details</h6>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                                  <div>
+                                                    <p className="text-gray-400 font-serif">Premium Rate</p>
+                                                    <p className="text-gray-200 font-sans">{ic.premiumRate}%</p>
+                                                  </div>
+                                                  {ic.insurancePolicies && (
+                                                    <div className="md:col-span-2">
+                                                      <p className="text-gray-400 font-serif">Insurance Policies</p>
+                                                      <p className="text-gray-200 font-sans whitespace-pre-wrap">{ic.insurancePolicies}</p>
+                                                    </div>
+                                                  )}
+                                                  {ic.submittedAt && (
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Submitted At</p>
+                                                      <p className="text-gray-200 font-sans">{new Date(ic.submittedAt).toLocaleString()}</p>
+                                                    </div>
+                                                  )}
+                                                  {ic.reviewedAt && (
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Reviewed At</p>
+                                                      <p className="text-gray-200 font-sans">{new Date(ic.reviewedAt).toLocaleString()}</p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+
+                                              {/* Insurance Company Registration Details */}
+                                              {icRecord && (
+                                                <div>
+                                                  <h6 className="text-xs font-semibold text-accent-400 font-sans mb-2">Company Registration Details</h6>
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Registration Number</p>
+                                                      <p className="text-gray-200 font-sans">{icRecord.formData?.registrationNumber || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Organization Type</p>
+                                                      <p className="text-gray-200 font-sans">{icRecord.formData?.organizationType || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Year Established</p>
+                                                      <p className="text-gray-200 font-sans">{icRecord.formData?.yearEstablished || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Industry</p>
+                                                      <p className="text-gray-200 font-sans">{icRecord.formData?.industry || 'N/A'}</p>
+                                                    </div>
+                                                    {icRecord.formData?.headquartersAddress && (
+                                                      <div className="md:col-span-2">
+                                                        <p className="text-gray-400 font-serif">Headquarters Address</p>
+                                                        <p className="text-gray-200 font-sans">{icRecord.formData.headquartersAddress}, {icRecord.formData.hqCity}, {icRecord.formData.hqState}, {icRecord.formData.hqCountry}</p>
+                                                      </div>
+                                                    )}
+                                                    {icRecord.formData?.officePhone && (
+                                                      <div>
+                                                        <p className="text-gray-400 font-serif">Office Phone</p>
+                                                        <p className="text-gray-200 font-sans">{icRecord.formData.officePhone}</p>
+                                                      </div>
+                                                    )}
+                                                    {icRecord.formData?.officialEmail && (
+                                                      <div>
+                                                        <p className="text-gray-400 font-serif">Official Email</p>
+                                                        <p className="text-gray-200 font-sans">{icRecord.formData.officialEmail}</p>
+                                                      </div>
+                                                    )}
+                                                    {icRecord.formData?.website && (
+                                                      <div className="md:col-span-2">
+                                                        <p className="text-gray-400 font-serif">Website</p>
+                                                        <p className="text-gray-200 font-sans">{icRecord.formData.website}</p>
+                                                      </div>
+                                                    )}
+                                                    {icRecord.formData?.missionStatement && (
+                                                      <div className="md:col-span-2">
+                                                        <p className="text-gray-400 font-serif">Mission Statement</p>
+                                                        <p className="text-gray-200 font-sans">{icRecord.formData.missionStatement}</p>
+                                                      </div>
+                                                    )}
+                                                    {icRecord.formData?.areasOfOperation && icRecord.formData.areasOfOperation.length > 0 && (
+                                                      <div className="md:col-span-2">
+                                                        <p className="text-gray-400 font-serif">Areas of Operation</p>
+                                                        <p className="text-gray-200 font-sans">{icRecord.formData.areasOfOperation.join(', ')}</p>
+                                                      </div>
+                                                    )}
+                                                    {icRecord.formData?.numEmployees && (
+                                                      <div>
+                                                        <p className="text-gray-400 font-serif">Number of Employees</p>
+                                                        <p className="text-gray-200 font-sans">{icRecord.formData.numEmployees}</p>
+                                                      </div>
+                                                    )}
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Status</p>
+                                                      <p className={`text-gray-200 font-sans ${icRecord.status === 'verified' ? 'text-green-400' : 'text-yellow-400'}`}>
+                                                        {icRecord.status === 'verified' ? 'Verified' : 'Unverified'}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )}
+
+                                              {!icRecord && (
+                                                <div className="text-xs text-gray-400 font-serif italic">
+                                                  Registration details not available
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Approved PFIs */}
+                            {approvedPFIs.length > 0 && (
+                              <div className="mt-4 pt-4 border-t border-primary-600">
+                                <h4 className="text-sm font-semibold font-sans text-accent-400 mb-3">Approved PFIs</h4>
+                                <div className="space-y-2">
+                                  {approvedPFIs.map((pfiApp: any, idx: number) => {
+                                    const pfiRecord = pfiApp.pfiId ? findPFIById(pfiApp.pfiId) : null;
+                                    const isExpanded = expandedPFI === pfiApp.pfiId;
+
+                                    return (
+                                      <div key={idx} className="p-3 bg-primary-700 rounded-md">
+                                        <p className="text-sm font-medium text-gray-100 font-sans">{pfiRecord?.formData?.organizationName || 'PFI'}</p>
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                          <div>
+                                            <p className="text-xs text-gray-400 font-serif">Proposed Interest Rate</p>
+                                            <p className="text-sm text-gray-200 font-sans">{pfiApp.proposedInterestRate}%</p>
+                                          </div>
+                                          {pfiApp.policies && (
+                                            <div>
+                                              <p className="text-xs text-gray-400 font-serif">Policies</p>
+                                              <p className="text-sm text-gray-200 font-sans line-clamp-2">{pfiApp.policies}</p>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* View More About This PFI Dropdown */}
+                                        <div className="mt-3 pt-3 border-t border-primary-600">
+                                          <button
+                                            type="button"
+                                            onClick={() => setExpandedPFI(isExpanded ? null : pfiApp.pfiId)}
+                                            className="w-full flex items-center justify-between px-3 py-2 bg-primary-800 hover:bg-primary-600 rounded-md transition-colors"
+                                          >
+                                            <span className="text-xs font-semibold text-accent-400 font-sans">
+                                              {isExpanded ? '▼' : '▶'} View More About This PFI
+                                            </span>
+                                            <span className="text-xs text-gray-400 font-serif">
+                                              {isExpanded ? 'Hide details' : 'Show full details'}
+                                            </span>
+                                          </button>
+
+                                          {isExpanded && (
+                                            <div className="mt-3 p-3 bg-primary-800 rounded-md space-y-3">
+                                              {/* PFI Application Details */}
+                                              <div>
+                                                <h6 className="text-xs font-semibold text-accent-400 font-sans mb-2">Scheme Application Details</h6>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                                  <div>
+                                                    <p className="text-gray-400 font-serif">Proposed Interest Rate</p>
+                                                    <p className="text-gray-200 font-sans">{pfiApp.proposedInterestRate}%</p>
+                                                  </div>
+                                                  {pfiApp.policies && (
+                                                    <div className="md:col-span-2">
+                                                      <p className="text-gray-400 font-serif">Policies</p>
+                                                      <p className="text-gray-200 font-sans whitespace-pre-wrap">{pfiApp.policies}</p>
+                                                    </div>
+                                                  )}
+                                                  {pfiApp.submittedAt && (
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Submitted At</p>
+                                                      <p className="text-gray-200 font-sans">{new Date(pfiApp.submittedAt).toLocaleString()}</p>
+                                                    </div>
+                                                  )}
+                                                  {pfiApp.reviewedAt && (
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Reviewed At</p>
+                                                      <p className="text-gray-200 font-sans">{new Date(pfiApp.reviewedAt).toLocaleString()}</p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+
+                                              {/* PFI Registration Details */}
+                                              {pfiRecord && (
+                                                <div>
+                                                  <h6 className="text-xs font-semibold text-accent-400 font-sans mb-2">PFI Registration Details</h6>
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Organization Name</p>
+                                                      <p className="text-gray-200 font-sans">{pfiRecord.formData?.organizationName || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Registration Number</p>
+                                                      <p className="text-gray-200 font-sans">{pfiRecord.formData?.registrationNumber || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Organization Type</p>
+                                                      <p className="text-gray-200 font-sans">{pfiRecord.formData?.organizationType || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Year Established</p>
+                                                      <p className="text-gray-200 font-sans">{pfiRecord.formData?.yearEstablished || 'N/A'}</p>
+                                                    </div>
+                                                    {pfiRecord.formData?.headquartersAddress && (
+                                                      <div className="md:col-span-2">
+                                                        <p className="text-gray-400 font-serif">Headquarters Address</p>
+                                                        <p className="text-gray-200 font-sans">{pfiRecord.formData.headquartersAddress}, {pfiRecord.formData.hqCity}, {pfiRecord.formData.hqState}, {pfiRecord.formData.hqCountry}</p>
+                                                      </div>
+                                                    )}
+                                                    {pfiRecord.formData?.officePhone && (
+                                                      <div>
+                                                        <p className="text-gray-400 font-serif">Office Phone</p>
+                                                        <p className="text-gray-200 font-sans">{pfiRecord.formData.officePhone}</p>
+                                                      </div>
+                                                    )}
+                                                    {pfiRecord.formData?.officialEmail && (
+                                                      <div>
+                                                        <p className="text-gray-400 font-serif">Official Email</p>
+                                                        <p className="text-gray-200 font-sans">{pfiRecord.formData.officialEmail}</p>
+                                                      </div>
+                                                    )}
+                                                    {pfiRecord.formData?.website && (
+                                                      <div className="md:col-span-2">
+                                                        <p className="text-gray-400 font-serif">Website</p>
+                                                        <p className="text-gray-200 font-sans">{pfiRecord.formData.website}</p>
+                                                      </div>
+                                                    )}
+                                                    {pfiRecord.formData?.missionStatement && (
+                                                      <div className="md:col-span-2">
+                                                        <p className="text-gray-400 font-serif">Mission Statement</p>
+                                                        <p className="text-gray-200 font-sans">{pfiRecord.formData.missionStatement}</p>
+                                                      </div>
+                                                    )}
+                                                    {pfiRecord.formData?.areasOfOperation && pfiRecord.formData.areasOfOperation.length > 0 && (
+                                                      <div className="md:col-span-2">
+                                                        <p className="text-gray-400 font-serif">Areas of Operation</p>
+                                                        <p className="text-gray-200 font-sans">{pfiRecord.formData.areasOfOperation.join(', ')}</p>
+                                                      </div>
+                                                    )}
+                                                    {pfiRecord.formData?.numEmployees && (
+                                                      <div>
+                                                        <p className="text-gray-400 font-serif">Number of Employees</p>
+                                                        <p className="text-gray-200 font-sans">{pfiRecord.formData.numEmployees}</p>
+                                                      </div>
+                                                    )}
+                                                    <div>
+                                                      <p className="text-gray-400 font-serif">Status</p>
+                                                      <p className={`text-gray-200 font-sans ${pfiRecord.status === 'verified' ? 'text-green-400' : 'text-yellow-400'}`}>
+                                                        {pfiRecord.status === 'verified' ? 'Verified' : 'Unverified'}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )}
+
+                                              {!pfiRecord && (
+                                                <div className="text-xs text-gray-400 font-serif italic">
+                                                  Registration details not available
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Anchor Application Form */}
+                          <div className="space-y-4">
+                            {/* Add Farmer Feature */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-medium text-gray-300 font-sans">
+                                  Farmers Information <span className="text-red-500">*</span>
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newFarmer = {
+                                      id: `farmer_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                                      name: '',
+                                      location: '',
+                                      crops: '',
+                                      additionalInfo: ''
+                                    };
+                                    setBeneficiaryApplicationData(prev => ({
+                                      ...prev,
+                                      farmers: [...prev.farmers, newFarmer]
+                                    }));
+                                  }}
+                                  className="px-3 py-1.5 rounded-md bg-accent-500 hover:bg-accent-600 text-white text-sm font-medium"
+                                >
+                                  + Add Farmer
+                                </button>
+                              </div>
+                              <p className="text-xs text-gray-400 mb-3 font-serif">As an Anchor, please add information about each farmer you work with.</p>
+
+                              {beneficiaryApplicationData.farmers.length === 0 ? (
+                                <div className="p-4 bg-primary-800 rounded-md border border-primary-600 text-center">
+                                  <p className="text-sm text-gray-400 font-serif">No farmers added yet. Click "Add Farmer" to get started.</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  {beneficiaryApplicationData.farmers.map((farmer, index) => (
+                                    <div key={farmer.id} className="p-4 bg-primary-800 rounded-md border border-primary-600">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <h4 className="text-sm font-semibold text-accent-400 font-sans">Farmer {index + 1}</h4>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setBeneficiaryApplicationData(prev => ({
+                                              ...prev,
+                                              farmers: prev.farmers.filter(f => f.id !== farmer.id)
+                                            }));
+                                          }}
+                                          className="px-2 py-1 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs"
+                                        >
+                                          Remove
+                                        </button>
+                                      </div>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-400 mb-1 font-sans">Farmer Name *</label>
+                                          <input
+                                            type="text"
+                                            value={farmer.name}
+                                            onChange={(e) => {
+                                              const updated = beneficiaryApplicationData.farmers.map(f =>
+                                                f.id === farmer.id ? { ...f, name: e.target.value } : f
+                                              );
+                                              setBeneficiaryApplicationData(prev => ({ ...prev, farmers: updated }));
+                                            }}
+                                            placeholder="Enter farmer name"
+                                            className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-400 mb-1 font-sans">Location *</label>
+                                          <input
+                                            type="text"
+                                            value={farmer.location}
+                                            onChange={(e) => {
+                                              const updated = beneficiaryApplicationData.farmers.map(f =>
+                                                f.id === farmer.id ? { ...f, location: e.target.value } : f
+                                              );
+                                              setBeneficiaryApplicationData(prev => ({ ...prev, farmers: updated }));
+                                            }}
+                                            placeholder="Enter location"
+                                            className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-400 mb-1 font-sans">Crops/Livestock *</label>
+                                          <input
+                                            type="text"
+                                            value={farmer.crops}
+                                            onChange={(e) => {
+                                              const updated = beneficiaryApplicationData.farmers.map(f =>
+                                                f.id === farmer.id ? { ...f, crops: e.target.value } : f
+                                              );
+                                              setBeneficiaryApplicationData(prev => ({ ...prev, farmers: updated }));
+                                            }}
+                                            placeholder="Enter crops or livestock"
+                                            className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-400 mb-1 font-sans">Additional Information</label>
+                                          <input
+                                            type="text"
+                                            value={farmer.additionalInfo}
+                                            onChange={(e) => {
+                                              const updated = beneficiaryApplicationData.farmers.map(f =>
+                                                f.id === farmer.id ? { ...f, additionalInfo: e.target.value } : f
+                                              );
+                                              setBeneficiaryApplicationData(prev => ({ ...prev, farmers: updated }));
+                                            }}
+                                            placeholder="Any additional details (optional)"
+                                            className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* PFI Selection */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                                Select PFI <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                value={beneficiaryApplicationData.selectedPFI}
+                                onChange={(e) => setBeneficiaryApplicationData(prev => ({ ...prev, selectedPFI: e.target.value }))}
+                                className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                                required
+                              >
+                                <option value="">Select a PFI</option>
+                                {approvedPFIs.map((pfi: any) => (
+                                  <option key={pfi.pfiId} value={pfi.pfiId}>
+                                    {pfi.pfiName || 'PFI'} - Interest Rate: {pfi.interestRate}%
+                                  </option>
+                                ))}
+                              </select>
+                              <p className="text-xs text-gray-400 mt-1 font-serif">
+                                Select the Participating Financial Institution you wish to work with.
+                              </p>
+                            </div>
+
+                            {/* Insurance Company Selection */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                                Select Insurance Company <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                value={beneficiaryApplicationData.selectedInsuranceCompany}
+                                onChange={(e) => setBeneficiaryApplicationData(prev => ({ ...prev, selectedInsuranceCompany: e.target.value }))}
+                                className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                                required
+                              >
+                                <option value="">Select an Insurance Company</option>
+                                {approvedInsuranceCompanies.map((ic: any) => (
+                                  <option key={ic.insuranceCompanyId} value={ic.insuranceCompanyId}>
+                                    {ic.insuranceCompanyName || 'Insurance Company'} - Premium Rate: {ic.premiumRate}%
+                                  </option>
+                                ))}
+                              </select>
+                              <p className="text-xs text-gray-400 mt-1 font-serif">
+                                Select the Insurance Company to provide coverage for your scheme participation.
+                              </p>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                                Supporting Documents (Optional)
+                              </label>
+                              <div className="space-y-3">
+                                {beneficiaryApplicationData.documents.map((doc, index) => (
+                                  <div key={index} className="flex gap-2 items-start">
+                                    <input
+                                      type="file"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0] || null;
+                                        const updated = [...beneficiaryApplicationData.documents];
+                                        updated[index] = {
+                                          ...updated[index],
+                                          fileName: file?.name || '',
+                                          file: file
+                                        };
+                                        setBeneficiaryApplicationData(prev => ({ ...prev, documents: updated }));
+                                      }}
+                                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                      className="flex-1 px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent-500 file:text-white hover:file:bg-accent-600"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={doc.description}
+                                      onChange={(e) => {
+                                        const updated = [...beneficiaryApplicationData.documents];
+                                        updated[index].description = e.target.value;
+                                        setBeneficiaryApplicationData(prev => ({ ...prev, documents: updated }));
+                                      }}
+                                      placeholder="Description"
+                                      className="flex-1 px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = beneficiaryApplicationData.documents.filter((_, i) => i !== index);
+                                        setBeneficiaryApplicationData(prev => ({ ...prev, documents: updated }));
+                                      }}
+                                      className="px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white"
+                                    >
+                                      ✖
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => setBeneficiaryApplicationData(prev => ({
+                                    ...prev,
+                                    documents: [...prev.documents, { fileName: '', description: '', file: null }]
+                                  }))}
+                                  className="px-4 py-2 rounded-md bg-primary-600 hover:bg-primary-500 text-gray-200 text-sm"
+                                >
+                                  + Add Document
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-end gap-4 pt-4 border-t border-primary-600">
+                              <button
+                                onClick={handleCloseForm}
+                                className="px-6 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 font-medium"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handleBeneficiaryApplication}
+                                disabled={isSubmitting || beneficiaryApplicationData.farmers.length === 0 || !beneficiaryApplicationData.selectedPFI || !beneficiaryApplicationData.selectedInsuranceCompany}
+                                className="px-6 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // For non-workflow schemes, show message
+                    return (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-yellow-900/30 border border-yellow-600 rounded-md">
+                          <p className="text-yellow-300 font-sans">This scheme is not part of the workflow system. Please use the standard application form.</p>
+                        </div>
+                        <button
+                          onClick={handleCloseForm}
+                          className="px-6 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 font-medium"
+                        >
+                          ← Back to Schemes
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Powered by */}
@@ -908,6 +1918,36 @@ const SchemeApplication: React.FC = () => {
           Powered by Mc. George
         </div>
       </div>
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-primary-800 rounded-lg p-6 max-w-md w-full border border-primary-600">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">⚠️</div>
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-2">Confirm Submission</h3>
+              <p className="text-sm text-gray-300 font-serif">
+                Are you sure you want to submit this application? Once submitted, you cannot make changes.
+              </p>
+            </div>
+            <div className="flex justify-center gap-3 mt-6">
+              <button
+                onClick={() => setShowSubmitConfirmation(false)}
+                className="px-6 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmSubmit}
+                disabled={isSubmitting}
+                className="px-6 py-2 rounded-md bg-accent-500 text-white hover:bg-accent-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Submitting...' : 'Yes, Submit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Final Confirmation Modal */}
       {showConfirmation && (

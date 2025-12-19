@@ -13,7 +13,7 @@ import {
 
 const Settings: React.FC = () => {
   const [activeSection, setActiveSection] = useState<'personal' | 'farm' | 'produce' | 'market' | 'verification' | 'banking' | 'security'>('personal');
-  
+
   const [formData, setFormData] = useState({
     // Step 1: Personal Information
     fullName: '',
@@ -25,7 +25,7 @@ const Settings: React.FC = () => {
     city: '',
     state: '',
     country: '',
-    
+
     // Step 2: Farm / Business Details
     farmBusinessName: '',
     typeOfFarmer: [] as string[],
@@ -34,32 +34,32 @@ const Settings: React.FC = () => {
     yearsOfExperience: '',
     primarySourceOfIncome: '',
     farmerAssociation: '',
-    
+
     // Step 3: Type of Produce
     crops: [] as string[],
     livestock: [] as string[],
     hasProcessingValueAddition: '',
     processingValueAdditionDetails: '',
-    
+
     // Step 4: Production Capacity & Market
     totalAnnualProduction: '',
     primaryMarket: '',
     majorBuyers: '',
     challengesFaced: '',
-    
+
     // Step 5: Verification & Documents
     idType: '',
     idNumber: '',
     idDocument: '',
     farmImages: '',
     certification: '',
-    
+
     // Step 6: Banking & Payment Details
     preferredPaymentMethod: '',
     bankName: '',
     accountName: '',
     accountNumber: '',
-    
+
     // Step 7: Security
     password: '',
     confirmPassword: '',
@@ -78,6 +78,19 @@ const Settings: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/producer' },
     { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/producer/scheme-application' },
+    {
+      id: 'anchor-relationships',
+      name: 'Anchor Relationships',
+      icon: '⚓',
+      hasDropdown: true,
+      dropdownItems: [
+        { id: 'current-anchors', name: 'View Current Anchors', icon: '👁️', href: '/portal/producer/anchor-relationships/current' },
+        { id: 'invitations', name: 'Accept/Decline Invitations', icon: '📨', href: '/portal/producer/anchor-relationships/invitations' },
+        { id: 'leave-request', name: 'Request to Leave Anchor', icon: '🚪', href: '/portal/producer/anchor-relationships/leave' },
+        { id: 'communication', name: 'Anchor Communication', icon: '💬', href: '/portal/producer/anchor-relationships/communication' },
+        { id: 'history', name: 'Relationship History', icon: '📜', href: '/portal/producer/anchor-relationships/history' },
+      ]
+    },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/producer/settings' }
   ];
 
@@ -326,9 +339,9 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <PortalLayout 
-      role="Producer/Farmer" 
-      roleIcon="🌾" 
+    <PortalLayout
+      role="Producer/Farmer"
+      roleIcon="🌾"
       sidebarItems={sidebarItems}
     >
       <div className="space-y-6">
@@ -371,7 +384,7 @@ const Settings: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-bold font-sans text-gray-100">Settings</h1>
             <p className="text-sm md:text-base text-gray-400 font-serif mt-2">Manage your account information and preferences</p>
           </div>
-          <button 
+          <button
             type="submit"
             form="settings-form"
             disabled={isVerified || isLoadingRecord || !recordId}
@@ -397,11 +410,10 @@ const Settings: React.FC = () => {
                 key={section.id}
                 type="button"
                 onClick={() => setActiveSection(section.id as any)}
-                className={`p-2 md:p-3 rounded-lg text-center transition-all duration-200 text-xs md:text-sm ${
-                  activeSection === section.id
+                className={`p-2 md:p-3 rounded-lg text-center transition-all duration-200 text-xs md:text-sm ${activeSection === section.id
                     ? 'bg-primary-500 text-white'
                     : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
-                }`}
+                  }`}
               >
                 <div className="font-medium font-sans">{section.label}</div>
               </button>
@@ -676,9 +688,8 @@ const Settings: React.FC = () => {
                       {['Maize', 'Rice', 'Wheat', 'Cassava', 'Yam', 'Potato', 'Tomato', 'Pepper', 'Onion', 'Beans', 'Groundnut', 'Soybean', 'Cotton', 'Cocoa', 'Coffee', 'Other'].map((crop) => (
                         <label
                           key={crop}
-                          className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${
-                            formData.crops.includes(crop) ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
-                          } transition-colors`}
+                          className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${formData.crops.includes(crop) ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
+                            } transition-colors`}
                         >
                           <input
                             type="checkbox"
@@ -700,9 +711,8 @@ const Settings: React.FC = () => {
                       {['Cattle', 'Goat', 'Sheep', 'Poultry', 'Pig', 'Fish', 'Rabbit', 'Other'].map((animal) => (
                         <label
                           key={animal}
-                          className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${
-                            formData.livestock.includes(animal) ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
-                          } transition-colors`}
+                          className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${formData.livestock.includes(animal) ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
+                            } transition-colors`}
                         >
                           <input
                             type="checkbox"
@@ -1027,7 +1037,7 @@ const Settings: React.FC = () => {
             )}
           </fieldset>
         </form>
-        
+
         <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
           Powered by Mc. George
         </div>

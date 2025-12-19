@@ -3,10 +3,10 @@ import PortalLayout from '../../../../components/PortalLayout';
 
 const CreditRisk: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -15,10 +15,10 @@ const CreditRisk: React.FC = () => {
         { id: 'reportings', name: 'Reportings', icon: '📑', href: '/portal/coordinating-agency/reportings' }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Stakeholders', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Stakeholders',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -29,10 +29,10 @@ const CreditRisk: React.FC = () => {
         { id: 'legal', name: 'Legal Department', icon: '⚖️', href: '/portal/coordinating-agency/stakeholders/legal' },
         { id: 'it', name: 'IT Department', icon: '💻', href: '/portal/coordinating-agency/stakeholders/it' },
         { id: 'training', name: 'Training Department', icon: '📚', href: '/portal/coordinating-agency/stakeholders/training' },
-        { 
-          id: 'monitoring-dept', 
-          name: 'Monitoring Department', 
-          icon: '📈', 
+        {
+          id: 'monitoring-dept',
+          name: 'Monitoring Department',
+          icon: '📈',
           href: '/portal/coordinating-agency/stakeholders/monitoring',
           hasDropdown: true,
           dropdownItems: [
@@ -136,9 +136,8 @@ const CreditRisk: React.FC = () => {
             <div key={index} className="bg-primary-800 rounded-lg shadow-lg p-4 sm:p-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-2xl sm:text-3xl">{stat.icon}</span>
-                <span className={`text-xs sm:text-sm font-sans ${
-                  stat.change.startsWith('-') ? 'text-green-400' : 'text-green-400'
-                }`}>{stat.change}</span>
+                <span className={`text-xs sm:text-sm font-sans ${stat.change.startsWith('-') ? 'text-green-400' : 'text-green-400'
+                  }`}>{stat.change}</span>
               </div>
               <p className="text-xl sm:text-2xl font-bold font-sans text-gray-100 mb-1">{stat.value}</p>
               <p className="text-xs sm:text-sm text-gray-400 font-serif">{stat.title}</p>
@@ -181,22 +180,20 @@ const CreditRisk: React.FC = () => {
                     <td className="py-3 px-2 text-xs sm:text-sm text-gray-300 font-sans">{item.id}</td>
                     <td className="py-3 px-2 text-xs sm:text-sm text-gray-100 font-sans">{item.scheme}</td>
                     <td className="py-3 px-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.riskLevel === 'Low' ? 'bg-green-500 text-white' :
-                        item.riskLevel === 'Medium' ? 'bg-yellow-500 text-white' :
-                        'bg-red-500 text-white'
-                      }`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.riskLevel === 'Low' ? 'bg-green-500 text-white' :
+                          item.riskLevel === 'Medium' ? 'bg-yellow-500 text-white' :
+                            'bg-red-500 text-white'
+                        }`}>
                         {item.riskLevel}
                       </span>
                     </td>
                     <td className="py-3 px-2 text-xs sm:text-sm text-accent-400 font-sans font-bold">{item.score}</td>
                     <td className="py-3 px-2 text-xs sm:text-sm text-gray-300 font-sans">{item.deRisking}</td>
                     <td className="py-3 px-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.status === 'Approved' ? 'bg-green-500 text-white' :
-                        item.status === 'Under Review' ? 'bg-yellow-500 text-white' :
-                        'bg-gray-500 text-white'
-                      }`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status === 'Approved' ? 'bg-green-500 text-white' :
+                          item.status === 'Under Review' ? 'bg-yellow-500 text-white' :
+                            'bg-gray-500 text-white'
+                        }`}>
                         {item.status}
                       </span>
                     </td>
@@ -208,8 +205,8 @@ const CreditRisk: React.FC = () => {
 
           {assessmentTotalPages > 1 && (
             <div className="flex items-center justify-center space-x-2 mt-4">
-              <button 
-                onClick={() => setAssessmentPage(Math.max(assessmentPage - 1, 1))} 
+              <button
+                onClick={() => setAssessmentPage(Math.max(assessmentPage - 1, 1))}
                 disabled={assessmentPage === 1}
                 className="btn-secondary text-sm p-2 disabled:opacity-50"
               >
@@ -218,8 +215,8 @@ const CreditRisk: React.FC = () => {
               <span className="text-sm text-gray-300 font-sans">
                 Page {assessmentPage} of {assessmentTotalPages}
               </span>
-              <button 
-                onClick={() => setAssessmentPage(Math.min(assessmentPage + 1, assessmentTotalPages))} 
+              <button
+                onClick={() => setAssessmentPage(Math.min(assessmentPage + 1, assessmentTotalPages))}
                 disabled={assessmentPage === assessmentTotalPages}
                 className="btn-secondary text-sm p-2 disabled:opacity-50"
               >
@@ -274,8 +271,8 @@ const CreditRisk: React.FC = () => {
 
           {strategyTotalPages > 1 && (
             <div className="flex items-center justify-center space-x-2 mt-4">
-              <button 
-                onClick={() => setStrategyPage(Math.max(strategyPage - 1, 1))} 
+              <button
+                onClick={() => setStrategyPage(Math.max(strategyPage - 1, 1))}
                 disabled={strategyPage === 1}
                 className="btn-secondary text-sm p-2 disabled:opacity-50"
               >
@@ -284,8 +281,8 @@ const CreditRisk: React.FC = () => {
               <span className="text-sm text-gray-300 font-sans">
                 Page {strategyPage} of {strategyTotalPages}
               </span>
-              <button 
-                onClick={() => setStrategyPage(Math.min(strategyPage + 1, strategyTotalPages))} 
+              <button
+                onClick={() => setStrategyPage(Math.min(strategyPage + 1, strategyTotalPages))}
                 disabled={strategyPage === strategyTotalPages}
                 className="btn-secondary text-sm p-2 disabled:opacity-50"
               >
@@ -324,4 +321,5 @@ const CreditRisk: React.FC = () => {
 };
 
 export default CreditRisk;
+
 

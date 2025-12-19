@@ -14,14 +14,14 @@ import { NIGERIAN_STATES } from '../../../constants/nigeriaStates';
 
 const Settings: React.FC = () => {
   const [activeSection, setActiveSection] = useState<'contact' | 'organization'>('contact');
-  
+
   const [formData, setFormData] = useState({
     // Contact Info - Personal Details
     fullName: '',
     position: '',
     gender: '',
     birthDate: '',
-    
+
     // Contact Info - Contact Information
     email: '',
     phone: '',
@@ -30,7 +30,7 @@ const Settings: React.FC = () => {
     city: '',
     state: '',
     country: '',
-    
+
     // Contact Info - Verification & Emergency
     idType: '',
     idNumber: '',
@@ -38,7 +38,7 @@ const Settings: React.FC = () => {
     emergencyContactName: '',
     emergencyContactPhone: '',
     emergencyRelationship: '',
-    
+
     // Organization Info - Basic Information
     organizationName: '',
     registrationNumber: '',
@@ -46,7 +46,7 @@ const Settings: React.FC = () => {
     yearEstablished: '',
     industry: '',
     missionStatement: '',
-    
+
     // Organization Info - Address & Contact Info
     headquartersAddress: '',
     hqCity: '',
@@ -59,7 +59,7 @@ const Settings: React.FC = () => {
     linkedin: '',
     twitter: '',
     instagram: '',
-    
+
     // Organization Info - Operations & Documentation
     numEmployees: '',
     areasOfOperation: [] as string[],
@@ -67,7 +67,7 @@ const Settings: React.FC = () => {
     certificateOfIncorporation: '',
     hasPartnership: 'No',
     partnershipDetails: '',
-    
+
     // Organization Info - Security & Terms
     password: '',
     confirmPassword: '',
@@ -86,6 +86,19 @@ const Settings: React.FC = () => {
   const sidebarItems = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊', href: '/portal/anchor' },
     { id: 'scheme-application', name: 'Schemes Application', icon: '📝', href: '/portal/anchor/scheme-application' },
+    {
+      id: 'producer-management',
+      name: 'Producer/Farmer Management',
+      icon: '🌾',
+      hasDropdown: true,
+      dropdownItems: [
+        { id: 'create-producer', name: 'Create New Producer/Farmer', icon: '➕', href: '/portal/anchor/producer-management/create' },
+        { id: 'invite-producers', name: 'Invite Existing Producers', icon: '📨', href: '/portal/anchor/producer-management/invite' },
+        { id: 'manage-producers', name: 'Manage Current Producers', icon: '👥', href: '/portal/anchor/producer-management/manage' },
+        { id: 'join-requests', name: 'View Join Requests', icon: '📥', href: '/portal/anchor/producer-management/requests' },
+        { id: 'activity-logs', name: 'Producer Activity Logs', icon: '📋', href: '/portal/anchor/producer-management/logs' },
+      ]
+    },
     { id: 'settings', name: 'Settings', icon: '⚙️', href: '/portal/anchor/settings' }
   ];
 
@@ -246,10 +259,10 @@ const Settings: React.FC = () => {
       return;
     }
 
-  if (formData.areasOfOperation.length === 0) {
-    showNotification('Select at least one area of operation / coverage before submitting.', 'error');
-    return;
-  }
+    if (formData.areasOfOperation.length === 0) {
+      showNotification('Select at least one area of operation / coverage before submitting.', 'error');
+      return;
+    }
 
     const storedFormData: AnchorFormData = {
       fullName: formData.fullName.trim(),
@@ -286,8 +299,8 @@ const Settings: React.FC = () => {
       linkedin: formData.linkedin.trim() || undefined,
       twitter: formData.twitter.trim() || undefined,
       instagram: formData.instagram.trim() || undefined,
-    numEmployees: formData.numEmployees.trim(),
-    areasOfOperation: [...formData.areasOfOperation],
+      numEmployees: formData.numEmployees.trim(),
+      areasOfOperation: [...formData.areasOfOperation],
       organizationLogoName: formData.organizationLogo.trim() || undefined,
       certificateOfIncorporationName: formData.certificateOfIncorporation.trim() || undefined,
       hasPartnership: formData.hasPartnership,
@@ -320,12 +333,12 @@ const Settings: React.FC = () => {
     });
 
     const updatedRecord = updateAnchorRecord(recordId, {
-    formData: storedFormData,
-    status: 'unverified',
-    rejectionReason: undefined,
-    lastSubmittedAt: new Date().toISOString(),
-    pendingNotificationId: notificationId,
-    email: storedFormData.officialEmail,
+      formData: storedFormData,
+      status: 'unverified',
+      rejectionReason: undefined,
+      lastSubmittedAt: new Date().toISOString(),
+      pendingNotificationId: notificationId,
+      email: storedFormData.officialEmail,
     } as Partial<Omit<AnchorRecord, 'id'>>);
 
     setStatus('unverified');
@@ -339,9 +352,9 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <PortalLayout 
-        role="Anchor" 
-        roleIcon="⚓" 
+    <PortalLayout
+      role="Anchor"
+      roleIcon="⚓"
       sidebarItems={sidebarItems}
     >
       <div className="space-y-6">
@@ -371,7 +384,7 @@ const Settings: React.FC = () => {
               ) : null}
               {!recordId && (
                 <p className="text-xs text-yellow-400 font-serif mt-2">
-              No registration data found. Please complete your Anchor registration.
+                  No registration data found. Please complete your Anchor registration.
                 </p>
               )}
             </>
@@ -384,7 +397,7 @@ const Settings: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-bold font-sans text-gray-100">Settings</h1>
             <p className="text-sm md:text-base text-gray-400 font-serif mt-2">Manage your account information and preferences</p>
           </div>
-          <button 
+          <button
             type="submit"
             form="settings-form"
             disabled={isVerified || isLoadingRecord || !recordId}
@@ -400,22 +413,20 @@ const Settings: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveSection('contact')}
-              className={`p-3 rounded-lg text-center transition-all duration-200 ${
-                activeSection === 'contact'
+              className={`p-3 rounded-lg text-center transition-all duration-200 ${activeSection === 'contact'
                   ? 'bg-primary-500 text-white'
                   : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
-              }`}
+                }`}
             >
               <div className="font-medium font-sans">Contact Info</div>
             </button>
             <button
               type="button"
               onClick={() => setActiveSection('organization')}
-              className={`p-3 rounded-lg text-center transition-all duration-200 ${
-                activeSection === 'organization'
+              className={`p-3 rounded-lg text-center transition-all duration-200 ${activeSection === 'organization'
                   ? 'bg-primary-500 text-white'
                   : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
-              }`}
+                }`}
             >
               <div className="font-medium font-sans">Organization Info</div>
             </button>
@@ -989,9 +1000,8 @@ const Settings: React.FC = () => {
                             return (
                               <label
                                 key={state}
-                                className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${
-                                  isChecked ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
-                                } transition-colors`}
+                                className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${isChecked ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
+                                  } transition-colors`}
                               >
                                 <input
                                   type="checkbox"
@@ -1082,7 +1092,7 @@ const Settings: React.FC = () => {
             )}
           </fieldset>
         </form>
-        
+
         <div className="mt-2 text-center text-xs text-gray-400 font-serif opacity-80">
           Powered by Mc. George
         </div>

@@ -9,6 +9,7 @@ const SchemeApplication: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
   const [selectedScheme, setSelectedScheme] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [schemesPage, setSchemesPage] = useState(1);
@@ -40,6 +41,14 @@ const SchemeApplication: React.FC = () => {
   const { addNotification } = useNotifications();
   const activeInsuranceCompany = useMemo(() => getActiveInsuranceCompanyRecord(), []);
 
+  // Insurance Company Submission Form Data (for workflow)
+  const [insuranceSubmissionData, setInsuranceSubmissionData] = useState({
+    premiumRate: '',
+    premiumFixedAmount: '',
+    insurancePolicies: '',
+    documents: [] as Array<{ fileName: string; description: string; file: File | null }>
+  });
+
   const [formData, setFormData] = useState({
     // Step 1: Contact Information
     nameOfAccount: '',
@@ -48,7 +57,7 @@ const SchemeApplication: React.FC = () => {
     contactPersonEmail: '',
     contactPersonPhone: '',
     discussPreviousProjects: '',
-    
+
     // Step 2: Account Profile
     profileType: '',
     maximumAmountExpected: '',
@@ -57,20 +66,20 @@ const SchemeApplication: React.FC = () => {
     geographicFocus: [] as string[],
     descriptionOfServices: '',
     fundingProgramsPreviousBenefit: '',
-    
+
     // Step 3: Financial Products and Terms
     financialProductsOffered: [] as string[],
     termsOfReferenceAFCF: '',
     termsOfReferencePFI: '',
     termsOfReferenceInsurance: '',
     termsOfReferenceBeneficiaries: '',
-    
+
     // Step 4: Reporting and Transparency
     reportingFrequency: '',
     reportingMechanisms: '',
     transparencyMeasures: '',
     monitoringAndEvaluation: '',
-    
+
     // Step 5: Compliance and Documentation
     regulatoryCompliance: '',
     fundSchemeDocumentation: null as File | null,
@@ -126,40 +135,74 @@ const SchemeApplication: React.FC = () => {
     const fetchSchemes = async () => {
       try {
         setSchemesLoading(true);
-        
+
+        // Get current Insurance Company ID
+        const currentIC = activeInsuranceCompany;
+        if (!currentIC) {
+          setAvailableSchemes([]);
+          setSchemesLoading(false);
+          return;
+        }
+
         // First, check if there's localStorage data (from Coordinating Agency portal)
         const storedSchemes = localStorage.getItem('fundSchemes');
         if (storedSchemes) {
           try {
             const parsedSchemes = JSON.parse(storedSchemes);
-            // Filter out deleted and completed schemes - only show Active schemes
-            const activeSchemes = parsedSchemes
-              .filter((scheme: any) => scheme.status === 'Active')
+            // Filter schemes: only show Active schemes where this Insurance Company is selected
+            // and workflow stage is 'initial' (waiting for Insurance Company submission)
+            // Hide scheme if there's an approved submission OR a pending submission
+            // Show scheme if there's only a rejected submission (allow reapplication) or no submission
+            const relevantSchemes = parsedSchemes
+              .filter((scheme: any) => {
+                const isActive = scheme.status === 'Active';
+                const isSelected = scheme.selectedInsuranceCompanyIds?.includes(currentIC.id) || false;
+                const isInitialStage = scheme.workflowStage === 'initial' || !scheme.workflowStage;
+
+                // Check submissions for this Insurance Company
+                const submissions = scheme.insuranceCompanySubmissions?.filter((sub: any) =>
+                  sub.insuranceCompanyId === currentIC.id
+                ) || [];
+
+                // Hide if there's an approved submission (scheme moved to Stage 1)
+                const hasApprovedSubmission = submissions.some((sub: any) => sub.status === 'approved');
+
+                // Hide if there's a pending submission (waiting for CA review)
+                const hasPendingSubmission = submissions.some((sub: any) => sub.status === 'pending');
+
+                // Show if no approved or pending submissions
+                // This allows reapplication after rejection (rejected submissions don't block visibility)
+                const shouldShow = !hasApprovedSubmission && !hasPendingSubmission;
+
+                return isActive && isSelected && isInitialStage && shouldShow;
+              })
               .map((scheme: any) => ({
                 id: scheme.id,
                 title: scheme.name || scheme.title || 'Untitled Scheme',
                 description: scheme.description || `Fund scheme: ${scheme.name || scheme.title || 'Untitled'}`,
                 amount: scheme.amount || 'N/A',
-                deadline: scheme.applicationDeadline || scheme.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default to 30 days from now
+                deadline: scheme.applicationDeadline || scheme.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 category: 'Fund Scheme',
                 state: scheme.state || 'Multi-State',
-                status: scheme.status || 'Active' // Include status for filtering
+                status: scheme.status || 'Active',
+                workflowStage: scheme.workflowStage || 'initial',
+                fullSchemeData: scheme // Store full scheme data for submission
               }));
-            setAvailableSchemes(activeSchemes);
+            setAvailableSchemes(relevantSchemes);
             setSchemesLoading(false);
             return;
           } catch (e) {
             console.error('Error parsing stored schemes:', e);
           }
         }
-        
+
         // If no localStorage, fetch from API
         const response = await schemeAPI.getAll({
           page: 1,
           limit: 100,
           status: 'Active'
         });
-        
+
         if (response.success && response.data) {
           // Transform API data to match the component's expected format
           // Filter out any schemes with status 'Past' or 'Inactive'
@@ -199,7 +242,7 @@ const SchemeApplication: React.FC = () => {
       // Additional check: exclude if status is 'Completed' (shouldn't happen if filtering worked above, but double-check)
       return scheme.status === 'Active';
     });
-    
+
     if (schemeSearch.trim()) {
       const searchLower = schemeSearch.toLowerCase();
       filtered = filtered.filter((scheme: any) =>
@@ -209,13 +252,13 @@ const SchemeApplication: React.FC = () => {
         scheme.amount.toLowerCase().includes(searchLower)
       );
     }
-    
+
     if (stateFilter !== 'All') {
       filtered = filtered.filter((scheme: any) =>
         scheme.state === stateFilter || scheme.state?.toLowerCase().includes(stateFilter.toLowerCase())
       );
     }
-    
+
     return filtered;
   }, [availableSchemes, schemeSearch, stateFilter]);
 
@@ -280,7 +323,7 @@ const SchemeApplication: React.FC = () => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    
+
     try {
       // Prepare application data
       const applicationData = {
@@ -322,10 +365,10 @@ const SchemeApplication: React.FC = () => {
       };
 
       const selectedSchemeData = availableSchemes.find(s => s.id === selectedScheme);
-      
+
       // Create notification to CA
       const applicationId = `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       addNotification({
         role: '🛡️ Insurance Company',
         targetRole: 'coordinating-agency',
@@ -363,6 +406,218 @@ const SchemeApplication: React.FC = () => {
     setSelectedScheme(schemeId);
     setShowForm(true);
     setCurrentStep(1);
+    // Reset Insurance Company submission form
+    setInsuranceSubmissionData({
+      premiumRate: '',
+      premiumFixedAmount: '',
+      insurancePolicies: '',
+      documents: []
+    });
+  };
+
+  // Handle notification clicks - open the same modal
+  useEffect(() => {
+    const handleNotificationSchemeClick = (event: CustomEvent) => {
+      const { schemeId } = event.detail;
+      if (schemeId) {
+        // Always open the modal, even if already open (allows reapplication)
+        handleApplyToScheme(schemeId);
+      }
+    };
+
+    window.addEventListener('notification-scheme-click' as any, handleNotificationSchemeClick as EventListener);
+    return () => {
+      window.removeEventListener('notification-scheme-click' as any, handleNotificationSchemeClick as EventListener);
+    };
+  }, []);
+
+  // Check for schemeId in URL or notification
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const schemeIdFromUrl = urlParams.get('schemeId');
+    if (schemeIdFromUrl && !selectedScheme && !showForm) {
+      handleApplyToScheme(schemeIdFromUrl);
+      // Clean up URL parameter after opening modal
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  const handleInsuranceSubmissionConfirm = () => {
+    setShowSubmitConfirmation(true);
+  };
+
+  const handleInsuranceSubmission = async () => {
+    if (!selectedScheme || !activeInsuranceCompany) return;
+
+    setShowSubmitConfirmation(false);
+    setIsSubmitting(true);
+
+    try {
+      // Get the full scheme data
+      const schemeData = availableSchemes.find(s => s.id === selectedScheme)?.fullSchemeData;
+      if (!schemeData) {
+        alert('Scheme data not found. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validate submission
+      const premiumType = schemeData?.insuranceCompanyPremiumType || 'rate';
+
+      if (premiumType === 'fixed') {
+        if (!insuranceSubmissionData.premiumFixedAmount.trim()) {
+          alert('Please enter the premium fixed amount.');
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        if (!insuranceSubmissionData.premiumRate.trim()) {
+          alert('Please enter the premium rate.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (!insuranceSubmissionData.insurancePolicies.trim()) {
+        alert('Please provide insurance policies information.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create submission object
+      const submission: any = {
+        insuranceCompanyId: activeInsuranceCompany.id,
+        insuranceCompanyName: activeInsuranceCompany.formData.organizationName,
+        ...(premiumType === 'fixed'
+          ? { premiumFixedAmount: insuranceSubmissionData.premiumFixedAmount }
+          : { premiumRate: insuranceSubmissionData.premiumRate }
+        ),
+        insurancePolicies: insuranceSubmissionData.insurancePolicies,
+        documents: insuranceSubmissionData.documents.map(doc => ({
+          fileName: doc.fileName,
+          description: doc.description
+        })),
+        submittedAt: new Date().toISOString(),
+        status: 'pending' as const
+      };
+
+      // Update scheme in localStorage
+      const storedSchemes = localStorage.getItem('fundSchemes');
+      if (storedSchemes) {
+        const schemes = JSON.parse(storedSchemes);
+
+        // DEBUG: Log before update
+        const targetScheme = schemes.find((s: any) => s.id === selectedScheme);
+        console.log('[IC Submit] Before update - IC submissions:', targetScheme?.insuranceCompanySubmissions);
+
+        const updatedSchemes = schemes.map((scheme: any) => {
+          if (scheme.id === selectedScheme) {
+            return {
+              ...scheme,
+              insuranceCompanySubmissions: [
+                ...(scheme.insuranceCompanySubmissions || []),
+                submission
+              ]
+            };
+          }
+          return scheme;
+        });
+        localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
+
+        // CRITICAL: Notify FundSchemes component that localStorage was updated
+        window.dispatchEvent(new CustomEvent('fundSchemes-updated'));
+        console.log('[IC Submit] Dispatched fundSchemes-updated event');
+
+        // DEBUG: Verify IC submission was saved
+        const saved = JSON.parse(localStorage.getItem('fundSchemes') || '[]');
+        const savedScheme = saved.find((s: any) => s.id === selectedScheme);
+        console.log('[IC Submit] After save - IC submissions in localStorage:', savedScheme?.insuranceCompanySubmissions);
+      }
+
+      // Send notification to CA
+      addNotification({
+        role: '🛡️ Insurance Company',
+        targetRole: 'coordinating-agency',
+        message: `Insurance Company "${activeInsuranceCompany.formData.organizationName}" has submitted premium rates and policies for scheme "${schemeData.name}". Please review and approve.`,
+        applicantName: activeInsuranceCompany.formData.organizationName,
+        applicantType: 'Company',
+        companyName: activeInsuranceCompany.formData.organizationName,
+        contactPersonName: activeInsuranceCompany.formData.fullName,
+        contactPersonEmail: activeInsuranceCompany.formData.email,
+        contactPersonPhone: activeInsuranceCompany.formData.phone,
+        companyEmail: activeInsuranceCompany.formData.officialEmail,
+        schemeId: selectedScheme,
+        schemeName: schemeData.name,
+        applicationId: `ic_sub_${Date.now()}`,
+        applicationData: {
+          ...(premiumType === 'fixed'
+            ? { premiumFixedAmount: insuranceSubmissionData.premiumFixedAmount }
+            : { premiumRate: insuranceSubmissionData.premiumRate }
+          ),
+          insurancePolicies: insuranceSubmissionData.insurancePolicies,
+          documents: insuranceSubmissionData.documents.map(d => ({ fileName: d.fileName, description: d.description })),
+          submittedAt: submission.submittedAt // Include submittedAt for matching during approval/rejection
+        },
+        applicationStatus: 'pending',
+        metadata: {
+          type: 'insuranceCompanySubmission',
+          insuranceCompanyId: activeInsuranceCompany.id,
+          submissionId: submission.insuranceCompanyId + '_' + Date.now()
+        }
+      });
+
+      // Refresh schemes list
+      const fetchSchemes = async () => {
+        const stored = localStorage.getItem('fundSchemes');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const currentIC = activeInsuranceCompany;
+          const relevant = parsed
+            .filter((s: any) => {
+              const isActive = s.status === 'Active';
+              const isSelected = s.selectedInsuranceCompanyIds?.includes(currentIC.id) || false;
+              const isInitialStage = s.workflowStage === 'initial' || !s.workflowStage;
+
+              // Check submissions for this Insurance Company
+              const submissions = s.insuranceCompanySubmissions?.filter((sub: any) =>
+                sub.insuranceCompanyId === currentIC.id
+              ) || [];
+
+              // Hide if there's an approved submission (scheme moved to Stage 1)
+              const hasApprovedSubmission = submissions.some((sub: any) => sub.status === 'approved');
+
+              // Hide if there's a pending submission (waiting for CA review)
+              const hasPendingSubmission = submissions.some((sub: any) => sub.status === 'pending');
+
+              // Show if no approved or pending submissions (allows reapplication after rejection)
+              return isActive && isSelected && isInitialStage && !hasApprovedSubmission && !hasPendingSubmission;
+            })
+            .map((s: any) => ({
+              id: s.id,
+              title: s.name || 'Untitled Scheme',
+              description: s.description || `Fund scheme: ${s.name || 'Untitled'}`,
+              amount: s.amount || 'N/A',
+              deadline: s.applicationDeadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              category: 'Fund Scheme',
+              state: s.state || 'Multi-State',
+              status: s.status || 'Active',
+              workflowStage: s.workflowStage || 'initial',
+              fullSchemeData: s
+            }));
+          setAvailableSchemes(relevant);
+        }
+      };
+      fetchSchemes();
+
+      setIsSubmitting(false);
+      setShowConfirmation(true);
+      setShowForm(false);
+      setSelectedScheme(null);
+    } catch (error) {
+      console.error('Error submitting Insurance Company submission:', error);
+      alert('Failed to submit. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   const handleCloseForm = () => {
@@ -780,7 +1035,253 @@ const SchemeApplication: React.FC = () => {
   return (
     <PortalLayout role="Insurance Company" roleIcon="🛡️" sidebarItems={sidebarItems}>
       <div className="space-y-6">
-        {!showForm ? (
+        {/* Unified Schemes Application Modal - Shows when scheme is selected */}
+        {selectedScheme && (() => {
+          const scheme = availableSchemes.find(s => s.id === selectedScheme);
+          const isWorkflowScheme = scheme?.workflowStage === 'initial' || scheme?.fullSchemeData?.workflowStage === 'initial';
+          const schemeData = scheme?.fullSchemeData || scheme;
+
+          if (isWorkflowScheme) {
+            // Unified Modal: Full Scheme Info + Submission Form (No Previous/Next buttons)
+            const requirements = schemeData?.insuranceCompanyRequirements || schemeData?.metadata?.insuranceCompanyRequirements?.requirements || '';
+
+            return (
+              <div className="fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto" onClick={handleCloseForm}>
+                <div className="min-h-screen flex items-center justify-center py-8">
+                  <div className="w-full max-w-4xl bg-primary-900 rounded-lg border border-primary-700 p-6" onClick={(e) => e.stopPropagation()}>
+                    {/* Modal Header */}
+                    <div className="flex items-start justify-between mb-6">
+                      <div>
+                        <h2 className="text-2xl font-bold font-sans text-gray-100 mb-2">Scheme Application</h2>
+                        <p className="text-sm text-gray-400 font-serif">Review scheme details and submit your insurance proposal</p>
+                      </div>
+                      <button
+                        onClick={handleCloseForm}
+                        className="text-gray-400 hover:text-gray-200 text-2xl"
+                      >
+                        ✖
+                      </button>
+                    </div>
+
+                    {/* Full Scheme Information */}
+                    <div className="mb-6 space-y-4">
+                      <div className="bg-primary-800 rounded-lg p-4 border border-primary-700">
+                        <h3 className="text-lg font-semibold text-gray-100 mb-4 font-sans">{scheme?.title || schemeData?.name}</h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <p className="text-xs text-gray-400 font-serif mb-1">Scheme ID</p>
+                            <p className="text-sm text-gray-100 font-sans">{schemeData?.id || scheme?.id}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400 font-serif mb-1">Fund Amount</p>
+                            <p className="text-sm text-gray-100 font-sans">{scheme?.amount || schemeData?.amount || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400 font-serif mb-1">Location</p>
+                            <p className="text-sm text-gray-100 font-sans">{scheme?.state || schemeData?.state || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400 font-serif mb-1">Application Deadline</p>
+                            <p className="text-sm text-gray-100 font-sans">
+                              {schemeData?.applicationDeadline
+                                ? new Date(schemeData.applicationDeadline).toLocaleDateString()
+                                : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {schemeData?.description && (
+                          <div className="mt-4">
+                            <p className="text-xs text-gray-400 font-serif mb-2">Scheme Description</p>
+                            <p className="text-sm text-gray-300 font-serif whitespace-pre-wrap">{schemeData.description}</p>
+                          </div>
+                        )}
+
+                        {schemeData?.metadata?.fundAllocation && (
+                          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <p className="text-xs text-gray-400 font-serif mb-1">Loan Amount</p>
+                              <p className="text-sm text-gray-100 font-sans">₦{schemeData.metadata.fundAllocation.loanAmount || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400 font-serif mb-1">Loan Tenure</p>
+                              <p className="text-sm text-gray-100 font-sans">
+                                {schemeData.metadata.fundAllocation.loanTenureValue} {schemeData.metadata.fundAllocation.loanTenureUnit}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400 font-serif mb-1">Insurance Percentage</p>
+                              <p className="text-sm text-gray-100 font-sans">{schemeData.metadata.fundAllocation.insurancePercentage || 'N/A'}%</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {requirements && (
+                        <div className="bg-accent-900/30 border border-accent-700 rounded-lg p-4">
+                          <h4 className="text-sm font-semibold text-accent-300 mb-2 font-sans">Requirements & Conditions</h4>
+                          <div
+                            className="text-sm text-gray-300 font-serif whitespace-pre-wrap"
+                            dangerouslySetInnerHTML={{ __html: requirements }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Submission Form */}
+                    <div className="border-t border-primary-700 pt-6">
+                      <h3 className="text-lg font-semibold text-gray-100 mb-4 font-sans">Your Insurance Proposal</h3>
+
+                      <div className="space-y-4">
+                        {/* Dynamic Premium Input based on scheme's premium type */}
+                        {(() => {
+                          const premiumType = schemeData?.insuranceCompanyPremiumType || 'rate';
+
+                          if (premiumType === 'fixed') {
+                            return (
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                                  Premium Fixed Amount (₦) <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={insuranceSubmissionData.premiumFixedAmount}
+                                  onChange={(e) => setInsuranceSubmissionData(prev => ({ ...prev, premiumFixedAmount: e.target.value }))}
+                                  placeholder="e.g., 50000000"
+                                  className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                                />
+                                <p className="text-xs text-gray-400 mt-1 font-serif">Enter the fixed premium amount in Naira you will charge for this scheme.</p>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                                  Premium Rate (%) <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  max="100"
+                                  value={insuranceSubmissionData.premiumRate}
+                                  onChange={(e) => setInsuranceSubmissionData(prev => ({ ...prev, premiumRate: e.target.value }))}
+                                  placeholder="e.g., 4.5"
+                                  className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                                />
+                                <p className="text-xs text-gray-400 mt-1 font-serif">Enter the premium rate percentage you will charge for this scheme.</p>
+                              </div>
+                            );
+                          }
+                        })()}
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                            Insurance Policies <span className="text-red-500">*</span>
+                          </label>
+                          <textarea
+                            value={insuranceSubmissionData.insurancePolicies}
+                            onChange={(e) => setInsuranceSubmissionData(prev => ({ ...prev, insurancePolicies: e.target.value }))}
+                            rows={6}
+                            placeholder="Describe the insurance policies you will provide, coverage details, terms and conditions..."
+                            className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                            Supporting Documents (Optional)
+                          </label>
+                          <div className="space-y-3">
+                            {insuranceSubmissionData.documents.map((doc, index) => (
+                              <div key={index} className="flex gap-2 items-start">
+                                <input
+                                  type="file"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0] || null;
+                                    const updated = [...insuranceSubmissionData.documents];
+                                    updated[index] = {
+                                      ...updated[index],
+                                      fileName: file?.name || '',
+                                      file: file
+                                    };
+                                    setInsuranceSubmissionData(prev => ({ ...prev, documents: updated }));
+                                  }}
+                                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                  className="flex-1 px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent-500 file:text-white hover:file:bg-accent-600"
+                                />
+                                <input
+                                  type="text"
+                                  value={doc.description}
+                                  onChange={(e) => {
+                                    const updated = [...insuranceSubmissionData.documents];
+                                    updated[index].description = e.target.value;
+                                    setInsuranceSubmissionData(prev => ({ ...prev, documents: updated }));
+                                  }}
+                                  placeholder="Description"
+                                  className="flex-1 px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = insuranceSubmissionData.documents.filter((_, i) => i !== index);
+                                    setInsuranceSubmissionData(prev => ({ ...prev, documents: updated }));
+                                  }}
+                                  className="px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                  ✖
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => setInsuranceSubmissionData(prev => ({
+                                ...prev,
+                                documents: [...prev.documents, { fileName: '', description: '', file: null }]
+                              }))}
+                              className="px-4 py-2 rounded-md bg-primary-600 hover:bg-primary-500 text-gray-200 text-sm"
+                            >
+                              + Add Document
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-4 pt-4 border-t border-primary-600">
+                          <button
+                            onClick={handleCloseForm}
+                            className="px-6 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 font-medium"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleInsuranceSubmissionConfirm}
+                            disabled={
+                              isSubmitting ||
+                              !insuranceSubmissionData.insurancePolicies.trim() ||
+                              (schemeData?.premiumType === 'percentage' && !insuranceSubmissionData.premiumRate.trim()) ||
+                              (schemeData?.premiumType === 'fixed' && !insuranceSubmissionData.premiumFixedAmount.trim())
+                            }
+                            className="px-6 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isSubmitting ? 'Submitting...' : 'Submit for Review'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // For non-workflow schemes, show regular form (keep existing behavior)
+          return null; // Will be handled by the old form below
+        })()}
+
+        {!selectedScheme && (
           <>
             {/* Available Schemes Section */}
             <div className="card">
@@ -790,8 +1291,8 @@ const SchemeApplication: React.FC = () => {
                   <p className="text-sm text-gray-400 font-serif">Select a scheme below to apply. Complete the multi-step application form to submit your application.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <select 
-                    value={stateFilter} 
+                  <select
+                    value={stateFilter}
                     onChange={(e) => setStateFilter(e.target.value)}
                     className="w-full sm:w-auto px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
                   >
@@ -814,44 +1315,44 @@ const SchemeApplication: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {schemesLoading ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-gray-400 font-serif">Loading schemes...</p>
                 </div>
               ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paginatedSchemes.map((scheme) => (
-                  <div key={scheme.id} className="bg-primary-700 rounded-lg border border-primary-600 p-4 hover:border-accent-500 transition-colors flex flex-col">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold font-sans text-gray-100 mb-2">{scheme.title}</h3>
-                        <p className="text-sm text-gray-300 font-serif mb-3">{scheme.description}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedSchemes.map((scheme) => (
+                    <div key={scheme.id} className="bg-primary-700 rounded-lg border border-primary-600 p-4 hover:border-accent-500 transition-colors flex flex-col">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold font-sans text-gray-100 mb-2">{scheme.title}</h3>
+                          <p className="text-sm text-gray-300 font-serif mb-3">{scheme.description}</p>
+                        </div>
                       </div>
+                      <div className="space-y-2 mb-4 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400 font-serif">Amount:</span>
+                          <span className="text-sm font-medium text-accent-400 font-sans">{scheme.amount}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400 font-serif">Category:</span>
+                          <span className="text-sm text-gray-300 font-serif">{scheme.category}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400 font-serif">Deadline:</span>
+                          <span className="text-sm text-gray-300 font-serif">{new Date(scheme.deadline).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleApplyToScheme(scheme.id)}
+                        className="w-full px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-md font-medium transition-colors mt-auto"
+                      >
+                        Apply Now
+                      </button>
                     </div>
-                    <div className="space-y-2 mb-4 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 font-serif">Amount:</span>
-                        <span className="text-sm font-medium text-accent-400 font-sans">{scheme.amount}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 font-serif">Category:</span>
-                        <span className="text-sm text-gray-300 font-serif">{scheme.category}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 font-serif">Deadline:</span>
-                        <span className="text-sm text-gray-300 font-serif">{new Date(scheme.deadline).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleApplyToScheme(scheme.id)}
-                      className="w-full px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-md font-medium transition-colors mt-auto"
-                    >
-                      Apply Now
-                    </button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
               )}
 
               {!schemesLoading && paginatedSchemes.length === 0 && (
@@ -882,78 +1383,6 @@ const SchemeApplication: React.FC = () => {
               )}
             </div>
           </>
-        ) : (
-          <>
-            {/* Application Form */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-xl sm:text-2xl font-bold font-sans text-gray-100">Scheme Application</h1>
-                <button
-                  onClick={handleCloseForm}
-                  className="px-4 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 font-medium"
-                >
-                  ← Back to Schemes
-                </button>
-              </div>
-              
-              {selectedScheme && (
-                <div className="mb-4 p-3 bg-primary-700 rounded-lg border border-primary-600">
-                  <p className="text-sm text-gray-400 font-serif">Applying for: <span className="text-accent-400 font-medium">{availableSchemes.find(s => s.id === selectedScheme)?.title}</span></p>
-                </div>
-              )}
-
-              {/* Progress Bar */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400 font-serif">Step {currentStep} of 5</span>
-                  <span className="text-sm text-gray-400 font-serif">{Math.round((currentStep / 5) * 100)}%</span>
-                </div>
-                <div className="w-full bg-primary-700 rounded-full h-2">
-                  <div
-                    className="bg-accent-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(currentStep / 5) * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Step Content */}
-              <div className="mb-6">
-                {currentStep === 1 && renderStep1()}
-                {currentStep === 2 && renderStep2()}
-                {currentStep === 3 && renderStep3()}
-                {currentStep === 4 && renderStep4()}
-                {currentStep === 5 && renderStep5()}
-              </div>
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between gap-4">
-                <button
-                  onClick={handlePrevious}
-                  disabled={currentStep === 1}
-                  className="px-6 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                  Previous
-                </button>
-                {currentStep < 5 ? (
-                  <button
-                    onClick={handleNext}
-                    disabled={!validateStep(currentStep)}
-                    className="px-6 py-2 rounded-md bg-accent-500 text-white hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                  >
-                    Next
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="px-6 py-2 rounded-md bg-accent-500 text-white hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                  >
-                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
-                  </button>
-                )}
-              </div>
-            </div>
-          </>
         )}
 
         {/* Powered by */}
@@ -961,6 +1390,35 @@ const SchemeApplication: React.FC = () => {
           Powered by Mc. George
         </div>
       </div>
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-primary-800 rounded-lg p-6 max-w-md w-full border border-primary-600">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">⚠️</div>
+              <h3 className="text-xl font-bold font-sans text-gray-100 mb-2">Confirm Submission</h3>
+              <p className="text-sm text-gray-300 font-serif">
+                Are you sure you want to submit your premium rates and insurance policies for this scheme? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-center gap-3 mt-6">
+              <button
+                onClick={() => setShowSubmitConfirmation(false)}
+                className="px-6 py-2 rounded-md bg-primary-700 text-gray-300 border border-primary-600 hover:bg-primary-600 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleInsuranceSubmission}
+                className="px-6 py-2 rounded-md bg-accent-500 text-white hover:bg-accent-600 font-medium"
+              >
+                Yes, Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Final Confirmation Modal */}
       {showConfirmation && (

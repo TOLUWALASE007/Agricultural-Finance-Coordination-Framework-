@@ -5,10 +5,10 @@ import { useNotifications } from '../../../../context/NotificationContext';
 
 const RepresentativeExtension: React.FC = () => {
   const sidebarItems = [
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard', 
-      icon: '🏠', 
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: '🏠',
       href: '/portal/coordinating-agency',
       hasDropdown: true,
       dropdownItems: [
@@ -18,16 +18,16 @@ const RepresentativeExtension: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { 
-      id: 'state-monitoring', 
-      name: 'State Monitoring Team', 
-      icon: '🗺️', 
+    {
+      id: 'me-team',
+      name: 'M&E Team',
+      icon: '📋',
       href: '/portal/coordinating-agency/monitoring/state'
     },
-    { 
-      id: 'representative-body', 
-      name: 'Representative Body', 
-      icon: '🏛️', 
+    {
+      id: 'representative-body',
+      name: 'Representative Body',
+      icon: '🏛️',
       href: '/portal/coordinating-agency/representative',
       hasDropdown: true,
       dropdownItems: [
@@ -36,20 +36,20 @@ const RepresentativeExtension: React.FC = () => {
         { id: 'rep-ngos', name: 'NGOs', icon: '🤝', href: '/portal/coordinating-agency/representative/ngos' }
       ]
     },
-    { 
-      id: 'applicants', 
-      name: 'Applicants', 
-      icon: '📝', 
+    {
+      id: 'applicants',
+      name: 'Applicants',
+      icon: '📝',
       href: '/portal/coordinating-agency/applicants',
       hasDropdown: true,
       dropdownItems: [
         { id: 'fund-provider', name: 'Fund Provider', icon: '💼', href: '/portal/coordinating-agency/applicants/fund-provider' },
         { id: 'pfis', name: 'PFIs', icon: '🏦', href: '/portal/coordinating-agency/applicants/pfis' },
         { id: 'insurance-companies', name: 'Insurance Companies', icon: '🛡️', href: '/portal/coordinating-agency/applicants/insurance-companies' },
-        { 
-          id: 'fund-beneficiaries', 
-          name: 'Fund Beneficiaries', 
-          icon: '👥', 
+        {
+          id: 'fund-beneficiaries',
+          name: 'Fund Beneficiaries',
+          icon: '👥',
           href: '/portal/coordinating-agency/fund-beneficiaries',
           hasDropdown: true,
           dropdownItems: [
@@ -61,10 +61,10 @@ const RepresentativeExtension: React.FC = () => {
         }
       ]
     },
-    { 
-      id: 'stakeholders', 
-      name: 'Department', 
-      icon: '🤝', 
+    {
+      id: 'stakeholders',
+      name: 'Department',
+      icon: '🤝',
       href: '/portal/coordinating-agency/stakeholders',
       hasDropdown: true,
       dropdownItems: [
@@ -100,7 +100,7 @@ const RepresentativeExtension: React.FC = () => {
     title: string;
     documents: { label: string; name: string; type: string }[];
   } | null>(null);
-  
+
   // State for Restrict Access
   const [restrictSearch, setRestrictSearch] = useState('');
   const [restrictPage, setRestrictPage] = useState(1);
@@ -112,7 +112,7 @@ const RepresentativeExtension: React.FC = () => {
   const [restrictReason, setRestrictReason] = useState('');
   const [restrictRemarks, setRestrictRemarks] = useState('');
   const [restrictToast, setRestrictToast] = useState<string | null>(null);
-  
+
   // State for Approval Rights
   const [approvalRightsSearch, setApprovalRightsSearch] = useState('');
   const [approvalRightsPage, setApprovalRightsPage] = useState(1);
@@ -121,7 +121,7 @@ const RepresentativeExtension: React.FC = () => {
   const [showApprovalRightsMoreInfo, setShowApprovalRightsMoreInfo] = useState<string | null>(null);
   const [showApprovalRightsHistory, setShowApprovalRightsHistory] = useState(false);
   const [showRightsModal, setShowRightsModal] = useState<string | null>(null);
-  
+
   // State for Reports (preserved)
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -135,32 +135,32 @@ const RepresentativeExtension: React.FC = () => {
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [reportTitle, setReportTitle] = useState('');
-  
+
   const { addNotification } = useNotifications();
 
   const pageSize = 3;
   const nigerianStates = [
-    'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT Abuja','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara'
+    'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT Abuja', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
   ];
-  
+
   // Get all Extension Organization records
   const [extensionOrganizationRecords, setExtensionOrganizationRecords] = useState<ExtensionOrganizationRecord[]>([]);
-  
+
   useEffect(() => {
     const records = getExtensionOrganizations();
     setExtensionOrganizationRecords(records);
   }, []);
-  
+
   // Refresh records when status changes
   const refreshExtensionOrganizations = () => {
     const records = getExtensionOrganizations();
     setExtensionOrganizationRecords(records);
   };
-  
+
   // Helper function to render full application view for Extension Organization (6 steps)
   const renderFullApplicationView = (applicationData: any) => {
     if (!applicationData) return null;
-    
+
     const buildEntries = (source: Record<string, any>, labels: Record<string, string>) =>
       Object.entries(labels)
         .map(([key, label]) => {
@@ -172,13 +172,13 @@ const RepresentativeExtension: React.FC = () => {
           return { label, value: trimmed };
         })
         .filter(Boolean) as { label: string; value: string }[];
-    
+
     const deriveDocumentType = (fileName: string) => {
       if (!fileName) return 'Unknown';
       const extension = fileName.split('.').pop();
       return extension ? extension.toUpperCase() : 'Unknown';
     };
-    
+
     const openDocuments = (title: string, docs: { label: string; name: string }[]) => {
       if (!docs.length) return;
       setDocumentModal({
@@ -189,7 +189,7 @@ const RepresentativeExtension: React.FC = () => {
         })),
       });
     };
-    
+
     const renderGroup = (
       title: string,
       entries: { label: string; value: string }[],
@@ -214,21 +214,21 @@ const RepresentativeExtension: React.FC = () => {
         )}
       </div>
     );
-    
+
     const step1 = applicationData.step1 ?? {};
     const step2 = applicationData.step2 ?? {};
     const step3 = applicationData.step3 ?? {};
     const step4 = applicationData.step4 ?? {};
     const step5 = applicationData.step5 ?? {};
     const step6 = applicationData.step6 ?? {};
-    
+
     const personalDetailsEntries = buildEntries(step1, {
       fullName: 'Full Name',
       position: 'Position',
       gender: 'Gender',
       birthDate: 'Date of Birth',
     });
-    
+
     const contactInformationEntries = buildEntries(step2, {
       email: 'Email Address',
       phone: 'Phone Number',
@@ -238,7 +238,7 @@ const RepresentativeExtension: React.FC = () => {
       state: 'State',
       country: 'Country',
     });
-    
+
     const verificationEntries = buildEntries(step3, {
       idType: 'ID Type',
       idNumber: 'ID Number',
@@ -247,7 +247,7 @@ const RepresentativeExtension: React.FC = () => {
       emergencyContactPhone: 'Emergency Contact Phone',
       emergencyRelationship: 'Relationship with Emergency Contact',
     });
-    
+
     const basicInformationEntries = buildEntries(step4, {
       organizationName: 'Organization Name',
       registrationNumber: 'Registration Number / CAC Number',
@@ -256,7 +256,7 @@ const RepresentativeExtension: React.FC = () => {
       industry: 'Industry / Sector',
       missionStatement: 'Short Description / Mission Statement',
     });
-    
+
     const addressInformationEntries = buildEntries(step5, {
       headquartersAddress: 'Headquarters Address',
       hqCity: 'Headquarters City',
@@ -270,7 +270,7 @@ const RepresentativeExtension: React.FC = () => {
       twitter: 'X Handle',
       instagram: 'Instagram Handle',
     });
-    
+
     const operationsEntries = buildEntries(
       {
         numEmployees: step6.numEmployees,
@@ -285,24 +285,24 @@ const RepresentativeExtension: React.FC = () => {
         partnershipDetails: 'Partnership Details',
       }
     );
-    
+
     const verificationDocuments =
       step3?.idDocumentName && step3.idDocumentName !== 'Not provided'
         ? [{ label: 'Government-issued ID', name: String(step3.idDocumentName) }]
         : [];
-    
+
     const operationsDocuments = [
       step6?.organizationLogoName && step6.organizationLogoName !== 'Not provided'
         ? { label: 'Organization Logo', name: String(step6.organizationLogoName) }
         : null,
       step6?.certificateOfIncorporationName && step6.certificateOfIncorporationName !== 'Not provided'
         ? {
-            label: 'Certificate of Incorporation / Registration',
-            name: String(step6.certificateOfIncorporationName),
-          }
+          label: 'Certificate of Incorporation / Registration',
+          name: String(step6.certificateOfIncorporationName),
+        }
         : null,
     ].filter(Boolean) as { label: string; name: string }[];
-    
+
     return (
       <div className="mt-4 space-y-6 bg-primary-800 rounded-md p-4">
         <div className="space-y-4">
@@ -351,11 +351,11 @@ const RepresentativeExtension: React.FC = () => {
       // Normalize formData to ensure areasOfOperation is an array
       const normalizedFormData = {
         ...record.formData,
-        areasOfOperation: Array.isArray(record.formData.areasOfOperation) 
-          ? record.formData.areasOfOperation 
+        areasOfOperation: Array.isArray(record.formData.areasOfOperation)
+          ? record.formData.areasOfOperation
           : (record.formData.areasOfOperation ? [record.formData.areasOfOperation] : [])
       };
-      
+
       return {
         id: record.id,
         name: record.formData.organizationName || record.formData.fullName,
@@ -378,7 +378,7 @@ const RepresentativeExtension: React.FC = () => {
       };
     });
   }, [extensionOrganizationRecords]);
-  
+
   // Filters and pagination (Approve) - ALL Extension Organizations
   const filteredApproveUsers = useMemo(() => {
     return extensionOrganizations.filter(user => {
@@ -388,14 +388,14 @@ const RepresentativeExtension: React.FC = () => {
       return matchesState && matchesSearch;
     });
   }, [extensionOrganizations, approveStateFilter, approveSearch]);
-  
+
   const paginatedApproveUsers = useMemo(() => {
     const startIndex = (approvePage - 1) * pageSize;
     return filteredApproveUsers.slice(startIndex, startIndex + pageSize);
   }, [filteredApproveUsers, approvePage]);
-  
+
   const totalApprovePages = Math.ceil(filteredApproveUsers.length / pageSize);
-  
+
   const approveAllOnPageSelected = paginatedApproveUsers.length > 0 && paginatedApproveUsers.every(u => selectedApproveUsers.includes(u.id));
   const toggleApproveSelectAll = () => {
     if (approveAllOnPageSelected) {
@@ -405,7 +405,7 @@ const RepresentativeExtension: React.FC = () => {
       setSelectedApproveUsers(prev => [...prev, ...toAdd]);
     }
   };
-  
+
   // Filters and pagination (Restrict) - ONLY Approved (verified) Extension Organizations
   const filteredRestrictUsers = useMemo(() => {
     return extensionOrganizations
@@ -417,14 +417,14 @@ const RepresentativeExtension: React.FC = () => {
         return matchesState && matchesSearch;
       });
   }, [extensionOrganizations, restrictStateFilter, restrictSearch]);
-  
+
   const paginatedRestrictUsers = useMemo(() => {
     const startIndex = (restrictPage - 1) * pageSize;
     return filteredRestrictUsers.slice(startIndex, startIndex + pageSize);
   }, [filteredRestrictUsers, restrictPage]);
-  
+
   const totalRestrictPages = Math.ceil(filteredRestrictUsers.length / pageSize);
-  
+
   const restrictAllOnPageSelected = paginatedRestrictUsers.length > 0 && paginatedRestrictUsers.every(u => selectedRestrictUsers.includes(u.id));
   const toggleRestrictSelectAll = () => {
     if (restrictAllOnPageSelected) {
@@ -434,7 +434,7 @@ const RepresentativeExtension: React.FC = () => {
       setSelectedRestrictUsers(prev => [...prev, ...toAdd]);
     }
   };
-  
+
   // Filter for Approval Rights - Extension Organizations who applied for schemes (using notifications)
   type ApprovalRightsUser = {
     id: string;
@@ -445,20 +445,20 @@ const RepresentativeExtension: React.FC = () => {
     organization: string;
     canApprove: boolean;
   };
-  
+
   const filteredApprovalRightsUsers: ApprovalRightsUser[] = useMemo(() => {
     // This will be populated from notifications for scheme applications
     // For now, return empty array - this card is preserved for scheme applications
     return [] as ApprovalRightsUser[];
   }, []);
-  
+
   const paginatedApprovalRightsUsers = useMemo(() => {
     const startIndex = (approvalRightsPage - 1) * pageSize;
     return filteredApprovalRightsUsers.slice(startIndex, startIndex + pageSize);
   }, [filteredApprovalRightsUsers, approvalRightsPage]);
-  
+
   const totalApprovalRightsPages = Math.ceil(filteredApprovalRightsUsers.length / pageSize);
-  
+
   const rightsAllOnPageSelected = filteredApprovalRightsUsers.length > 0 && filteredApprovalRightsUsers.every(u => selectedApprovalRightsUsers.includes(u.id));
   const toggleRightsSelectAll = () => {
     if (rightsAllOnPageSelected) {
@@ -468,7 +468,7 @@ const RepresentativeExtension: React.FC = () => {
       setSelectedApprovalRightsUsers(prev => [...prev, ...toAdd]);
     }
   };
-  
+
   // Reset pages on filter/search change
   useEffect(() => { setApprovePage(1); }, [approveSearch, approveStateFilter]);
   useEffect(() => { setRestrictPage(1); }, [restrictSearch, restrictStateFilter]);
@@ -477,40 +477,40 @@ const RepresentativeExtension: React.FC = () => {
   const handleApproveCheckboxChange = (userId: string) => setSelectedApproveUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
   const handleRestrictCheckboxChange = (userId: string) => setSelectedRestrictUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
   const handleApprovalRightsCheckboxChange = (userId: string) => setSelectedApprovalRightsUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
-  
+
   const handleMassApprove = () => {
     if (selectedApproveUsers.length === 0) return;
     alert(`Approved ${selectedApproveUsers.length} Extension Organization applications`);
     setSelectedApproveUsers([]);
     refreshExtensionOrganizations();
   };
-  
+
   // Process approval/rejection
   const processApproval = (userId: string) => {
     if (!approvalDecision) return;
-    
+
     const user = extensionOrganizations.find(u => u.id === userId);
     if (!user || !user.record) return;
-    
+
     const trimmedRemarks = approvalRemarks.trim();
     const isApproved = approvalDecision === 'approve';
-    
+
     if (!isApproved && !trimmedRemarks) {
       alert('Please provide a reason for rejecting this Extension Organization.');
       return;
     }
-    
+
     // Update Extension Organization status
     updateExtensionOrganizationStatus(user.record.id, isApproved ? 'verified' : 'unverified', {
       rejectionReason: isApproved ? undefined : trimmedRemarks,
       pendingNotificationId: null,
     });
-    
+
     // Send notification to Extension Organization
     const message = isApproved
       ? 'Your registration has been approved. You now have full access.'
       : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
-    
+
     addNotification({
       role: '🏛️ Coordinating Agency',
       targetRole: 'extension',
@@ -520,7 +520,7 @@ const RepresentativeExtension: React.FC = () => {
         extensionOrganizationId: user.record.id,
       },
     });
-    
+
     refreshExtensionOrganizations();
     setShowApprovalModal(null);
     setApprovalDecision('');
@@ -531,59 +531,59 @@ const RepresentativeExtension: React.FC = () => {
     setFinalApprovalNotice(`✅ Decision ${isApproved ? 'Approved' : 'Rejected'} submitted for ${user.name}`);
     setTimeout(() => setFinalApprovalNotice(null), 3000);
   };
-  
+
   const handleApprovalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!showApprovalModal || !approvalDecision) return;
-    
+
     if (approvalDecision === 'approve' && !showApprovalConfirmation) {
       setShowApprovalConfirmation(true);
       return;
     }
-    
+
     if (approvalDecision === 'reject' && !showRejectionConfirmation) {
       setShowRejectionConfirmation(true);
       return;
     }
-    
+
     processApproval(showApprovalModal);
   };
-  
+
   const handleConfirmApproval = () => {
     setShowApprovalConfirmation(false);
     if (showApprovalModal) {
       processApproval(showApprovalModal);
     }
   };
-  
+
   const handleConfirmRejection = () => {
     setShowRejectionConfirmation(false);
     if (showApprovalModal) {
       processApproval(showApprovalModal);
     }
   };
-  
+
   const handleCancelApproval = () => {
     setShowApprovalConfirmation(false);
     setApprovalDecision('');
   };
-  
+
   const handleCancelRejection = () => {
     setShowRejectionConfirmation(false);
     setApprovalDecision('');
   };
-  
+
   // Handle restrict access
   const handleRestrictAccess = (userId: string) => {
     const user = extensionOrganizations.find(u => u.id === userId);
     if (!user || !user.record) return;
-    
+
     // Change status from verified to unverified
     updateExtensionOrganizationStatus(user.record.id, 'unverified', {
       rejectionReason: restrictRemarks || 'Access restricted by Coordinating Agency',
       pendingNotificationId: null,
     });
-    
+
     // Send notification
     addNotification({
       role: '🏛️ Coordinating Agency',
@@ -594,7 +594,7 @@ const RepresentativeExtension: React.FC = () => {
         extensionOrganizationId: user.record.id,
       },
     });
-    
+
     refreshExtensionOrganizations();
     setShowRestrictModal(null);
     setRestrictReason('');
@@ -602,13 +602,13 @@ const RepresentativeExtension: React.FC = () => {
     setRestrictToast(`🚫 Access restricted for ${user.name}`);
     setTimeout(() => setRestrictToast(null), 3000);
   };
-  
+
   const handleMassRestrict = () => {
     if (selectedRestrictUsers.length === 0) return;
     alert(`Restricted access for ${selectedRestrictUsers.length} Extension Organization users`);
     setSelectedRestrictUsers([]);
   };
-  
+
   const handleMassApprovalRights = () => {
     if (selectedApprovalRightsUsers.length === 0) return;
     alert(`Updated approval rights for ${selectedApprovalRightsUsers.length} Extension Organization users`);
@@ -660,7 +660,7 @@ const RepresentativeExtension: React.FC = () => {
                   {filteredApproveUsers.filter(u => u.status === 'unverified').length} Pending
                 </span>
               </div>
-              <button onClick={() => {}} className="btn-secondary text-xs px-3 py-1">📜 View History</button>
+              <button onClick={() => { }} className="btn-secondary text-xs px-3 py-1">📜 View History</button>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
@@ -689,7 +689,7 @@ const RepresentativeExtension: React.FC = () => {
             {selectedApproveUsers.length > 0 && (
               <div className="flex items-center justify-between p-2 bg-accent-600/20 border border-accent-600 rounded-md">
                 <span className="text-sm text-gray-200 font-sans">{selectedApproveUsers.length} selected</span>
-                <button 
+                <button
                   onClick={handleMassApprove}
                   className="btn-primary text-xs px-3 py-1"
                 >
@@ -698,7 +698,7 @@ const RepresentativeExtension: React.FC = () => {
               </div>
             )}
           </div>
-            
+
           <div className="flex-1 flex flex-col">
             <div className="space-y-3 flex-1">
               {paginatedApproveUsers.length > 0 ? (
@@ -727,11 +727,10 @@ const RepresentativeExtension: React.FC = () => {
                               <p className="text-sm font-medium text-gray-100 font-sans">{user.name}</p>
                               <p className="text-xs text-gray-400 font-serif">{user.email}</p>
                             </div>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              user.status === 'verified' 
-                                ? 'bg-green-500 text-white' 
-                                : 'bg-yellow-500 text-white'
-                            }`}>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'verified'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-yellow-500 text-white'
+                              }`}>
                               {user.status === 'verified' ? 'Approved' : 'Pending'}
                             </span>
                           </div>
@@ -747,13 +746,13 @@ const RepresentativeExtension: React.FC = () => {
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            <button 
+                            <button
                               onClick={() => setShowApproveMoreInfo(user.id)}
                               className="text-xs text-accent-400 hover:text-accent-300 font-medium"
                             >
                               📋 More Info
                             </button>
-                            <button 
+                            <button
                               onClick={() => setShowApprovalModal(user.id)}
                               className="text-xs bg-accent-600 hover:bg-accent-700 text-white px-3 py-1 rounded transition-colors font-medium"
                             >
@@ -776,16 +775,16 @@ const RepresentativeExtension: React.FC = () => {
             {/* Pagination */}
             {filteredApproveUsers.length > pageSize && (
               <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-                <button 
-                  onClick={() => setApprovePage(prev => Math.max(prev - 1, 1))} 
+                <button
+                  onClick={() => setApprovePage(prev => Math.max(prev - 1, 1))}
                   disabled={approvePage === 1}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ←
                 </button>
                 <span className="text-xs text-gray-400">{approvePage} of {totalApprovePages}</span>
-                <button 
-                  onClick={() => setApprovePage(prev => Math.min(prev + 1, totalApprovePages))} 
+                <button
+                  onClick={() => setApprovePage(prev => Math.min(prev + 1, totalApprovePages))}
                   disabled={approvePage === totalApprovePages}
                   className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -859,14 +858,14 @@ const RepresentativeExtension: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => setShowRestrictMoreInfo(user.id)} 
+                        <button
+                          onClick={() => setShowRestrictMoreInfo(user.id)}
                           className="btn-secondary text-sm px-3 py-1"
                         >
                           📋 More Info
                         </button>
-                        <button 
-                          onClick={() => setShowRestrictModal(user.id)} 
+                        <button
+                          onClick={() => setShowRestrictModal(user.id)}
                           className="btn-primary text-sm px-3 py-1"
                         >
                           🚫 Restrict Access
@@ -883,20 +882,20 @@ const RepresentativeExtension: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Pagination */}
           {filteredRestrictUsers.length > pageSize && (
             <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-              <button 
-                onClick={() => setRestrictPage(prev => Math.max(prev - 1, 1))} 
+              <button
+                onClick={() => setRestrictPage(prev => Math.max(prev - 1, 1))}
                 disabled={restrictPage === 1}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ←
               </button>
               <span className="text-xs text-gray-400">{restrictPage} of {totalRestrictPages}</span>
-              <button 
-                onClick={() => setRestrictPage(prev => Math.min(prev + 1, totalRestrictPages))} 
+              <button
+                onClick={() => setRestrictPage(prev => Math.min(prev + 1, totalRestrictPages))}
                 disabled={restrictPage === totalRestrictPages}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -953,9 +952,8 @@ const RepresentativeExtension: React.FC = () => {
                           <p className="text-gray-100 font-sans font-semibold">{user.name}</p>
                           <p className="text-gray-400 text-sm font-serif">{user.email}</p>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.canApprove ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.canApprove ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
+                          }`}>
                           {user.canApprove ? 'Can Approve' : 'No Approval Rights'}
                         </span>
                       </div>
@@ -971,14 +969,14 @@ const RepresentativeExtension: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => setShowApprovalRightsMoreInfo(user.id)} 
+                        <button
+                          onClick={() => setShowApprovalRightsMoreInfo(user.id)}
                           className="btn-secondary text-sm px-3 py-1"
                         >
                           📋 More Info
                         </button>
-                        <button 
-                          onClick={() => setShowRightsModal(user.id)} 
+                        <button
+                          onClick={() => setShowRightsModal(user.id)}
                           className="btn-primary text-sm px-3 py-1"
                         >
                           ✅ Apply Changes
@@ -995,20 +993,20 @@ const RepresentativeExtension: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Pagination */}
           {filteredApprovalRightsUsers.length > pageSize && (
             <div className="flex items-center justify-center space-x-2 mt-4 pt-4">
-              <button 
-                onClick={() => setApprovalRightsPage(prev => Math.max(prev - 1, 1))} 
+              <button
+                onClick={() => setApprovalRightsPage(prev => Math.max(prev - 1, 1))}
                 disabled={approvalRightsPage === 1}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ←
               </button>
               <span className="text-xs text-gray-400">{approvalRightsPage} of {totalApprovalRightsPages}</span>
-              <button 
-                onClick={() => setApprovalRightsPage(prev => Math.min(prev + 1, totalApprovalRightsPages))} 
+              <button
+                onClick={() => setApprovalRightsPage(prev => Math.min(prev + 1, totalApprovalRightsPages))}
                 disabled={approvalRightsPage === totalApprovalRightsPages}
                 className="btn-secondary text-sm p-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -1027,7 +1025,7 @@ const RepresentativeExtension: React.FC = () => {
             </div>
             <div>
               <label className="block text-xs text-gray-300 mb-1">State</label>
-              <select value={stateFilter} onChange={(e)=>{ setStateFilter(e.target.value); setPage(1); }} className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500">
+              <select value={stateFilter} onChange={(e) => { setStateFilter(e.target.value); setPage(1); }} className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500">
                 <option value="All">All</option>
                 {nigerianStates.map(st => (<option key={st} value={st}>{st}</option>))}
               </select>
@@ -1068,7 +1066,7 @@ const RepresentativeExtension: React.FC = () => {
 
           <div className="flex items-center justify-center gap-2 mt-4">
             <button onClick={() => setPage(Math.max(1, page - 1))} className="btn-secondary text-sm p-1" disabled={page === 1}>←</button>
-            <span className="text-gray-300 text-sm">Page {page} of {Math.max(totalPages,1)}</span>
+            <span className="text-gray-300 text-sm">Page {page} of {Math.max(totalPages, 1)}</span>
             <button onClick={() => setPage(page + 1)} className="btn-secondary text-sm p-1" disabled={page >= totalPages}>→</button>
           </div>
         </div>
@@ -1151,7 +1149,7 @@ const RepresentativeExtension: React.FC = () => {
                   </div>
                   <button onClick={() => setShowApproveMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                 </div>
-                
+
                 {/* Application Details Section */}
                 <div className="space-y-4 mb-6">
                   <div className="bg-primary-800 rounded-md p-4">
@@ -1181,7 +1179,7 @@ const RepresentativeExtension: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Contact Person Information */}
                   <div className="bg-primary-800 rounded-md p-4">
                     <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -1213,7 +1211,7 @@ const RepresentativeExtension: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* View Full Application Section */}
                 {user.applicationData && (
                   <div className="mb-6 border-t border-primary-700 pt-4">
@@ -1228,11 +1226,11 @@ const RepresentativeExtension: React.FC = () => {
                         {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                       </span>
                     </button>
-                    
+
                     {showFullApplication && renderFullApplicationView(user.applicationData)}
                   </div>
                 )}
-                
+
                 <div className="flex justify-end">
                   <button
                     onClick={() => { setShowApproveMoreInfo(null); setShowApprovalModal(user.id); }}
@@ -1264,7 +1262,7 @@ const RepresentativeExtension: React.FC = () => {
                   </div>
                   <button onClick={() => setShowApprovalModal(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                 </div>
-                
+
                 {/* Application Details Section */}
                 <div className="space-y-4 mb-6">
                   <div className="bg-primary-800 rounded-md p-4">
@@ -1294,7 +1292,7 @@ const RepresentativeExtension: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Contact Person Information */}
                   <div className="bg-primary-800 rounded-md p-4">
                     <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -1326,7 +1324,7 @@ const RepresentativeExtension: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* View Full Application Section */}
                 {user.applicationData && (
                   <div className="mb-6 border-t border-primary-700 pt-4">
@@ -1341,18 +1339,18 @@ const RepresentativeExtension: React.FC = () => {
                         {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                       </span>
                     </button>
-                    
+
                     {showFullApplication && renderFullApplicationView(user.applicationData)}
                   </div>
                 )}
-                
+
                 {/* Approval Form */}
                 <form onSubmit={handleApprovalSubmit} className="space-y-4 border-t border-primary-700 pt-4">
                   <div>
                     <label className="block text-sm text-gray-300 font-serif mb-1">Decision</label>
-                    <select 
-                      value={approvalDecision} 
-                      onChange={(e) => setApprovalDecision(e.target.value)} 
+                    <select
+                      value={approvalDecision}
+                      onChange={(e) => setApprovalDecision(e.target.value)}
                       className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
                       required
                     >
@@ -1365,22 +1363,22 @@ const RepresentativeExtension: React.FC = () => {
                     <label className="block text-sm text-gray-300 font-serif mb-1">
                       {approvalDecision === 'reject' ? 'Reason for Rejection' : 'Remarks'}
                     </label>
-                    <textarea 
-                      value={approvalRemarks} 
-                      onChange={(e) => setApprovalRemarks(e.target.value)} 
-                      rows={3} 
-                      className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600" 
-                      placeholder={approvalDecision === 'reject' ? 'Provide the reason for rejection' : 'Add remarks (optional)'} 
+                    <textarea
+                      value={approvalRemarks}
+                      onChange={(e) => setApprovalRemarks(e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600"
+                      placeholder={approvalDecision === 'reject' ? 'Provide the reason for rejection' : 'Add remarks (optional)'}
                       required={approvalDecision === 'reject'}
                     />
                   </div>
                   <div className="flex justify-end gap-2">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => {
                         setShowApprovalModal(null);
                         setShowFullApplication(false);
-                      }} 
+                      }}
                       className="btn-secondary"
                     >
                       Cancel
@@ -1443,7 +1441,7 @@ const RepresentativeExtension: React.FC = () => {
                   </div>
                   <button onClick={() => setShowRestrictMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                 </div>
-                
+
                 {/* Application Details Section */}
                 <div className="space-y-4 mb-6">
                   <div className="bg-primary-800 rounded-md p-4">
@@ -1473,7 +1471,7 @@ const RepresentativeExtension: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Contact Person Information */}
                   <div className="bg-primary-800 rounded-md p-4">
                     <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Contact Person Information</h4>
@@ -1505,7 +1503,7 @@ const RepresentativeExtension: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* View Full Application Section */}
                 {user.applicationData && (
                   <div className="mb-6 border-t border-primary-700 pt-4">
@@ -1520,11 +1518,11 @@ const RepresentativeExtension: React.FC = () => {
                         {showFullApplication ? 'Hide detailed view' : 'Show detailed view'}
                       </span>
                     </button>
-                    
+
                     {showFullApplication && renderFullApplicationView(user.applicationData)}
                   </div>
                 )}
-                
+
                 <div className="flex justify-end">
                   <button
                     onClick={() => { setShowRestrictMoreInfo(null); setShowRestrictModal(user.id); }}
@@ -1597,7 +1595,7 @@ const RepresentativeExtension: React.FC = () => {
                   </div>
                   <button onClick={() => setShowApprovalRightsMoreInfo(null)} className="text-gray-400 hover:text-gray-200">✖</button>
                 </div>
-                
+
                 <div className="space-y-4 mb-6">
                   <div className="bg-primary-800 rounded-md p-4">
                     <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">User Information</h4>
@@ -1625,7 +1623,7 @@ const RepresentativeExtension: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end">
                   <button onClick={() => setShowApprovalRightsMoreInfo(null)} className="btn-secondary">Close</button>
                 </div>
@@ -1653,7 +1651,7 @@ const RepresentativeExtension: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={user.canApprove}
-                        onChange={() => {/* toggleApprovalRights(user.id) */}}
+                        onChange={() => {/* toggleApprovalRights(user.id) */ }}
                         className="accent-accent-500 w-4 h-4"
                       />
                       <span>Grant Approval Rights</span>
@@ -1744,5 +1742,6 @@ const RepresentativeExtension: React.FC = () => {
 };
 
 export default RepresentativeExtension;
+
 
 

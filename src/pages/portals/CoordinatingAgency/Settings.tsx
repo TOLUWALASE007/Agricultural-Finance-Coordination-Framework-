@@ -78,7 +78,7 @@ const Settings: React.FC = () => {
         { id: 'trainings', name: 'Trainings', icon: '📚', href: '/portal/coordinating-agency/trainings' }
       ]
     },
-    { id: 'state-monitoring', name: 'State Monitoring Team', icon: '🗺️', href: '/portal/coordinating-agency/monitoring/state' },
+    { id: 'me-team', name: 'M&E Team', icon: '📋', href: '/portal/coordinating-agency/monitoring/state' },
     {
       id: 'representative-body',
       name: 'Representative Body',
@@ -183,22 +183,20 @@ const Settings: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveSection('contact')}
-              className={`p-3 rounded-lg text-center transition-all duration-200 ${
-                activeSection === 'contact'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
-              }`}
+              className={`p-3 rounded-lg text-center transition-all duration-200 ${activeSection === 'contact'
+                ? 'bg-primary-500 text-white'
+                : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
+                }`}
             >
               <div className="font-medium font-sans">Contact Info</div>
             </button>
             <button
               type="button"
               onClick={() => setActiveSection('organization')}
-              className={`p-3 rounded-lg text-center transition-all duration-200 ${
-                activeSection === 'organization'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
-              }`}
+              className={`p-3 rounded-lg text-center transition-all duration-200 ${activeSection === 'organization'
+                ? 'bg-primary-500 text-white'
+                : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
+                }`}
             >
               <div className="font-medium font-sans">Organization Info</div>
             </button>
@@ -873,3 +871,4 @@ const Settings: React.FC = () => {
 };
 
 export default Settings;
+
