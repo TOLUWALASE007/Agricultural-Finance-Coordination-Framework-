@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import PortalLayout from '../../../components/PortalLayout';
 import { generateReport, showNotification } from '../../../utils/quickActions';
-import { getMEProjects } from '../../../utils/localDatabase';
+import { getMEProjects, getFundProviders } from '../../../utils/localDatabase';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -86,16 +86,26 @@ const Reportings: React.FC = () => {
   ];
 
   const stats = [
-    { title: 'Total Reports', value: '156', change: '+12', icon: '📑' },
-    { title: 'Pending Review', value: '8', change: '-2', icon: '⏳' },
-    { title: 'Active PFIs', value: '24', change: '+3', icon: '🏦' },
-    { title: 'Active Insurance Companies', value: '18', change: '+2', icon: '🛡️' }
+    // First Row
+    { title: 'Total Active Schemes', value: '156', change: '+12', icon: '📊' },
+    { title: 'Pending Loan Requests from Beneficiaries', value: '8', change: '-2', icon: '⏳' },
+    { title: 'Number of Active Beneficiaries', value: '2,847', change: '+145', icon: '👥' },
+    { title: 'Number of Loan Defaulters', value: '23', change: '-5', icon: '⚠️' },
+    // Second Row
+    { title: 'Total Successful Repayments', value: '1,924', change: '+89', icon: '✅' },
+    { title: 'Total Funds Disbursed', value: '₦45.2B', change: '+₦3.8B', icon: '💼' },
+    { title: 'Recovery Rate', value: '94.2%', change: '+2.1%', icon: '📈' },
+    { title: 'Total Active M&E Projects', value: '34', change: '+6', icon: '📋' }
   ];
 
   // Get M&E Reports from projects with submitted reports
   const meProjects = getMEProjects();
   // Show reports from projects that have at least one submitted report
   const projectsWithReports = meProjects.filter(p => p.evaluationReports && p.evaluationReports.length > 0);
+
+  // Get approved fund providers for filter
+  const allFundProviders = getFundProviders();
+  const approvedFundProviders = allFundProviders.filter(fp => fp.status === 'verified');
 
   // Transform M&E projects into report format
   const reports = projectsWithReports.flatMap(project => {
@@ -139,6 +149,7 @@ const Reportings: React.FC = () => {
   const [selectedState, setSelectedState] = useState('All States');
   const [selectedMonth, setSelectedMonth] = useState('All Months');
   const [selectedYear, setSelectedYear] = useState('2025');
+  const [selectedFundProvider, setSelectedFundProvider] = useState('All Fund Providers');
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [downloadReportType, setDownloadReportType] = useState('');
   const [downloadFileFormat, setDownloadFileFormat] = useState('PDF');
@@ -286,7 +297,7 @@ const Reportings: React.FC = () => {
 
   const totalPages = Math.max(1, Math.ceil(filteredReports.length / reportPageSize));
 
-  useEffect(() => { setReportPage(1); }, [selectedState, selectedMonth, selectedYear]);
+  useEffect(() => { setReportPage(1); }, [selectedState, selectedMonth, selectedYear, selectedFundProvider]);
 
   const isAllOnPageSelected = paginatedReports.length > 0 && paginatedReports.every(r => selectedReports.includes(r.id));
 
@@ -345,37 +356,10 @@ const Reportings: React.FC = () => {
           </p>
         </div>
 
-        {/* Download Page Button */}
-        <div className="flex justify-end">
-          <button
-            onClick={handleDownloadPage}
-            className="btn-primary flex items-center gap-2 px-4 py-2"
-          >
-            <span>📄</span>
-            <span>Download Page as PDF</span>
-          </button>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <div key={index} className="card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400 font-serif">{stat.title}</p>
-                  <p className="text-2xl font-bold font-sans text-gray-100">{stat.value}</p>
-                  <p className="text-sm text-accent-400 font-serif">{stat.change}</p>
-                </div>
-                <div className="text-3xl">{stat.icon}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
         {/* Unified Filters */}
         <div className="card">
           <h3 className="text-sm font-semibold text-gray-100 mb-4">Filters</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* State Filter */}
             <div>
               <label className="block text-xs font-medium text-gray-300 mb-2">State</label>
@@ -429,18 +413,55 @@ const Reportings: React.FC = () => {
                 <option value="2021">2021</option>
               </select>
             </div>
+
+            {/* Fund Provider Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-300 mb-2">Fund Provider</label>
+              <select
+                value={selectedFundProvider}
+                onChange={(e) => setSelectedFundProvider(e.target.value)}
+                className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
+              >
+                <option value="All Fund Providers">All Fund Providers</option>
+                {approvedFundProviders.map((fp) => (
+                  <option key={fp.id} value={fp.formData.organizationName}>{fp.formData.organizationName}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <p className="text-xs text-gray-400 mt-3">
-            {selectedState === 'All States' && selectedMonth === 'All Months'
-              ? `Showing all reports for ${selectedYear}`
-              : selectedState === 'All States'
-                ? `Showing ${selectedMonth} ${selectedYear} reports across all states`
-                : selectedMonth === 'All Months'
-                  ? `Showing ${selectedYear} reports for ${selectedState}`
-                  : `Showing ${selectedMonth} ${selectedYear} reports for ${selectedState}`}
+            Filters apply to stats cards, graph, and M&E reports
           </p>
         </div>
+
+        {/* Download Page Button */}
+        <div className="flex justify-end">
+          <button
+            onClick={handleDownloadPage}
+            className="btn-primary flex items-center gap-2 px-4 py-2"
+          >
+            <span>📄</span>
+            <span>Download Page as PDF</span>
+          </button>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, index) => (
+            <div key={index} className="card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400 font-serif">{stat.title}</p>
+                  <p className="text-2xl font-bold font-sans text-gray-100">{stat.value}</p>
+                  <p className="text-sm text-accent-400 font-serif">{stat.change}</p>
+                </div>
+                <div className="text-3xl">{stat.icon}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
 
         {/* Scheme Performance Graph */}
         <div className="card">

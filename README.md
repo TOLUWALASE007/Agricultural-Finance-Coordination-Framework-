@@ -664,7 +664,7 @@ The AFCF platform is deployed and accessible online:
 - **Repository**: [https://github.com/TOLUWALASE007/Agricultural-Finance-Coordination-Framework-](https://github.com/TOLUWALASE007/Agricultural-Finance-Coordination-Framework-)
 - **Deployment Platform**: GitHub Pages
 - **Build Status**: ✅ Production Ready
-- **Last Updated**: December 2025
+- **Last Updated**: December 22, 2025
 
 ### 📦 Deployment Process
 
