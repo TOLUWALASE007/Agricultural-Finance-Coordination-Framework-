@@ -1,7 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import PortalLayout from '../../../components/PortalLayout';
 import { generateReport, showNotification } from '../../../utils/quickActions';
 import { getMEProjects } from '../../../utils/localDatabase';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const Reportings: React.FC = () => {
   const sidebarItems = [
@@ -131,32 +133,112 @@ const Reportings: React.FC = () => {
 
   // State management
   const [reportPage, setReportPage] = useState(1);
-  const [reportStateFilter, setReportStateFilter] = useState('All States');
   const [selectedReports, setSelectedReports] = useState<string[]>([]);
   const [forwardOpen, setForwardOpen] = useState(false);
   const [forwardTargets, setForwardTargets] = useState('');
   const [selectedState, setSelectedState] = useState('All States');
+  const [selectedMonth, setSelectedMonth] = useState('All Months');
+  const [selectedYear, setSelectedYear] = useState('2025');
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [downloadReportType, setDownloadReportType] = useState('');
   const [downloadFileFormat, setDownloadFileFormat] = useState('PDF');
-  const [viewReportModal, setViewReportModal] = useState<any>(null); // For viewing report details
+  const [viewReportModal, setViewReportModal] = useState<any>(null);
+
+  // Ref for page content to download
+  const pageContentRef = useRef<HTMLDivElement>(null);
+
+  // Handler to download entire page as PDF
+  const handleDownloadPage = async () => {
+    if (!pageContentRef.current) return;
+
+    try {
+      showNotification('Generating page PDF...', 'info');
+
+      const canvas = await html2canvas(pageContentRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#0f172a'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if content is longer than one page
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`Reports_Page_${new Date().toISOString().split('T')[0]}.pdf`);
+      showNotification('Page downloaded successfully!', 'success');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showNotification('Failed to generate PDF', 'error');
+    }
+  };
+
+  // Ref for graph to download
+  const graphRef = useRef<HTMLDivElement>(null);
+
+  // Handler to download graph as image
+  const handleDownloadGraph = async () => {
+    if (!graphRef.current) return;
+
+    try {
+      showNotification('Generating graph image...', 'info');
+
+      const canvas = await html2canvas(graphRef.current, {
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#1e293b'
+      });
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `Scheme_Performance_Graph_${new Date().toISOString().split('T')[0]}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          showNotification('Graph downloaded successfully!', 'success');
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('Error generating graph image:', error);
+      showNotification('Failed to generate graph image', 'error');
+    }
+  };
+
   const reportPageSize = 6;
 
-  // Mock data for graphs based on state
-  const getMonthlyData = (state: string) => {
+  // Scheme Performance Data
+  const getSchemePerformanceData = (state: string) => {
     const baseData = [
-      { month: 'Jan', reports: 12 },
-      { month: 'Feb', reports: 15 },
-      { month: 'Mar', reports: 18 },
-      { month: 'Apr', reports: 14 },
-      { month: 'May', reports: 20 },
-      { month: 'Jun', reports: 22 },
-      { month: 'Jul', reports: 19 },
-      { month: 'Aug', reports: 25 },
-      { month: 'Sep', reports: 23 },
-      { month: 'Oct', reports: 28 },
-      { month: 'Nov', reports: 24 },
-      { month: 'Dec', reports: 26 }
+      { category: 'Performing', funds: 45000000000, schemes: 156, color: '#22c55e' }, // ₦45B
+      { category: 'Non-Performing', funds: 12000000000, schemes: 42, color: '#f59e0b' }, // ₦12B
+      { category: 'Bad', funds: 3500000000, schemes: 18, color: '#ef4444' } // ₦3.5B
     ];
 
     if (state === 'All States') return baseData;
@@ -164,66 +246,38 @@ const Reportings: React.FC = () => {
     // Simulate state-specific data with variation
     return baseData.map(item => ({
       ...item,
-      reports: Math.max(1, Math.floor(item.reports * (0.3 + Math.random() * 0.7)))
+      funds: Math.floor(item.funds * (0.3 + Math.random() * 0.7)),
+      schemes: Math.max(1, Math.floor(item.schemes * (0.3 + Math.random() * 0.7)))
     }));
   };
 
-  const getQuarterlyData = (state: string) => {
-    const baseData = [
-      { quarter: 'Q1 2023', reports: 45 },
-      { quarter: 'Q2 2023', reports: 52 },
-      { quarter: 'Q3 2023', reports: 48 },
-      { quarter: 'Q4 2023', reports: 58 },
-      { quarter: 'Q1 2024', reports: 62 },
-      { quarter: 'Q2 2024', reports: 55 },
-      { quarter: 'Q3 2024', reports: 68 },
-      { quarter: 'Q4 2024', reports: 72 }
-    ];
-
-    if (state === 'All States') return baseData;
-
-    return baseData.map(item => ({
-      ...item,
-      reports: Math.max(5, Math.floor(item.reports * (0.2 + Math.random() * 0.6)))
-    }));
-  };
-
-  const getStateData = (state: string) => {
-    if (state !== 'All States') {
-      // Show only the selected state
-      return [{ state: state, reports: Math.floor(Math.random() * 50) + 20 }];
-    }
-
-    // Show top 10 states when "All States" is selected
-    return [
-      { state: 'Lagos', reports: 65 },
-      { state: 'Kano', reports: 58 },
-      { state: 'Kaduna', reports: 52 },
-      { state: 'Rivers', reports: 48 },
-      { state: 'Oyo', reports: 45 },
-      { state: 'Delta', reports: 42 },
-      { state: 'Ogun', reports: 40 },
-      { state: 'Katsina', reports: 38 },
-      { state: 'Benue', reports: 35 },
-      { state: 'Plateau', reports: 32 }
-    ];
-  };
-
-  const monthlyData = useMemo(() => getMonthlyData(selectedState), [selectedState]);
-  const quarterlyData = useMemo(() => getQuarterlyData(selectedState), [selectedState]);
-  const stateData = useMemo(() => getStateData(selectedState), [selectedState]);
+  const schemeData = useMemo(() => getSchemePerformanceData(selectedState), [selectedState]);
 
   // Filtered reports
   const filteredReports = useMemo(() => {
-    // For now, show all M&E reports regardless of state filter
-    // TODO: Add state information to ME projects for proper filtering
-    const filtered = reports;
+    let filtered = reports;
 
-    // Sort by date only (newest first) - no priority sorting for Lead M&E
+    // Filter by month
+    if (selectedMonth !== 'All Months') {
+      filtered = filtered.filter(report => {
+        const reportDate = new Date(report.date);
+        const reportMonth = reportDate.toLocaleString('en-US', { month: 'long' });
+        return reportMonth === selectedMonth;
+      });
+    }
+
+    // Filter by year
+    filtered = filtered.filter(report => {
+      const reportDate = new Date(report.date);
+      const reportYear = reportDate.getFullYear().toString();
+      return reportYear === selectedYear;
+    });
+
+    // Sort by date (newest first)
     return filtered.sort((a, b) => {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
-  }, [reports, reportStateFilter]);
+  }, [reports, selectedState, selectedMonth, selectedYear]);
 
   const paginatedReports = useMemo(() => {
     const start = (reportPage - 1) * reportPageSize;
@@ -232,7 +286,7 @@ const Reportings: React.FC = () => {
 
   const totalPages = Math.max(1, Math.ceil(filteredReports.length / reportPageSize));
 
-  useEffect(() => { setReportPage(1); }, [reportStateFilter]);
+  useEffect(() => { setReportPage(1); }, [selectedState, selectedMonth, selectedYear]);
 
   const isAllOnPageSelected = paginatedReports.length > 0 && paginatedReports.every(r => selectedReports.includes(r.id));
 
@@ -282,13 +336,24 @@ const Reportings: React.FC = () => {
 
   return (
     <PortalLayout role="Coordinating Agency (Super Admin)" roleIcon="🏛️" sidebarItems={sidebarItems}>
-      <div className="space-y-6">
+      <div className="space-y-6" ref={pageContentRef}>
         {/* Header Section */}
         <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-xl p-4 sm:p-6 text-white">
           <h1 className="text-base sm:text-xl font-bold font-sans mb-2">Reports & Documentation</h1>
           <p className="text-xs sm:text-sm text-gray-200 font-serif">
             Access comprehensive reports, analytics, and documentation for all agricultural finance programs and stakeholder activities.
           </p>
+        </div>
+
+        {/* Download Page Button */}
+        <div className="flex justify-end">
+          <button
+            onClick={handleDownloadPage}
+            className="btn-primary flex items-center gap-2 px-4 py-2"
+          >
+            <span>📄</span>
+            <span>Download Page as PDF</span>
+          </button>
         </div>
 
         {/* Stats Grid */}
@@ -307,305 +372,275 @@ const Reportings: React.FC = () => {
           ))}
         </div>
 
-        {/* State Filter */}
+        {/* Unified Filters */}
         <div className="card">
-          <label className="block text-sm font-semibold text-gray-100 mb-2">Filter by State</label>
-          <select
-            value={selectedState}
-            onChange={(e) => setSelectedState(e.target.value)}
-            className="w-full px-4 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
-          >
-            {nigerianStates.map((state) => (
-              <option key={state} value={state}>{state}</option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-400 mt-2">
-            {selectedState === 'All States'
-              ? 'Showing aggregated data across all states'
-              : `Showing data for ${selectedState}`}
-          </p>
-        </div>
-
-        {/* Report Graphs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Monthly Reports Graph */}
-          <div
-            className="card hover:border-accent-500 transition-all cursor-pointer transform hover:scale-105"
-            onClick={() => {
-              setDownloadReportType('Monthly');
-              setDownloadModalOpen(true);
-            }}
-          >
-            <h3 className="text-sm font-semibold text-gray-100 mb-4 flex items-center gap-2">
-              <span>📅</span> Monthly Reports
-            </h3>
-            <div className="w-full h-48 overflow-x-auto overflow-y-hidden" style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#3b82f6 #1f2937'
-            }}>
-              <style>{`
-                .overflow-x-auto::-webkit-scrollbar {
-                  height: 8px;
-                }
-                .overflow-x-auto::-webkit-scrollbar-track {
-                  background: #1f2937;
-                  border-radius: 4px;
-                }
-                .overflow-x-auto::-webkit-scrollbar-thumb {
-                  background: #3b82f6;
-                  border-radius: 4px;
-                }
-                .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-                  background: #60a5fa;
-                }
-              `}</style>
-              <svg
-                width={Math.max(300, monthlyData.length * 40)}
-                height="180"
-                viewBox={`0 0 ${Math.max(300, monthlyData.length * 40)} 180`}
-                preserveAspectRatio="xMidYMid meet"
-              >
-                <defs>
-                  <linearGradient id="monthlyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.05" />
-                  </linearGradient>
-                </defs>
-                {(() => {
-                  const data = monthlyData;
-                  const maxValue = Math.max(...data.map(d => d.reports));
-                  const svgWidth = Math.max(300, data.length * 40);
-                  const padding = 20;
-
-                  const points = data.map((item, index) => {
-                    const x = padding + (index / Math.max(data.length - 1, 1)) * (svgWidth - 2 * padding);
-                    const y = 160 - ((item.reports / maxValue) * 140);
-                    return { x, y, value: item.reports, label: item.month };
-                  });
-
-                  const pathD = points.map((p, i) =>
-                    i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`
-                  ).join(' ');
-
-                  const areaD = `${pathD} L ${points[points.length - 1].x} 160 L ${points[0].x} 160 Z`;
-
-                  return (
-                    <>
-                      <path d={areaD} fill="url(#monthlyGradient)" />
-                      <path d={pathD} stroke="#3b82f6" strokeWidth="2" fill="none" />
-                      {points.map((point, i) => (
-                        <g key={i}>
-                          <circle cx={point.x} cy={point.y} r="4" fill="#3b82f6" stroke="#1e3a8a" strokeWidth="2" />
-                          <text x={point.x} y="175" fontSize="10" fill="#9ca3af" textAnchor="middle">{point.label}</text>
-                          <text x={point.x} y={point.y - 10} fontSize="10" fill="#e5e7eb" textAnchor="middle" fontWeight="bold">{point.value}</text>
-                        </g>
-                      ))}
-                    </>
-                  );
-                })()}
-              </svg>
-            </div>
-            <p className="text-xs text-gray-400 mt-3 text-center">Click to download report</p>
-          </div>
-
-          {/* Quarterly Reports Graph */}
-          <div
-            className="card hover:border-accent-500 transition-all cursor-pointer transform hover:scale-105"
-            onClick={() => {
-              setDownloadReportType('Quarterly');
-              setDownloadModalOpen(true);
-            }}
-          >
-            <h3 className="text-sm font-semibold text-gray-100 mb-4 flex items-center gap-2">
-              <span>📊</span> Quarterly Reports
-            </h3>
-            <div className="w-full h-48 overflow-x-auto overflow-y-hidden" style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#a855f7 #1f2937'
-            }}>
-              <style>{`
-                .overflow-x-auto::-webkit-scrollbar {
-                  height: 8px;
-                }
-                .overflow-x-auto::-webkit-scrollbar-track {
-                  background: #1f2937;
-                  border-radius: 4px;
-                }
-                .overflow-x-auto::-webkit-scrollbar-thumb {
-                  background: #a855f7;
-                  border-radius: 4px;
-                }
-                .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-                  background: #c084fc;
-                }
-              `}</style>
-              <svg
-                width={Math.max(300, quarterlyData.length * 60)}
-                height="180"
-                viewBox={`0 0 ${Math.max(300, quarterlyData.length * 60)} 180`}
-                preserveAspectRatio="xMidYMid meet"
-              >
-                <defs>
-                  <linearGradient id="quarterlyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#a855f7" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#a855f7" stopOpacity="0.05" />
-                  </linearGradient>
-                </defs>
-                {(() => {
-                  const data = quarterlyData;
-                  const maxValue = Math.max(...data.map(d => d.reports));
-                  const svgWidth = Math.max(300, data.length * 60);
-                  const padding = 20;
-
-                  const points = data.map((item, index) => {
-                    const x = padding + (index / Math.max(data.length - 1, 1)) * (svgWidth - 2 * padding);
-                    const y = 160 - ((item.reports / maxValue) * 140);
-                    return { x, y, value: item.reports, label: item.quarter };
-                  });
-
-                  const pathD = points.map((p, i) =>
-                    i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`
-                  ).join(' ');
-
-                  const areaD = `${pathD} L ${points[points.length - 1].x} 160 L ${points[0].x} 160 Z`;
-
-                  return (
-                    <>
-                      <path d={areaD} fill="url(#quarterlyGradient)" />
-                      <path d={pathD} stroke="#a855f7" strokeWidth="2" fill="none" />
-                      {points.map((point, i) => (
-                        <g key={i}>
-                          <circle cx={point.x} cy={point.y} r="4" fill="#a855f7" stroke="#6b21a8" strokeWidth="2" />
-                          <text x={point.x} y="175" fontSize="9" fill="#9ca3af" textAnchor="middle">{point.label}</text>
-                          <text x={point.x} y={point.y - 10} fontSize="10" fill="#e5e7eb" textAnchor="middle" fontWeight="bold">{point.value}</text>
-                        </g>
-                      ))}
-                    </>
-                  );
-                })()}
-              </svg>
-            </div>
-            <p className="text-xs text-gray-400 mt-3 text-center">Click to download report</p>
-          </div>
-
-          {/* State Reports Graph */}
-          <div
-            className="card hover:border-accent-500 transition-all cursor-pointer transform hover:scale-105"
-            onClick={() => {
-              setDownloadReportType('State');
-              setDownloadModalOpen(true);
-            }}
-          >
-            <h3 className="text-sm font-semibold text-gray-100 mb-4 flex items-center gap-2">
-              <span>🗺️</span> State Reports
-            </h3>
-            <div className="w-full h-48 overflow-x-auto overflow-y-hidden" style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#22c55e #1f2937'
-            }}>
-              <style>{`
-                .w-full.h-48::-webkit-scrollbar {
-                  height: 8px;
-                }
-                .w-full.h-48::-webkit-scrollbar-track {
-                  background: #1f2937;
-                  border-radius: 4px;
-                }
-                .w-full.h-48::-webkit-scrollbar-thumb {
-                  background: #22c55e;
-                  border-radius: 4px;
-                }
-                .w-full.h-48::-webkit-scrollbar-thumb:hover {
-                  background: #4ade80;
-                }
-              `}</style>
-              <svg
-                width={Math.max(300, stateData.length * 50)}
-                height="180"
-                viewBox={`0 0 ${Math.max(300, stateData.length * 50)} 180`}
-                preserveAspectRatio="xMidYMid meet"
-              >
-                <defs>
-                  <linearGradient id="stateGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#22c55e" stopOpacity="0.05" />
-                  </linearGradient>
-                </defs>
-                {(() => {
-                  const data = stateData;
-                  const maxValue = Math.max(...data.map(d => d.reports));
-                  const svgWidth = Math.max(300, data.length * 50);
-                  const padding = 20;
-
-                  const points = data.map((item, index) => {
-                    const x = padding + (index / Math.max(data.length - 1, 1)) * (svgWidth - 2 * padding);
-                    const y = 160 - ((item.reports / maxValue) * 140);
-                    return { x, y, value: item.reports, label: item.state };
-                  });
-
-                  const pathD = points.map((p, i) =>
-                    i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`
-                  ).join(' ');
-
-                  const areaD = points.length > 1
-                    ? `${pathD} L ${points[points.length - 1].x} 160 L ${points[0].x} 160 Z`
-                    : '';
-
-                  return (
-                    <>
-                      {areaD && <path d={areaD} fill="url(#stateGradient)" />}
-                      {points.length > 1 && <path d={pathD} stroke="#22c55e" strokeWidth="2" fill="none" />}
-                      {points.map((point, i) => (
-                        <g key={i}>
-                          <circle cx={point.x} cy={point.y} r="4" fill="#22c55e" stroke="#15803d" strokeWidth="2" />
-                          <text
-                            x={point.x}
-                            y="175"
-                            fontSize="10"
-                            fill="#9ca3af"
-                            textAnchor="middle"
-                          >
-                            {point.label}
-                          </text>
-                          <text x={point.x} y={point.y - 10} fontSize="10" fill="#e5e7eb" textAnchor="middle" fontWeight="bold">{point.value}</text>
-                        </g>
-                      ))}
-                    </>
-                  );
-                })()}
-              </svg>
-            </div>
-            <p className="text-xs text-gray-400 mt-3 text-center">Click to download report</p>
-          </div>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="card flex flex-col">
-          <div className="flex flex-col gap-3 mb-4">
-            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+          <h3 className="text-sm font-semibold text-gray-100 mb-4">Filters</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* State Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-300 mb-2">State</label>
               <select
-                value={reportStateFilter}
-                onChange={(e) => { setReportStateFilter(e.target.value); setReportPage(1); }}
-                className="px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
+                value={selectedState}
+                onChange={(e) => setSelectedState(e.target.value)}
+                className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
               >
-                <option value="All States">All States</option>
-                {nigerianStates.slice(1).map(state => (
+                {nigerianStates.map((state) => (
                   <option key={state} value={state}>{state}</option>
                 ))}
               </select>
-
-              <div className="flex items-center gap-2 ml-auto">
-                <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isAllOnPageSelected}
-                    onChange={toggleSelectAllOnPage}
-                    className="w-4 h-4 accent-accent-500"
-                  />
-                  <span>Select All on Page</span>
-                </label>
-              </div>
             </div>
+
+            {/* Month Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-300 mb-2">Month</label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
+              >
+                <option value="All Months">All Months</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
+              </select>
+            </div>
+
+            {/* Year Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-300 mb-2">Year</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="w-full px-3 py-2 rounded-md bg-primary-700 text-gray-100 border border-primary-600 focus:outline-none focus:ring-2 focus:ring-accent-500 text-sm"
+              >
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
+              </select>
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-400 mt-3">
+            {selectedState === 'All States' && selectedMonth === 'All Months'
+              ? `Showing all reports for ${selectedYear}`
+              : selectedState === 'All States'
+                ? `Showing ${selectedMonth} ${selectedYear} reports across all states`
+                : selectedMonth === 'All Months'
+                  ? `Showing ${selectedYear} reports for ${selectedState}`
+                  : `Showing ${selectedMonth} ${selectedYear} reports for ${selectedState}`}
+          </p>
+        </div>
+
+        {/* Scheme Performance Graph */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
+              <span>📊</span> Scheme Performance vs Funds
+            </h3>
+            <button
+              onClick={handleDownloadGraph}
+              className="btn-secondary text-xs px-3 py-2 flex items-center gap-1"
+            >
+              <span>⬇️</span>
+              <span>Download Graph</span>
+            </button>
+          </div>
+
+          <div ref={graphRef} className="bg-primary-800/50 rounded-lg p-6">
+            <div className="w-full h-80">
+              <svg width="100%" height="100%" viewBox="0 0 800 320" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <linearGradient id="performingGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#22c55e" stopOpacity="0.05" />
+                  </linearGradient>
+                  <linearGradient id="nonPerformingGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.05" />
+                  </linearGradient>
+                  <linearGradient id="badGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity="0.05" />
+                  </linearGradient>
+                </defs>
+
+                {(() => {
+                  const maxFunds = Math.max(...schemeData.map(d => d.funds));
+                  const padding = 60;
+                  const graphWidth = 800 - 2 * padding;
+                  const graphHeight = 240;
+
+                  const timePoints = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+
+                  const createLineData = (baseValue: number, variance: number) => {
+                    return timePoints.map((_, index) => {
+                      const x = padding + (index / (timePoints.length - 1)) * graphWidth;
+                      const randomVariance = (Math.random() - 0.5) * variance;
+                      const value = baseValue + randomVariance;
+                      const y = 280 - ((value / maxFunds) * graphHeight);
+                      return { x, y, value, label: timePoints[index] };
+                    });
+                  };
+
+                  const performingLine = createLineData(schemeData[0].funds, schemeData[0].funds * 0.1);
+                  const nonPerformingLine = createLineData(schemeData[1].funds, schemeData[1].funds * 0.15);
+                  const badLine = createLineData(schemeData[2].funds, schemeData[2].funds * 0.2);
+
+                  const createPath = (points: Array<{ x: number, y: number, value: number, label: string }>) => {
+                    return points.map((p, i) =>
+                      i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`
+                    ).join(' ');
+                  };
+
+                  const createAreaPath = (points: Array<{ x: number, y: number, value: number, label: string }>) => {
+                    const linePath = createPath(points);
+                    return `${linePath} L ${points[points.length - 1].x} 280 L ${points[0].x} 280 Z`;
+                  };
+
+                  return (
+                    <>
+                      {[0, 1, 2, 3, 4].map((i) => {
+                        const y = 40 + (i * graphHeight / 4);
+                        return (
+                          <line
+                            key={i}
+                            x1={padding}
+                            y1={y}
+                            x2={800 - padding}
+                            y2={y}
+                            stroke="#374151"
+                            strokeWidth="1"
+                            strokeDasharray="4,4"
+                          />
+                        );
+                      })}
+
+                      {[0, 1, 2, 3, 4].map((i) => {
+                        const y = 40 + (i * graphHeight / 4);
+                        const value = maxFunds - (i * maxFunds / 4);
+                        return (
+                          <text
+                            key={i}
+                            x={padding - 10}
+                            y={y + 5}
+                            fontSize="12"
+                            fill="#9ca3af"
+                            textAnchor="end"
+                          >
+                            ₦{(value / 1000000000).toFixed(0)}B
+                          </text>
+                        );
+                      })}
+
+                      <path d={createAreaPath(performingLine)} fill="url(#performingGradient)" />
+                      <path d={createPath(performingLine)} stroke="#22c55e" strokeWidth="3" fill="none" />
+                      {performingLine.map((point, i) => (
+                        <g key={`perf-${i}`}>
+                          <circle cx={point.x} cy={point.y} r="5" fill="#22c55e" stroke="#15803d" strokeWidth="2" />
+                          {i === performingLine.length - 1 && (
+                            <text x={point.x} y={point.y - 15} fontSize="11" fill="#22c55e" textAnchor="middle" fontWeight="bold">
+                              ₦{(point.value / 1000000000).toFixed(1)}B
+                            </text>
+                          )}
+                        </g>
+                      ))}
+
+                      <path d={createAreaPath(nonPerformingLine)} fill="url(#nonPerformingGradient)" />
+                      <path d={createPath(nonPerformingLine)} stroke="#f59e0b" strokeWidth="3" fill="none" />
+                      {nonPerformingLine.map((point, i) => (
+                        <g key={`non-${i}`}>
+                          <circle cx={point.x} cy={point.y} r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="2" />
+                          {i === nonPerformingLine.length - 1 && (
+                            <text x={point.x} y={point.y - 15} fontSize="11" fill="#f59e0b" textAnchor="middle" fontWeight="bold">
+                              ₦{(point.value / 1000000000).toFixed(1)}B
+                            </text>
+                          )}
+                        </g>
+                      ))}
+
+                      <path d={createAreaPath(badLine)} fill="url(#badGradient)" />
+                      <path d={createPath(badLine)} stroke="#ef4444" strokeWidth="3" fill="none" />
+                      {badLine.map((point, i) => (
+                        <g key={`bad-${i}`}>
+                          <circle cx={point.x} cy={point.y} r="5" fill="#ef4444" stroke="#dc2626" strokeWidth="2" />
+                          {i === badLine.length - 1 && (
+                            <text x={point.x} y={point.y - 15} fontSize="11" fill="#ef4444" textAnchor="middle" fontWeight="bold">
+                              ₦{(point.value / 1000000000).toFixed(1)}B
+                            </text>
+                          )}
+                        </g>
+                      ))}
+
+                      {timePoints.map((label, i) => {
+                        const x = padding + (i / (timePoints.length - 1)) * graphWidth;
+                        return (
+                          <text
+                            key={label}
+                            x={x}
+                            y="305"
+                            fontSize="12"
+                            fill="#9ca3af"
+                            textAnchor="middle"
+                          >
+                            {label}
+                          </text>
+                        );
+                      })}
+                    </>
+                  );
+                })()}
+              </svg>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-primary-700">
+              <div className="flex flex-wrap justify-center gap-6 mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                  <span className="text-sm text-gray-300">Performing ({schemeData[0].schemes} schemes)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-orange-500"></div>
+                  <span className="text-sm text-gray-300">Non-Performing ({schemeData[1].schemes} schemes)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-red-500"></div>
+                  <span className="text-sm text-gray-300">Bad ({schemeData[2].schemes} schemes)</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 text-center">
+                {selectedState === 'All States'
+                  ? 'Showing aggregated scheme performance across all states'
+                  : `Showing scheme performance for ${selectedState}`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Reports List Header */}
+        <div className="card flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-100">M&E Reports</h3>
+            <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAllOnPageSelected}
+                onChange={toggleSelectAllOnPage}
+                className="w-4 h-4 accent-accent-500"
+              />
+              <span>Select All on Page</span>
+            </label>
           </div>
 
           {/* Bulk Action Buttons */}
