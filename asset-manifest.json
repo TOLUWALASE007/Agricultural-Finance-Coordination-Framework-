@@ -1,19 +1,17 @@
 {
   "files": {
-    "main.css": "/Agricultural-Finance-Coordination-Framework-/static/css/main.32db043d.css",
-    "main.js": "/Agricultural-Finance-Coordination-Framework-/static/js/main.b140b628.js",
-    "static/js/239.49751774.chunk.js": "/Agricultural-Finance-Coordination-Framework-/static/js/239.49751774.chunk.js",
+    "main.css": "/Agricultural-Finance-Coordination-Framework-/static/css/main.a342cab2.css",
+    "main.js": "/Agricultural-Finance-Coordination-Framework-/static/js/main.11e9edc8.js",
     "static/js/977.0221d39c.chunk.js": "/Agricultural-Finance-Coordination-Framework-/static/js/977.0221d39c.chunk.js",
     "static/js/455.3013a3cf.chunk.js": "/Agricultural-Finance-Coordination-Framework-/static/js/455.3013a3cf.chunk.js",
     "index.html": "/Agricultural-Finance-Coordination-Framework-/index.html",
-    "main.32db043d.css.map": "/Agricultural-Finance-Coordination-Framework-/static/css/main.32db043d.css.map",
-    "main.b140b628.js.map": "/Agricultural-Finance-Coordination-Framework-/static/js/main.b140b628.js.map",
-    "239.49751774.chunk.js.map": "/Agricultural-Finance-Coordination-Framework-/static/js/239.49751774.chunk.js.map",
+    "main.a342cab2.css.map": "/Agricultural-Finance-Coordination-Framework-/static/css/main.a342cab2.css.map",
+    "main.11e9edc8.js.map": "/Agricultural-Finance-Coordination-Framework-/static/js/main.11e9edc8.js.map",
     "977.0221d39c.chunk.js.map": "/Agricultural-Finance-Coordination-Framework-/static/js/977.0221d39c.chunk.js.map",
     "455.3013a3cf.chunk.js.map": "/Agricultural-Finance-Coordination-Framework-/static/js/455.3013a3cf.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.32db043d.css",
-    "static/js/main.b140b628.js"
+    "static/css/main.a342cab2.css",
+    "static/js/main.11e9edc8.js"
   ]
 }
