@@ -59,7 +59,7 @@ const Register: React.FC = () => {
     birthDate: '',
     birthMonth: '',
     birthYear: '',
-    
+
     // Contact Info - Contact Information
     email: '',
     phone: '',
@@ -68,7 +68,7 @@ const Register: React.FC = () => {
     city: '',
     state: '',
     country: '',
-    
+
     // Contact Info - Verification & Emergency
     idType: '',
     idNumber: '',
@@ -76,7 +76,7 @@ const Register: React.FC = () => {
     emergencyContactName: '',
     emergencyContactPhone: '',
     emergencyRelationship: '',
-    
+
     // Organization Info - Basic Information
     organizationName: '',
     registrationNumber: '',
@@ -84,7 +84,7 @@ const Register: React.FC = () => {
     yearEstablished: '',
     industry: '',
     missionStatement: '',
-    
+
     // Organization Info - Address & Contact Info
     headquartersAddress: '',
     hqCity: '',
@@ -97,7 +97,7 @@ const Register: React.FC = () => {
     linkedin: '',
     twitter: '',
     instagram: '',
-    
+
     // Organization Info - Operations & Documentation
     numEmployees: '',
     areasOfOperation: [] as string[],
@@ -105,16 +105,16 @@ const Register: React.FC = () => {
     certificateOfIncorporation: null as File | null,
     hasPartnership: '',
     partnershipDetails: '',
-    
+
     // Security
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
-    
+
     // Student/Researcher specific fields
     // Step 1: Contact Information
     nationality: '',
-    
+
     // Step 2: Academic / Research Information
     institutionName: '',
     faculty: '',
@@ -132,11 +132,11 @@ const Register: React.FC = () => {
     linkedinProfile: '',
     agreeToDataSharing: false,
     agreeToAccuracy: false,
-    
+
     // Producer/Farmer specific fields
     // Step 1: Personal Information
     // (uses existing: fullName, gender, birthDate, phone, email, address, city, state, country)
-    
+
     // Step 2: Farm / Business Details
     farmBusinessName: '',
     typeOfFarmer: [] as string[],
@@ -145,23 +145,23 @@ const Register: React.FC = () => {
     yearsOfExperience: '',
     primarySourceOfIncome: '',
     farmerAssociation: '',
-    
+
     // Step 3: Type of Produce
     crops: [] as string[],
     livestock: [] as string[],
     hasProcessingValueAddition: '',
     processingValueAdditionDetails: '',
-    
+
     // Step 4: Production Capacity & Market
     totalAnnualProduction: '',
     primaryMarket: '',
     majorBuyers: '',
     challengesFaced: '',
-    
+
     // Step 5: Verification & Documents
     farmImages: null as File | null,
     certification: null as File | null,
-    
+
     // Step 6: Banking & Payment Details
     preferredPaymentMethod: '',
     bankName: '',
@@ -177,13 +177,6 @@ const Register: React.FC = () => {
       name: 'Fund Provider',
       icon: '💼',
       description: 'Financial institutions and organizations providing agricultural financing',
-      registrationTypes: ['individual', 'company']
-    },
-    {
-      id: 'coordinating-agency',
-      name: 'Coordinating Agency',
-      icon: '🏛️',
-      description: 'Government agencies coordinating agricultural finance programs',
       registrationTypes: ['individual', 'company']
     },
     {
@@ -312,17 +305,17 @@ const Register: React.FC = () => {
 
   const getTotalSteps = () => {
     const currentRole = getCurrentRole();
-    
+
     // Student/Researcher: 3 steps
     if (currentRole.id === 'researcher') {
       return 3;
     }
-    
+
     // Producer/Farmer: 7 steps
     if (currentRole.id === 'producer') {
       return 7;
     }
-    
+
     // Contact Info tab has 3 steps (no Security & Terms)
     // Organization Info tab has 4 steps (includes Security & Terms)
     return activeTypeTab === 'individual' ? 3 : 4;
@@ -333,7 +326,7 @@ const Register: React.FC = () => {
     if (isSubmitting) return;
 
     const currentRole = getCurrentRole();
-    
+
     // CRITICAL: Early role validation to prevent cross-role registration
     // Verify the role is correctly identified before proceeding
     if (!currentRole || !currentRole.id) {
@@ -344,22 +337,22 @@ const Register: React.FC = () => {
     // Prevent any registration if role state is ambiguous
     const cooperativeGroupIndex = roles.findIndex(r => r.id === 'cooperative');
     const fundProviderIndex = roles.findIndex(r => r.id === 'fund-provider');
-    
+
     if (currentRole.id === 'cooperative' && activeTab !== cooperativeGroupIndex) {
-      console.error('CRITICAL: Cooperative Group role mismatch', { 
-        currentRoleId: currentRole.id, 
-        activeTab, 
-        expectedIndex: cooperativeGroupIndex 
+      console.error('CRITICAL: Cooperative Group role mismatch', {
+        currentRoleId: currentRole.id,
+        activeTab,
+        expectedIndex: cooperativeGroupIndex
       });
       alert('Registration error: Role selection mismatch detected. Please select Cooperative Group tab and try again.');
       return;
     }
 
     if (currentRole.id === 'fund-provider' && activeTab !== fundProviderIndex) {
-      console.error('CRITICAL: Fund Provider role mismatch', { 
-        currentRoleId: currentRole.id, 
-        activeTab, 
-        expectedIndex: fundProviderIndex 
+      console.error('CRITICAL: Fund Provider role mismatch', {
+        currentRoleId: currentRole.id,
+        activeTab,
+        expectedIndex: fundProviderIndex
       });
       alert('Registration error: Role selection mismatch detected. Please select Fund Provider tab and try again.');
       return;
@@ -596,9 +589,9 @@ const Register: React.FC = () => {
       // CRITICAL: Final validation before Cooperative Group registration
       // Ensure we're absolutely certain this is Cooperative Group registration
       if (currentRole.id !== 'cooperative' || currentRole.name !== 'Cooperative Group') {
-        console.error('CRITICAL: Cooperative Group registration blocked - role validation failed', { 
-          currentRole, 
-          activeTab 
+        console.error('CRITICAL: Cooperative Group registration blocked - role validation failed', {
+          currentRole,
+          activeTab
         });
         alert('Registration error: Invalid role detected. Cannot proceed with Cooperative Group registration.');
         setIsSubmitting(false);
@@ -608,9 +601,9 @@ const Register: React.FC = () => {
       // Double-check activeTab matches Cooperative Group index
       const cooperativeGroupIndex = roles.findIndex(r => r.id === 'cooperative');
       if (activeTab !== cooperativeGroupIndex) {
-        console.error('CRITICAL: Cooperative Group registration blocked - activeTab mismatch', { 
-          activeTab, 
-          expectedIndex: cooperativeGroupIndex 
+        console.error('CRITICAL: Cooperative Group registration blocked - activeTab mismatch', {
+          activeTab,
+          expectedIndex: cooperativeGroupIndex
         });
         alert('Registration error: Tab selection mismatch. Please ensure Cooperative Group is selected.');
         setIsSubmitting(false);
@@ -688,9 +681,9 @@ const Register: React.FC = () => {
         // CRITICAL: Final validation before calling registration function
         // Ensure we NEVER call registerFundProvider for Cooperative Group registration
         if (currentRole.id !== 'cooperative' || currentRole.name !== 'Cooperative Group') {
-          console.error('CRITICAL: Blocked Cooperative Group registration - role validation failed', { 
-            currentRole, 
-            activeTab 
+          console.error('CRITICAL: Blocked Cooperative Group registration - role validation failed', {
+            currentRole,
+            activeTab
           });
           alert('Registration error: Role validation failed. Cannot proceed.');
           setIsSubmitting(false);
@@ -724,10 +717,10 @@ const Register: React.FC = () => {
         // Verify no Fund Provider record exists with the same email
         const existingFP = findFundProviderByEmail(officialEmail);
         if (existingFP) {
-          console.error('CRITICAL: Fund Provider record already exists with this email!', { 
-            email: officialEmail, 
+          console.error('CRITICAL: Fund Provider record already exists with this email!', {
+            email: officialEmail,
             fpRecordId: existingFP.id,
-            cgRecordId: record.id 
+            cgRecordId: record.id
           });
           alert('Registration error: Email conflict detected. Please contact support.');
           setIsSubmitting(false);
@@ -737,7 +730,7 @@ const Register: React.FC = () => {
         // CRITICAL: Ensure notification role is Cooperative Group, NOT Fund Provider
         const notificationRole = '🤝 Cooperative Group';
         const notificationMessage = `${storedFormData.organizationName || storedFormData.fullName} submitted a new Cooperative Group registration for approval.`;
-        
+
         // Final validation: ensure notification role matches Cooperative Group
         if (notificationRole !== '🤝 Cooperative Group') {
           console.error('CRITICAL: Notification role mismatch!', { notificationRole });
@@ -1486,7 +1479,7 @@ const Register: React.FC = () => {
   // Render form step content
   const renderStepContent = () => {
     const currentRole = getCurrentRole();
-    
+
     // Student/Researcher Registration Form (3 steps)
     if (currentRole.id === 'researcher') {
       switch (currentStep) {
@@ -1494,11 +1487,11 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Contact Information</h3>
-              
+
               {/* Personal Details */}
               <div className="space-y-4">
                 <h4 className="text-lg font-semibold font-sans text-gray-200">Personal Details</h4>
-                
+
                 <div>
                   <label htmlFor="fullName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                     Full Name *
@@ -1570,7 +1563,7 @@ const Register: React.FC = () => {
               {/* Contact Details */}
               <div className="space-y-4">
                 <h4 className="text-lg font-semibold font-sans text-gray-200">Contact Details</h4>
-                
+
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                     Email *
@@ -1687,7 +1680,7 @@ const Register: React.FC = () => {
               {/* Identity Verification */}
               <div className="space-y-4">
                 <h4 className="text-lg font-semibold font-sans text-gray-200">Identity Verification</h4>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="idType" className="block text-sm font-medium font-sans text-gray-300 mb-2">
@@ -1748,11 +1741,11 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Academic / Research Information</h3>
-              
+
               {/* Academic Profile */}
               <div className="space-y-4">
                 <h4 className="text-lg font-semibold font-sans text-gray-200">Academic Profile</h4>
-                
+
                 <div>
                   <label htmlFor="institutionName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                     Institution *
@@ -1864,7 +1857,7 @@ const Register: React.FC = () => {
               {/* Research Information */}
               <div className="space-y-4">
                 <h4 className="text-lg font-semibold font-sans text-gray-200">Research Information</h4>
-                
+
                 <div>
                   <label htmlFor="areaOfStudy" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                     Area of Study *
@@ -1945,7 +1938,7 @@ const Register: React.FC = () => {
               {/* Optional Professional Links */}
               <div className="space-y-4">
                 <h4 className="text-lg font-semibold font-sans text-gray-200">Optional Professional Links</h4>
-                
+
                 <div>
                   <label htmlFor="googleScholar" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                     Google Scholar Profile (Optional)
@@ -1998,11 +1991,11 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Security & Terms</h3>
-              
+
               {/* Account Security */}
               <div className="space-y-4">
                 <h4 className="text-lg font-semibold font-sans text-gray-200">Account Security</h4>
-                
+
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                     Password *
@@ -2039,7 +2032,7 @@ const Register: React.FC = () => {
               {/* Terms & Confirmation */}
               <div className="space-y-4">
                 <h4 className="text-lg font-semibold font-sans text-gray-200">Terms & Confirmation</h4>
-                
+
                 <div className="flex items-start">
                   <input
                     type="checkbox"
@@ -2085,7 +2078,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Personal Information</h3>
-              
+
               <div>
                 <label htmlFor="fullName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                   Full Name *
@@ -2238,7 +2231,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Farm / Business Details</h3>
-              
+
               <div>
                 <label htmlFor="farmBusinessName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                   Farm/Business Name *
@@ -2376,7 +2369,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Type of Produce</h3>
-              
+
               <div>
                 <label className="block text-sm font-medium font-sans text-gray-300 mb-2">
                   Crops (Select all that apply)
@@ -2479,7 +2472,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Production Capacity & Market</h3>
-              
+
               <div>
                 <label htmlFor="totalAnnualProduction" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                   Total Annual Production *
@@ -2552,7 +2545,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Verification & Documents</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="idType" className="block text-sm font-medium font-sans text-gray-300 mb-2">
@@ -2641,7 +2634,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Banking & Payment Details</h3>
-              
+
               <div>
                 <label htmlFor="preferredPaymentMethod" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                   Preferred Payment Method *
@@ -2717,7 +2710,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Security & Terms</h3>
-              
+
               <div>
                 <label htmlFor="password" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                   Create Password *
@@ -2780,7 +2773,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Personal Details</h3>
-              
+
               <div>
                 <label htmlFor="fullName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                   Full Name *
@@ -2854,7 +2847,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Contact Information</h3>
-              
+
               <div>
                 <label htmlFor="email" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                   Email Address *
@@ -2973,7 +2966,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Verification & Emergency</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="idType" className="block text-sm font-medium font-sans text-gray-300 mb-2">
@@ -3087,7 +3080,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Basic Information</h3>
-              
+
               <div>
                 <label htmlFor="organizationName" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                   Organization Name *
@@ -3200,7 +3193,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Address & Contact Info</h3>
-              
+
               <div>
                 <label htmlFor="headquartersAddress" className="block text-sm font-medium font-sans text-gray-300 mb-2">
                   Headquarters Address *
@@ -3381,7 +3374,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Operations & Documentation</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="numEmployees" className="block text-sm font-medium font-sans text-gray-300 mb-2">
@@ -3419,9 +3412,8 @@ const Register: React.FC = () => {
                         return (
                           <label
                             key={state}
-                            className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${
-                              isChecked ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
-                            } transition-colors`}
+                            className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${isChecked ? 'bg-primary-600/70 text-white' : 'text-gray-300 hover:bg-primary-600/40'
+                              } transition-colors`}
                           >
                             <input
                               type="checkbox"
@@ -3518,7 +3510,7 @@ const Register: React.FC = () => {
           return (
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-sans text-gray-100 mb-6">Security & Terms</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium font-sans text-gray-300 mb-2">
@@ -3581,9 +3573,9 @@ const Register: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <img 
-              src={`${process.env.PUBLIC_URL}/images/logo/LOGO.svg`} 
-              alt="AFCF Logo" 
+            <img
+              src={`${process.env.PUBLIC_URL}/images/logo/LOGO.svg`}
+              alt="AFCF Logo"
               className="h-12 w-auto"
             />
           </div>
@@ -3613,11 +3605,10 @@ const Register: React.FC = () => {
                     // Reset form data when switching roles to ensure data isolation
                     setFormData(getInitialFormData());
                   }}
-                  className={`p-3 rounded-lg text-left transition-all duration-200 ${
-                    activeTab === index
+                  className={`p-3 rounded-lg text-left transition-all duration-200 ${activeTab === index
                       ? 'bg-primary-500 text-white'
                       : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
-                  }`}
+                    }`}
                 >
                   <div className="text-lg mb-1">{role.icon}</div>
                   <div className="text-sm font-medium font-sans">{role.name}</div>
@@ -3639,11 +3630,10 @@ const Register: React.FC = () => {
                       setActiveTypeTab(type as 'individual' | 'company');
                       setCurrentStep(1);
                     }}
-                    className={`p-3 rounded-lg text-center transition-all duration-200 ${
-                      activeTypeTab === type
+                    className={`p-3 rounded-lg text-center transition-all duration-200 ${activeTypeTab === type
                         ? 'bg-primary-500 text-white'
                         : 'bg-primary-700 text-gray-300 hover:bg-primary-600 hover:text-white'
-                    }`}
+                      }`}
                   >
                     <div className="font-medium font-sans">
                       {type === 'individual' ? 'Contact Info' : 'Organization Info'}
@@ -3668,7 +3658,7 @@ const Register: React.FC = () => {
                 </span>
               </div>
               <div className="w-full bg-primary-800 rounded-full h-2">
-                <div 
+                <div
                   className="bg-primary-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${(currentStep / getTotalSteps()) * 100}%` }}
                 ></div>
@@ -3682,7 +3672,7 @@ const Register: React.FC = () => {
           <div className="card">
             <form onSubmit={handleSubmit}>
               {renderStepContent()}
-              
+
               {/* Navigation Buttons */}
               <div className="flex justify-between items-center mt-8 pt-6 border-t border-primary-700">
                 <button
@@ -3693,14 +3683,14 @@ const Register: React.FC = () => {
                 >
                   Previous
                 </button>
-                
+
                 <div className="flex space-x-4">
                   {(() => {
                     const currentRole = getCurrentRole();
                     const isLastStepOfIndividualTab = hasMultipleRegistrationTypes() && activeTypeTab === 'individual' && currentStep === 3 && currentRole.id !== 'researcher' && currentRole.id !== 'producer';
                     const shouldShowProceedButton = isLastStepOfIndividualTab;
                     const shouldShowSubmitButton = currentStep >= getTotalSteps() && !shouldShowProceedButton;
-                    
+
                     if (shouldShowProceedButton) {
                       return (
                         <button
@@ -3715,7 +3705,7 @@ const Register: React.FC = () => {
                         </button>
                       );
                     }
-                    
+
                     if (shouldShowSubmitButton) {
                       return (
                         <button
@@ -3727,7 +3717,7 @@ const Register: React.FC = () => {
                         </button>
                       );
                     }
-                    
+
                     return (
                       <button
                         type="button"
@@ -3746,8 +3736,8 @@ const Register: React.FC = () => {
             <div className="mt-6 text-center">
               <p className="text-gray-300 font-serif">
                 Already have an account?{' '}
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="font-medium text-accent-400 hover:text-accent-300 transition-colors duration-200"
                 >
                   Sign In
