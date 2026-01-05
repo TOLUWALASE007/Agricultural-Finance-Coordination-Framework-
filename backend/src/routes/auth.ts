@@ -213,19 +213,34 @@ router.post('/register', [
     const contactInfo = sanitizeContactInfo(req.body.contactInfo || {});
     const organizationInfo = sanitizeOrganizationInfo(req.body.organizationInfo || {});
 
-    const email = contactInfo.contactInformation.email;
+    const contactEmail = contactInfo.contactInformation.email;
+    const officialEmail = organizationInfo.addressContactInfo.officialEmail;
+
+    // Organizational roles must use official email as primary login email
+    const organizationalRoles = ['fund-provider', 'pfi', 'insurance', 'anchor', 'lead-firm', 'cooperative', 'extension'];
+    const isOrganizationalUser = organizationalRoles.includes(role);
+
+    // Determine which email to use as primary
+    const primaryEmail = isOrganizationalUser && officialEmail ? officialEmail : contactEmail;
 
     // Validate required top-level fields after sanitization
-    if (!email) {
-      logger.error('Registration failed: Contact email is required');
-      res.status(400).json({ error: 'Contact email is required' });
+    if (!primaryEmail) {
+      logger.error('Registration failed: Email is required');
+      res.status(400).json({ error: isOrganizationalUser ? 'Official email is required for organizational registration' : 'Contact email is required' });
       return;
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Check if user already exists with either email
+    const existingUser = await User.findOne({
+      $or: [
+        { email: primaryEmail },
+        { 'organizationInfo.addressContactInfo.officialEmail': primaryEmail },
+        { 'contactInfo.contactInformation.email': primaryEmail }
+      ]
+    });
+
     if (existingUser) {
-      logger.warn(`Registration failed: User already exists with email ${email}`);
+      logger.warn(`Registration failed: User already exists with email ${primaryEmail}`);
       res.status(400).json({ error: 'User already exists with this email' });
       return;
     }
@@ -237,7 +252,7 @@ router.post('/register', [
     const { firstName, lastName } = buildNameParts(contactInfo.personalDetails.fullName || 'Portal User');
 
     const userDoc = await User.create({
-      email,
+      email: primaryEmail, // Use official email for organizational users
       passwordHash,
       firstName,
       lastName,
@@ -255,7 +270,7 @@ router.post('/register', [
         organizationName: organizationInfo.basicInformation.organizationName || undefined,
         registrationNumber: organizationInfo.basicInformation.registrationNumber || undefined,
         contactPersonName: contactInfo.personalDetails.fullName || undefined,
-        contactPersonEmail: email,
+        contactPersonEmail: primaryEmail,
         contactPersonPhone: contactInfo.contactInformation.phone || undefined,
         verificationStatus: 'pending'
       });
@@ -288,12 +303,15 @@ router.post('/register', [
       // Link any documents uploaded with this email that don't have a userId yet
       const result = await Document.updateMany(
         {
-          userEmail: email,
+          $or: [
+            { userEmail: primaryEmail },
+            { userEmail: contactEmail }
+          ],
           $or: [{ userId: null }, { userId: { $exists: false } }]
         },
         { $set: { userId: userDoc._id } }
       );
-      logger.info(`Linked ${result.modifiedCount} documents to user ${userDoc._id} via email ${email}`);
+      logger.info(`Linked ${result.modifiedCount} documents to user ${userDoc._id} via email ${primaryEmail}`);
     } catch (docErr) {
       logger.error('Failed to link documents to user:', docErr);
     }
@@ -314,7 +332,7 @@ router.post('/register', [
         metadata: {
           type: `${role}Registration`,
           userId: userDoc._id,
-          email: email,
+          email: primaryEmail,
           targetRole: 'coordinating-agency',
           requiresDecision: true,
           applicantName: contactInfo.personalDetails.fullName,
@@ -328,7 +346,7 @@ router.post('/register', [
       logger.error('Failed to create notification:', notifErr);
     }
 
-    logger.info(`New portal user registered: ${email} (${role})`);
+    logger.info(`New portal user registered: ${primaryEmail} (${role})`);
 
     res.status(201).json({
       success: true,
@@ -360,7 +378,22 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    // Try to find user by primary email first, then check organizational email fields
+    let user = await User.findOne({ email });
+
+    // If not found by primary email, check if it's an official email in organizationInfo
+    if (!user) {
+      user = await User.findOne({
+        'organizationInfo.addressContactInfo.officialEmail': email
+      });
+    }
+
+    // If still not found, check contact email
+    if (!user) {
+      user = await User.findOne({
+        'contactInfo.contactInformation.email': email
+      });
+    }
 
     if (!user) {
       res.status(400).json({ error: 'Invalid credentials' });
