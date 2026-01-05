@@ -287,15 +287,12 @@ const Register: React.FC = () => {
   // Helper function to upload all documents to MongoDB
   const uploadAllDocuments = async () => {
     const uploadedDocs: any = {};
-    const documentIds: string[] = [];
-    const formDataAny = formData as any; // Type assertion to access role-specific fields
 
     const uploadDocument = async (file: File | null, fieldName: string) => {
       if (!file) return null;
       try {
-        const result = await documentAPI.upload(file, 'other', '', false);
-        documentIds.push(result.data.id);
-        return result.data.filename;
+        const result = await documentAPI.upload(file);
+        return result.filename;
       } catch (error) {
         console.error(`Failed to upload ${fieldName}:`, error);
         throw error;
@@ -303,40 +300,38 @@ const Register: React.FC = () => {
     };
 
     // Upload all document fields
-    if (formDataAny.idDocument) {
-      uploadedDocs.idDocumentName = await uploadDocument(formDataAny.idDocument, 'identification');
+    if (formData.idDocument) {
+      uploadedDocs.idDocumentName = await uploadDocument(formData.idDocument, 'identification');
     }
-    if (formDataAny.organizationLogo) {
-      uploadedDocs.organizationLogoName = await uploadDocument(formDataAny.organizationLogo, 'logo');
+    if (formData.organizationLogo) {
+      uploadedDocs.organizationLogoName = await uploadDocument(formData.organizationLogo, 'logo');
     }
-    if (formDataAny.certificateOfIncorporation) {
-      uploadedDocs.certificateOfIncorporationName = await uploadDocument(formDataAny.certificateOfIncorporation, 'certificate');
+    if (formData.certificateOfIncorporation) {
+      uploadedDocs.certificateOfIncorporationName = await uploadDocument(formData.certificateOfIncorporation, 'certificate');
     }
-    if (formDataAny.taxClearanceCertificate) {
-      uploadedDocs.taxClearanceCertificateName = await uploadDocument(formDataAny.taxClearanceCertificate, 'tax clearance');
+    if (formData.taxClearanceCertificate) {
+      uploadedDocs.taxClearanceCertificateName = await uploadDocument(formData.taxClearanceCertificate, 'tax clearance');
     }
-    if (formDataAny.auditedFinancialStatement) {
-      uploadedDocs.auditedFinancialStatementName = await uploadDocument(formDataAny.auditedFinancialStatement, 'financial statement');
+    if (formData.auditedFinancialStatement) {
+      uploadedDocs.auditedFinancialStatementName = await uploadDocument(formData.auditedFinancialStatement, 'financial statement');
     }
-    if (formDataAny.proofOfAddress) {
-      uploadedDocs.proofOfAddressName = await uploadDocument(formDataAny.proofOfAddress, 'proof of address');
+    if (formData.proofOfAddress) {
+      uploadedDocs.proofOfAddressName = await uploadDocument(formData.proofOfAddress, 'proof of address');
     }
-    if (formDataAny.bankStatement) {
-      uploadedDocs.bankStatementName = await uploadDocument(formDataAny.bankStatement, 'bank statement');
+    if (formData.bankStatement) {
+      uploadedDocs.bankStatementName = await uploadDocument(formData.bankStatement, 'bank statement');
     }
-    if (formDataAny.businessPlan) {
-      uploadedDocs.businessPlanName = await uploadDocument(formDataAny.businessPlan, 'business plan');
+    if (formData.businessPlan) {
+      uploadedDocs.businessPlanName = await uploadDocument(formData.businessPlan, 'business plan');
     }
 
-    return { uploadedDocs, documentIds };
+    return uploadedDocs;
   };
 
   // Helper function to save user data to MongoDB backend
-  const saveToBackend = async (role: string, password: string, formData: any, uploadedDocs: any, documentIds: string[]) => {
+  const saveToBackend = async (role: string, password: string, formData: any, uploadedDocs: any) => {
     try {
-      console.log('uploadedDocs being sent:', uploadedDocs);
-
-      const response = await authAPI.register({
+      await authAPI.register({
         role,
         password,
         contactInfo: {
@@ -409,20 +404,9 @@ const Register: React.FC = () => {
           },
         },
       });
-
-      // Link documents to the newly created user
-      if (response.userId && documentIds.length > 0) {
-        try {
-          await documentAPI.linkToUser(documentIds, response.userId);
-          console.log('Documents linked to user successfully');
-        } catch (linkError) {
-          console.error('Failed to link documents:', linkError);
-        }
-      }
     } catch (backendError) {
       console.error('Failed to save to backend:', backendError);
       console.error('Backend error details:', backendError instanceof Error ? backendError.message : backendError);
-      throw backendError;
     }
   };
 
@@ -492,12 +476,9 @@ const Register: React.FC = () => {
 
         // Upload documents to MongoDB
         let uploadedDocs: any = {};
-        let documentIds: string[] = [];
         try {
           alert('Uploading documents... Please wait.');
-          const result = await uploadAllDocuments();
-          uploadedDocs = result.uploadedDocs;
-          documentIds = result.documentIds;
+          uploadedDocs = await uploadAllDocuments();
         } catch (uploadError) {
           alert('Document upload failed. Please check your files and try again.');
           setIsSubmitting(false);
@@ -549,7 +530,7 @@ const Register: React.FC = () => {
         };
 
         // Save to MongoDB backend
-        await saveToBackend('fund-provider', formData.password, storedFormData, uploadedDocs, documentIds);
+        await saveToBackend('fund-provider', formData.password, storedFormData, uploadedDocs);
 
         alert('Registration submitted successfully! Please sign in to track your verification status.');
         navigate('/login');
@@ -588,12 +569,9 @@ const Register: React.FC = () => {
 
         // Upload documents to MongoDB
         let uploadedDocs: any = {};
-        let documentIds: string[] = [];
         try {
           alert('Uploading documents... Please wait.');
-          const result = await uploadAllDocuments();
-          uploadedDocs = result.uploadedDocs;
-          documentIds = result.documentIds;
+          uploadedDocs = await uploadAllDocuments();
         } catch (uploadError) {
           alert('Document upload failed. Please check your files and try again.');
           setIsSubmitting(false);
@@ -645,7 +623,7 @@ const Register: React.FC = () => {
         };
 
         // Save to MongoDB backend
-        await saveToBackend('insurance', formData.password, storedFormData, uploadedDocs, documentIds);
+        await saveToBackend('insurance', formData.password, storedFormData, uploadedDocs);
 
         alert('Registration submitted successfully! Please sign in to track your verification status.');
         navigate('/login');
@@ -708,12 +686,9 @@ const Register: React.FC = () => {
 
         // Upload documents to MongoDB
         let uploadedDocs: any = {};
-        let documentIds: string[] = [];
         try {
           alert('Uploading documents... Please wait.');
-          const result = await uploadAllDocuments();
-          uploadedDocs = result.uploadedDocs;
-          documentIds = result.documentIds;
+          uploadedDocs = await uploadAllDocuments();
         } catch (uploadError) {
           alert('Document upload failed. Please check your files and try again.');
           setIsSubmitting(false);
@@ -765,7 +740,7 @@ const Register: React.FC = () => {
         };
 
         // Save to MongoDB backend
-        await saveToBackend('cooperative', formData.password, storedFormData, uploadedDocs, documentIds);
+        await saveToBackend('cooperative', formData.password, storedFormData, uploadedDocs);
 
         alert('Registration submitted successfully! Please sign in to track your verification status.');
         navigate('/login');
@@ -804,12 +779,9 @@ const Register: React.FC = () => {
 
         // Upload documents to MongoDB
         let uploadedDocs: any = {};
-        let documentIds: string[] = [];
         try {
           alert('Uploading documents... Please wait.');
-          const result = await uploadAllDocuments();
-          uploadedDocs = result.uploadedDocs;
-          documentIds = result.documentIds;
+          uploadedDocs = await uploadAllDocuments();
         } catch (uploadError) {
           alert('Document upload failed. Please check your files and try again.');
           setIsSubmitting(false);
@@ -861,7 +833,7 @@ const Register: React.FC = () => {
         };
 
         // Save to MongoDB backend
-        await saveToBackend('extension', formData.password, storedFormData, uploadedDocs, documentIds);
+        await saveToBackend('extension', formData.password, storedFormData, uploadedDocs);
 
         alert('Registration submitted successfully! Please sign in to track your verification status.');
         navigate('/login');
@@ -898,21 +870,7 @@ const Register: React.FC = () => {
           return;
         }
 
-        // Upload documents to MongoDB
-        let uploadedDocs: any = {};
-        let documentIds: string[] = [];
-        try {
-          alert('Uploading documents... Please wait.');
-          const result = await uploadAllDocuments();
-          uploadedDocs = result.uploadedDocs;
-          documentIds = result.documentIds;
-        } catch (uploadError) {
-          alert('Document upload failed. Please check your files and try again.');
-          setIsSubmitting(false);
-          return;
-        }
-
-        const storedFormData: any = {
+        const storedFormData: PFIFormData = {
           fullName: formData.fullName.trim(),
           position: formData.position.trim(),
           gender: formData.gender,
@@ -926,7 +884,7 @@ const Register: React.FC = () => {
           country: formData.country.trim(),
           idType: formData.idType,
           idNumber: formData.idNumber.trim(),
-          idDocumentName: uploadedDocs.idDocumentName || undefined,
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
           emergencyContactName: formData.emergencyContactName.trim(),
           emergencyContactPhone: formData.emergencyContactPhone.trim(),
           emergencyRelationship: formData.emergencyRelationship.trim(),
@@ -949,15 +907,52 @@ const Register: React.FC = () => {
           instagram: formData.instagram?.trim() || undefined,
           numEmployees: formData.numEmployees.trim(),
           areasOfOperation: [...formData.areasOfOperation],
-          organizationLogoName: uploadedDocs.organizationLogoName || undefined,
-          certificateOfIncorporationName: uploadedDocs.certificateOfIncorporationName || undefined,
+          organizationLogoName: formData.organizationLogo ? formData.organizationLogo.name : undefined,
+          certificateOfIncorporationName: formData.certificateOfIncorporation ? formData.certificateOfIncorporation.name : undefined,
           hasPartnership: formData.hasPartnership,
           partnershipDetails: formData.partnershipDetails.trim(),
           password: '',
         };
 
-        // Save to MongoDB backend
-        await saveToBackend('pfi', formData.password, storedFormData, uploadedDocs, documentIds);
+        const applicationData = buildPFIApplicationData(storedFormData);
+
+        const record = registerPFI({
+          email: officialEmail,
+          password: formData.password,
+          registrationType,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('pfi_')) {
+          console.error('CRITICAL: PFI record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '🏦 PFI',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.organizationName || storedFormData.fullName} submitted a new PFI registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Company',
+          companyName: storedFormData.organizationName,
+          companyId: storedFormData.registrationNumber,
+          organization: storedFormData.organizationName,
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'pfiRegistration',
+            pfiId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updatePFIRecord(record.id, { pendingNotificationId: notificationId });
 
         alert('Registration submitted successfully! Please sign in to track your verification status.');
         navigate('/login');
@@ -994,21 +989,7 @@ const Register: React.FC = () => {
           return;
         }
 
-        // Upload documents to MongoDB
-        let uploadedDocs: any = {};
-        let documentIds: string[] = [];
-        try {
-          alert('Uploading documents... Please wait.');
-          const result = await uploadAllDocuments();
-          uploadedDocs = result.uploadedDocs;
-          documentIds = result.documentIds;
-        } catch (uploadError) {
-          alert('Document upload failed. Please check your files and try again.');
-          setIsSubmitting(false);
-          return;
-        }
-
-        const storedFormData: any = {
+        const storedFormData: AnchorFormData = {
           fullName: formData.fullName.trim(),
           position: formData.position.trim(),
           gender: formData.gender,
@@ -1022,7 +1003,7 @@ const Register: React.FC = () => {
           country: formData.country.trim(),
           idType: formData.idType,
           idNumber: formData.idNumber.trim(),
-          idDocumentName: uploadedDocs.idDocumentName || undefined,
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
           emergencyContactName: formData.emergencyContactName.trim(),
           emergencyContactPhone: formData.emergencyContactPhone.trim(),
           emergencyRelationship: formData.emergencyRelationship.trim(),
@@ -1045,15 +1026,52 @@ const Register: React.FC = () => {
           instagram: formData.instagram?.trim() || undefined,
           numEmployees: formData.numEmployees.trim(),
           areasOfOperation: [...formData.areasOfOperation],
-          organizationLogoName: uploadedDocs.organizationLogoName || undefined,
-          certificateOfIncorporationName: uploadedDocs.certificateOfIncorporationName || undefined,
+          organizationLogoName: formData.organizationLogo ? formData.organizationLogo.name : undefined,
+          certificateOfIncorporationName: formData.certificateOfIncorporation ? formData.certificateOfIncorporation.name : undefined,
           hasPartnership: formData.hasPartnership,
           partnershipDetails: formData.partnershipDetails.trim(),
           password: '',
         };
 
-        // Save to MongoDB backend
-        await saveToBackend('anchor', formData.password, storedFormData, uploadedDocs, documentIds);
+        const applicationData = buildAnchorApplicationData(storedFormData);
+
+        const record = registerAnchor({
+          email: officialEmail,
+          password: formData.password,
+          registrationType,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('anchor_')) {
+          console.error('CRITICAL: Anchor record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '⚓ Anchor',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.organizationName || storedFormData.fullName} submitted a new Anchor registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Company',
+          companyName: storedFormData.organizationName,
+          companyId: storedFormData.registrationNumber,
+          organization: storedFormData.organizationName,
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'anchorRegistration',
+            anchorId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateAnchorRecord(record.id, { pendingNotificationId: notificationId });
 
         alert('Registration submitted successfully! Please sign in to track your verification status.');
         navigate('/login');
@@ -1090,21 +1108,7 @@ const Register: React.FC = () => {
           return;
         }
 
-        // Upload documents to MongoDB
-        let uploadedDocs: any = {};
-        let documentIds: string[] = [];
-        try {
-          alert('Uploading documents... Please wait.');
-          const result = await uploadAllDocuments();
-          uploadedDocs = result.uploadedDocs;
-          documentIds = result.documentIds;
-        } catch (uploadError) {
-          alert('Document upload failed. Please check your files and try again.');
-          setIsSubmitting(false);
-          return;
-        }
-
-        const storedFormData: any = {
+        const storedFormData: LeadFirmFormData = {
           fullName: formData.fullName.trim(),
           position: formData.position.trim(),
           gender: formData.gender,
@@ -1118,7 +1122,7 @@ const Register: React.FC = () => {
           country: formData.country.trim(),
           idType: formData.idType,
           idNumber: formData.idNumber.trim(),
-          idDocumentName: uploadedDocs.idDocumentName || undefined,
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
           emergencyContactName: formData.emergencyContactName.trim(),
           emergencyContactPhone: formData.emergencyContactPhone.trim(),
           emergencyRelationship: formData.emergencyRelationship.trim(),
@@ -1141,15 +1145,52 @@ const Register: React.FC = () => {
           instagram: formData.instagram?.trim() || undefined,
           numEmployees: formData.numEmployees.trim(),
           areasOfOperation: [...formData.areasOfOperation],
-          organizationLogoName: uploadedDocs.organizationLogoName || undefined,
-          certificateOfIncorporationName: uploadedDocs.certificateOfIncorporationName || undefined,
+          organizationLogoName: formData.organizationLogo ? formData.organizationLogo.name : undefined,
+          certificateOfIncorporationName: formData.certificateOfIncorporation ? formData.certificateOfIncorporation.name : undefined,
           hasPartnership: formData.hasPartnership,
           partnershipDetails: formData.partnershipDetails.trim(),
           password: '',
         };
 
-        // Save to MongoDB backend
-        await saveToBackend('lead-firm', formData.password, storedFormData, uploadedDocs, documentIds);
+        const applicationData = buildLeadFirmApplicationData(storedFormData);
+
+        const record = registerLeadFirm({
+          email: officialEmail,
+          password: formData.password,
+          registrationType,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('lf_')) {
+          console.error('CRITICAL: Lead Firm record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '🌱 Lead Firm',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.organizationName || storedFormData.fullName} submitted a new Lead Firm registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Company',
+          companyName: storedFormData.organizationName,
+          companyId: storedFormData.registrationNumber,
+          organization: storedFormData.organizationName,
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'leadFirmRegistration',
+            leadFirmId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateLeadFirmRecord(record.id, { pendingNotificationId: notificationId });
 
         alert('Registration submitted successfully! Please sign in to track your verification status.');
         navigate('/login');
@@ -1196,21 +1237,7 @@ const Register: React.FC = () => {
           return;
         }
 
-        // Upload documents to MongoDB
-        let uploadedDocs: any = {};
-        let documentIds: string[] = [];
-        try {
-          alert('Uploading documents... Please wait.');
-          const result = await uploadAllDocuments();
-          uploadedDocs = result.uploadedDocs;
-          documentIds = result.documentIds;
-        } catch (uploadError) {
-          alert('Document upload failed. Please check your files and try again.');
-          setIsSubmitting(false);
-          return;
-        }
-
-        const storedFormData: any = {
+        const storedFormData: ProducerFormData = {
           fullName: formData.fullName.trim(),
           gender: formData.gender,
           birthDate: formData.birthDate,
@@ -1237,9 +1264,9 @@ const Register: React.FC = () => {
           challengesFaced: formData.challengesFaced.trim() || undefined,
           idType: formData.idType,
           idNumber: formData.idNumber.trim(),
-          idDocumentName: uploadedDocs.idDocumentName || undefined,
-          farmImagesName: uploadedDocs.farmImagesName || undefined,
-          certificationName: uploadedDocs.certificationName || undefined,
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
+          farmImagesName: formData.farmImages ? formData.farmImages.name : undefined,
+          certificationName: formData.certification ? formData.certification.name : undefined,
           preferredPaymentMethod: formData.preferredPaymentMethod,
           bankName: formData.bankName.trim(),
           accountName: formData.accountName.trim(),
@@ -1247,8 +1274,41 @@ const Register: React.FC = () => {
           password: formData.password,
         };
 
-        // Save to MongoDB backend
-        await saveToBackend('producer', formData.password, storedFormData, uploadedDocs, documentIds);
+        const applicationData = buildProducerApplicationData(storedFormData);
+
+        const record = registerProducer({
+          email: email,
+          password: formData.password,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('producer_')) {
+          console.error('CRITICAL: Producer record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '🌾 Producer/Farmer',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.fullName} submitted a new Producer/Farmer registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Individual',
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email || storedFormData.phone,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'producerRegistration',
+            producerId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateProducerRecord(record.id, { pendingNotificationId: notificationId });
 
         alert('Registration submitted successfully! Please sign in to track your verification status.');
         navigate('/login');
@@ -1283,21 +1343,7 @@ const Register: React.FC = () => {
           return;
         }
 
-        // Upload documents to MongoDB
-        let uploadedDocs: any = {};
-        let documentIds: string[] = [];
-        try {
-          alert('Uploading documents... Please wait.');
-          const result = await uploadAllDocuments();
-          uploadedDocs = result.uploadedDocs;
-          documentIds = result.documentIds;
-        } catch (uploadError) {
-          alert('Document upload failed. Please check your files and try again.');
-          setIsSubmitting(false);
-          return;
-        }
-
-        const storedFormData: any = {
+        const storedFormData: ResearcherFormData = {
           fullName: formData.fullName.trim(),
           gender: formData.gender,
           birthDate: formData.birthDate,
@@ -1311,7 +1357,7 @@ const Register: React.FC = () => {
           country: formData.country.trim(),
           idType: formData.idType,
           idNumber: formData.idNumber.trim(),
-          idDocumentName: uploadedDocs.idDocumentName || undefined,
+          idDocumentName: formData.idDocument ? formData.idDocument.name : undefined,
           institutionName: formData.institutionName.trim(),
           faculty: formData.faculty.trim(),
           currentLevel: formData.currentLevel,
@@ -1322,15 +1368,48 @@ const Register: React.FC = () => {
           researchTopic: formData.researchTopic.trim() || undefined,
           supervisorName: formData.supervisorName.trim() || undefined,
           supervisorEmail: formData.supervisorEmail.trim() || undefined,
-          supportingDocumentName: uploadedDocs.supportingDocumentName || undefined,
+          supportingDocumentName: formData.supportingDocument ? formData.supportingDocument.name : undefined,
           googleScholar: formData.googleScholar.trim() || undefined,
           researchGate: formData.researchGate.trim() || undefined,
           linkedinProfile: formData.linkedinProfile.trim() || undefined,
           password: formData.password,
         };
 
-        // Save to MongoDB backend
-        await saveToBackend('researcher', formData.password, storedFormData, uploadedDocs, documentIds);
+        const applicationData = buildResearcherApplicationData(storedFormData);
+
+        const record = registerResearcher({
+          email: email,
+          password: formData.password,
+          formData: storedFormData,
+        });
+
+        if (!record || !record.id || !record.id.startsWith('researcher_')) {
+          console.error('CRITICAL: Researcher record validation failed', { record });
+          alert('Registration error: Record creation failed. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const notificationId = addNotification({
+          role: '🎓 Researcher/Student',
+          targetRole: 'coordinating-agency',
+          message: `${storedFormData.fullName} submitted a new Researcher/Student registration for approval.`,
+          applicantName: storedFormData.fullName,
+          applicantType: 'Individual',
+          fullAddress: `${storedFormData.address}, ${storedFormData.city}, ${storedFormData.state}, ${storedFormData.country}`,
+          contactPersonName: storedFormData.fullName,
+          contactPersonEmail: storedFormData.email,
+          contactPersonPhone: storedFormData.phone,
+          applicationData,
+          metadata: {
+            type: 'researcherRegistration',
+            researcherId: record.id,
+            email: record.email,
+            requiresDecision: true,
+          },
+        });
+
+        updateResearcherRecord(record.id, { pendingNotificationId: notificationId });
 
         alert('Registration submitted successfully! Please sign in to track your verification status.');
         navigate('/login');
@@ -3626,8 +3705,3 @@ const Register: React.FC = () => {
 };
 
 export default Register;
-
-
-
-
-

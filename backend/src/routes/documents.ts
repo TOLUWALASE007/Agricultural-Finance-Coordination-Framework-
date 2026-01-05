@@ -1,7 +1,5 @@
 import express, { Response, Router } from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs/promises';
 import { body, validationResult } from 'express-validator';
 import Document from '../models/Document';
 import { authenticateToken, AuthRequest } from './auth';
@@ -9,30 +7,35 @@ import { logger } from '../utils/logger';
 
 const router: Router = express.Router();
 
-const storage = multer.diskStorage({
-  destination: async (_req, _file, cb) => {
-    const uploadPath = process.env.UPLOAD_PATH || './uploads';
-    try {
-      await fs.mkdir(uploadPath, { recursive: true });
-      cb(null, uploadPath);
-    } catch (error) {
-      cb(error as Error, uploadPath);
-    }
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Use memory storage instead of disk storage
+const storage = multer.memoryStorage();
 
 const fileFilter = (_req: express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
   cb(null, allowedTypes.includes(file.mimetype));
 };
 
-const upload = multer({ storage, fileFilter, limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760') } });
+const upload = multer({ storage, fileFilter, limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE || '52428800') } });
 
-router.post('/upload', authenticateToken, upload.single('document'), async (req: AuthRequest, res: Response): Promise<void> => {
+// Optional authentication middleware - allows both authenticated and unauthenticated requests
+const optionalAuth = (req: AuthRequest, _res: Response, next: express.NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token) {
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+      req.user = decoded as { userId: string; email: string; userType: string };
+    } catch (err) {
+      // Token invalid, but we allow the request to proceed without user info
+      logger.warn('Invalid token provided for optional auth endpoint');
+    }
+  }
+  next();
+};
+
+router.post('/upload', optionalAuth, upload.single('document'), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded' });
@@ -42,16 +45,20 @@ router.post('/upload', authenticateToken, upload.single('document'), async (req:
     const { documentType, description, relatedEntityType, relatedEntityId } = req.body;
 
     if (!documentType) {
-      await fs.unlink(req.file.path);
       res.status(400).json({ error: 'Document type is required' });
       return;
     }
 
+    // Generate unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const filename = 'document-' + uniqueSuffix + '-' + req.file.originalname.replace(/\s+/g, '_');
+
+    // Store file data in MongoDB
     const doc = await Document.create({
-      userId: req.user!.userId as any,
-      filename: req.file.filename,
+      userId: req.user?.userId ? req.user.userId as any : null,
+      filename,
       originalName: req.file.originalname,
-      filePath: req.file.path,
+      fileData: req.file.buffer, // Store the actual file data
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
       documentType,
@@ -60,13 +67,14 @@ router.post('/upload', authenticateToken, upload.single('document'), async (req:
       relatedEntityId: relatedEntityId ? relatedEntityId as any : undefined
     });
 
-    logger.info(`Document uploaded: ${req.file.originalname} by user ${req.user!.userId}`);
-    res.status(201).json({ success: true, message: 'Document uploaded successfully', data: { id: String(doc._id), filename: req.file.filename, originalName: req.file.originalname, fileSize: req.file.size, mimeType: req.file.mimetype, documentType, uploadDate: new Date() } });
+    const logMessage = req.user?.userId
+      ? `Document uploaded to MongoDB: ${req.file.originalname} by user ${req.user.userId}`
+      : `Document uploaded to MongoDB: ${req.file.originalname} (unauthenticated - registration)`;
+    logger.info(logMessage);
+
+    res.status(201).json({ success: true, message: 'Document uploaded successfully', data: { id: String(doc._id), filename, originalName: req.file.originalname, fileSize: req.file.size, mimeType: req.file.mimetype, documentType, uploadDate: new Date() } });
   } catch (error: any) {
     logger.error('Upload document error:', error);
-    if (req.file) {
-      try { await fs.unlink(req.file.path); } catch {}
-    }
     res.status(500).json({ error: 'Server error during file upload' });
   }
 });
@@ -88,7 +96,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response): Prom
     }
 
     const count = await Document.countDocuments(filter);
-    const documents = await Document.find(filter).sort({ uploadDate: -1 }).skip((pageNum - 1) * limitNum).limit(limitNum).lean();
+    const documents = await Document.find(filter).select('-fileData').sort({ uploadDate: -1 }).skip((pageNum - 1) * limitNum).limit(limitNum).lean();
 
     res.json({ success: true, data: documents.map(d => ({ id: String(d._id), ...d })), pagination: { page: pageNum, limit: limitNum, total: count, pages: Math.ceil(count / limitNum) } });
   } catch (error: any) {
@@ -100,7 +108,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response): Prom
 router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const document = await Document.findOne({ _id: id, userId: req.user!.userId });
+    const document = await Document.findOne({ _id: id, userId: req.user!.userId }).select('-fileData');
 
     if (!document) {
       res.status(404).json({ error: 'Document not found' });
@@ -124,19 +132,17 @@ router.get('/:id/download', authenticateToken, async (req: AuthRequest, res: Res
       return;
     }
 
-    try {
-      await fs.access(document.filePath);
-    } catch {
-      res.status(404).json({ error: 'File not found on server' });
+    if (!document.fileData) {
+      res.status(404).json({ error: 'File data not found' });
       return;
     }
 
     res.setHeader('Content-Disposition', `attachment; filename="${document.originalName}"`);
     res.setHeader('Content-Type', document.mimeType);
     res.setHeader('Content-Length', document.fileSize.toString());
-    require('fs').createReadStream(document.filePath).pipe(res);
+    res.send(document.fileData);
 
-    logger.info(`Document downloaded: ${document.originalName} by user ${req.user!.userId}`);
+    logger.info(`Document downloaded from MongoDB: ${document.originalName} by user ${req.user!.userId}`);
   } catch (error: any) {
     logger.error('Download document error:', error);
     res.status(500).json({ error: 'Server error during download' });
@@ -182,14 +188,8 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response)
       return;
     }
 
-    try {
-      await fs.unlink(document.filePath);
-    } catch (error) {
-      logger.warn(`Failed to delete file from filesystem: ${document.filePath}`, error);
-    }
-
     await Document.findByIdAndDelete(id);
-    logger.info(`Document deleted: ${document.originalName} by user ${req.user!.userId}`);
+    logger.info(`Document deleted from MongoDB: ${document.originalName} by user ${req.user!.userId}`);
     res.json({ success: true, message: 'Document deleted successfully' });
   } catch (error: any) {
     logger.error('Delete document error:', error);
@@ -199,24 +199,57 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response)
 
 router.get('/types/list', authenticateToken, async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
-    res.json({ success: true, data: [
-      { value: 'identification', label: 'Identification Document' },
-      { value: 'business_registration', label: 'Business Registration' },
-      { value: 'tax_certificate', label: 'Tax Certificate' },
-      { value: 'financial_statement', label: 'Financial Statement' },
-      { value: 'bank_statement', label: 'Bank Statement' },
-      { value: 'collateral_document', label: 'Collateral Document' },
-      { value: 'insurance_certificate', label: 'Insurance Certificate' },
-      { value: 'loan_application', label: 'Loan Application' },
-      { value: 'loan_agreement', label: 'Loan Agreement' },
-      { value: 'repayment_schedule', label: 'Repayment Schedule' },
-      { value: 'farm_registration', label: 'Farm Registration' },
-      { value: 'anchor_agreement', label: 'Anchor Agreement' },
-      { value: 'produce_certificate', label: 'Produce Certificate' },
-      { value: 'other', label: 'Other' }
-    ]});
+    res.json({
+      success: true, data: [
+        { value: 'identification', label: 'Identification Document' },
+        { value: 'business_registration', label: 'Business Registration' },
+        { value: 'tax_certificate', label: 'Tax Certificate' },
+        { value: 'financial_statement', label: 'Financial Statement' },
+        { value: 'bank_statement', label: 'Bank Statement' },
+        { value: 'collateral_document', label: 'Collateral Document' },
+        { value: 'insurance_certificate', label: 'Insurance Certificate' },
+        { value: 'loan_application', label: 'Loan Application' },
+        { value: 'loan_agreement', label: 'Loan Agreement' },
+        { value: 'repayment_schedule', label: 'Repayment Schedule' },
+        { value: 'farm_registration', label: 'Farm Registration' },
+        { value: 'anchor_agreement', label: 'Anchor Agreement' },
+        { value: 'produce_certificate', label: 'Produce Certificate' },
+        { value: 'other', label: 'Other' }
+      ]
+    });
   } catch (error: any) {
     logger.error('Get document types error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Link documents uploaded with an email to a userId
+router.post('/link-to-user', async (req: express.Request, res: Response): Promise<void> => {
+  try {
+    const { documentIds, userId } = req.body;
+
+    if (!documentIds || !userId || !Array.isArray(documentIds)) {
+      res.status(400).json({ error: 'documentIds (array) and userId are required' });
+      return;
+    }
+
+    const result = await Document.updateMany(
+      {
+        _id: { $in: documentIds },
+        $or: [{ userId: null }, { userId: { $exists: false } }]
+      },
+      { $set: { userId: userId } }
+    );
+
+    logger.info(`Linked ${result.modifiedCount} documents to user ${userId} by document IDs`);
+
+    res.json({
+      success: true,
+      message: `Linked ${result.modifiedCount} documents to user`,
+      count: result.modifiedCount
+    });
+  } catch (error: any) {
+    logger.error('Link documents error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -23,6 +23,8 @@ type VerificationEmergency = {
   idType: NullableString;
   idNumber: NullableString;
   idDocument: NullableString;
+  idDocumentData?: Buffer;
+  idDocumentMimeType?: string;
   emergencyContactName: NullableString;
   emergencyContactPhone: NullableString;
   emergencyRelationship: NullableString;
@@ -61,7 +63,11 @@ type OperationsDocumentation = {
   numEmployees: NullableString;
   areasOfOperation: NullableString;
   organizationLogo: NullableString;
+  organizationLogoData?: Buffer;
+  organizationLogoMimeType?: string;
   certificateOfIncorporation: NullableString;
+  certificateOfIncorporationData?: Buffer;
+  certificateOfIncorporationMimeType?: string;
   hasPartnership: NullableString;
   partnershipDetails: NullableString;
 };
@@ -113,6 +119,8 @@ const VerificationEmergencySchema = new Schema<VerificationEmergency>({
   idType: { type: String, default: '' },
   idNumber: { type: String, default: '' },
   idDocument: { type: String, default: '' },
+  idDocumentData: { type: Buffer },
+  idDocumentMimeType: { type: String },
   emergencyContactName: { type: String, default: '' },
   emergencyContactPhone: { type: String, default: '' },
   emergencyRelationship: { type: String, default: '' }
@@ -151,7 +159,11 @@ const OperationsDocumentationSchema = new Schema<OperationsDocumentation>({
   numEmployees: { type: String, default: '' },
   areasOfOperation: { type: String, default: '' },
   organizationLogo: { type: String, default: '' },
+  organizationLogoData: { type: Buffer },
+  organizationLogoMimeType: { type: String },
   certificateOfIncorporation: { type: String, default: '' },
+  certificateOfIncorporationData: { type: Buffer },
+  certificateOfIncorporationMimeType: { type: String },
   hasPartnership: { type: String, default: '' },
   partnershipDetails: { type: String, default: '' }
 }, { _id: false });

@@ -193,7 +193,7 @@ const Settings: React.FC = () => {
 
   useEffect(() => {
     const loadRecord = () => {
-      const rawSession = localStorage.getItem('user');
+      const rawSession = sessionStorage.getItem('user');
       if (!rawSession) {
         setIsLoadingRecord(false);
         return;

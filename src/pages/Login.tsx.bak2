@@ -239,31 +239,117 @@ const Login: React.FC = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
+    
+    
+
+    const shouldUseDemo = isStaticHosted && (!process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL.includes('localhost'));
+
+    if (shouldUseDemo) {
+      const loggedIn = tryDemoLogin();
+      if (!loggedIn) {
+        alert('Login failed. Please verify your email, password, and selected role.');
+      }
+      setIsSubmitting(false);
+      return;
+    }
+
+    // On localhost, skip backend login attempt to avoid ERR_CONNECTION_REFUSED errors
+    // Local and demo login should handle authentication when backend is not running
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (isLocalhost) {
+      // On localhost, only use local/demo login to avoid connection errors
+      // Try demo login as final fallback
+      const loggedIn = tryDemoLogin();
+      if (!loggedIn) {
+        alert('Login failed. Please verify your email, password, and selected role. If you just registered, your account may need to be verified.');
+      }
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Attempt backend login with proper error handling (only for non-localhost environments)
+    let backendLoginSuccess = false;
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 2000); // 2 second timeout
+
     try {
-      // Try MongoDB backend login first
-      const response = await authAPI.login({
-        email: formData.email,
-        password: formData.password,
-        role: formData.role
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        }),
+        signal: abortController.signal
       });
 
-      if (response.success && response.token) {
+      clearTimeout(timeoutId);
+
+      // Check for network/connection errors in response
+      if (response.status === 0 || response.type === 'error') {
+        // Network error - backend not running, try local login
+        
+        
+        throw new Error('Backend server is not running');
+      }
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.token) {
         // Backend login successful
-        handleSuccessfulLogin(response.user, formData.role, response.token);
+        sessionStorage.setItem('authToken', data.token);
+        sessionStorage.setItem('user', JSON.stringify(data.user));
+        const portalPath = roleMap[formData.role] || '/portal/fund-provider';
+        navigate(portalPath);
+        setIsSubmitting(false);
+        backendLoginSuccess = true;
         return;
       } else {
-        throw new Error(response.error || 'Invalid credentials');
+        // Backend returned error - will fall through to local login attempt
+        throw new Error(data.error || 'Invalid credentials');
       }
     } catch (backendError: any) {
-      console.error('Backend login failed:', backendError);
+      clearTimeout(timeoutId);
+
+      // Check if this is an abort (timeout) or connection error
+      const isAborted = backendError?.name === 'AbortError';
+      const errorMessage = backendError?.message || String(backendError) || '';
+      const isConnectionError =
+        isAborted ||
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('ERR_CONNECTION_REFUSED') ||
+        errorMessage.includes('NetworkError') ||
+        backendError?.name === 'TypeError' ||
+        backendError?.name === 'NetworkError' ||
+        !backendError?.message; // If no message, likely connection error
+
+      if (isConnectionError) {
+        // Connection error - try local login silently (don't log to console)
+        
+        
+        // If local login also fails, continue to demo login fallback
+      }
+
+      // If backend login failed for other reasons, continue to local/demo login
+      // Don't throw here - let the flow continue to try local and demo login
+    }
+
+    // If we reach here, backend login failed and we need to try local/demo login
+    // This code should not execute if backend login succeeded or local login succeeded above
+    if (!backendLoginSuccess) {
+      // Try local login one more time (in case it wasn't tried above)
       
-      // Fallback to demo login
+      
+
+      // Try demo login
       const demoHandled = tryDemoLogin();
       if (!demoHandled) {
-        alert('Login failed. Please verify your credentials or use demo accounts.');
+        alert('Login failed. Please verify your credentials. If the backend server is not running, ensure you have registered locally or use demo accounts.');
       }
-    } finally {
       setIsSubmitting(false);
+      return;
     }
   };
 

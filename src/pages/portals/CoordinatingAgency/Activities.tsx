@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import PortalLayout from '../../../components/PortalLayout';
 import { generateReport, processAction, addNewRecord } from '../../../utils/quickActions';
 

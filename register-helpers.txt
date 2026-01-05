@@ -1,0 +1,127 @@
+// Helper functions to add to Register.tsx before handleSubmit
+
+// Helper function to upload all documents to MongoDB
+const uploadAllDocuments = async () => {
+  const uploadedDocs: any = {};
+  
+  const uploadDocument = async (file: File | null, fieldName: string) => {
+    if (!file) return null;
+    try {
+      const result = await documentAPI.upload(file);
+      return result.filename;
+    } catch (error) {
+      console.error(`Failed to upload ${fieldName}:`, error);
+      throw error;
+    }
+  };
+
+  // Upload all document fields
+  if (formData.idDocument) {
+    uploadedDocs.idDocumentName = await uploadDocument(formData.idDocument, 'identification');
+  }
+  if (formData.organizationLogo) {
+    uploadedDocs.organizationLogoName = await uploadDocument(formData.organizationLogo, 'logo');
+  }
+  if (formData.certificateOfIncorporation) {
+    uploadedDocs.certificateOfIncorporationName = await uploadDocument(formData.certificateOfIncorporation, 'certificate');
+  }
+  if (formData.taxClearanceCertificate) {
+    uploadedDocs.taxClearanceCertificateName = await uploadDocument(formData.taxClearanceCertificate, 'tax clearance');
+  }
+  if (formData.auditedFinancialStatement) {
+    uploadedDocs.auditedFinancialStatementName = await uploadDocument(formData.auditedFinancialStatement, 'financial statement');
+  }
+  if (formData.proofOfAddress) {
+    uploadedDocs.proofOfAddressName = await uploadDocument(formData.proofOfAddress, 'proof of address');
+  }
+  if (formData.bankStatement) {
+    uploadedDocs.bankStatementName = await uploadDocument(formData.bankStatement, 'bank statement');
+  }
+  if (formData.businessPlan) {
+    uploadedDocs.businessPlanName = await uploadDocument(formData.businessPlan, 'business plan');
+  }
+
+  return uploadedDocs;
+};
+
+// Helper function to save user data to MongoDB backend
+const saveToBackend = async (role: string, password: string, formData: any, uploadedDocs: any) => {
+  try {
+    await authAPI.register({
+      role,
+      password,
+      contactInfo: {
+        personalDetails: {
+          fullName: formData.fullName || '',
+          position: formData.position || '',
+          gender: formData.gender || '',
+          birthDate: formData.birthDate || '',
+        },
+        contactInformation: {
+          email: formData.email || formData.officialEmail || '',
+          phone: formData.phone || '',
+          whatsapp: formData.whatsapp || '',
+          address: formData.address || '',
+          city: formData.city || '',
+          state: formData.state || '',
+          country: formData.country || '',
+        },
+        identification: {
+          idType: formData.idType || '',
+          idNumber: formData.idNumber || '',
+          idDocumentName: uploadedDocs.idDocumentName || '',
+        },
+        verificationEmergency: {
+          emergencyContactName: formData.emergencyContactName || '',
+          emergencyContactPhone: formData.emergencyContactPhone || '',
+          emergencyRelationship: formData.emergencyRelationship || '',
+        },
+      },
+      organizationInfo: {
+        basicInformation: {
+          organizationName: formData.organizationName || '',
+          registrationNumber: formData.registrationNumber || '',
+          organizationType: formData.organizationType || '',
+          yearEstablished: formData.yearEstablished || '',
+          industry: formData.industry || '',
+          missionStatement: formData.missionStatement || '',
+        },
+        addressContactInfo: {
+          headquartersAddress: formData.headquartersAddress || '',
+          hqCity: formData.hqCity || '',
+          hqState: formData.hqState || '',
+          hqCountry: formData.hqCountry || '',
+          officePhone: formData.officePhone || '',
+          officialEmail: formData.officialEmail || '',
+          website: formData.website || '',
+        },
+        socialMedia: {
+          facebook: formData.facebook || '',
+          linkedin: formData.linkedin || '',
+          twitter: formData.twitter || '',
+          instagram: formData.instagram || '',
+        },
+        operationalDetails: {
+          numEmployees: formData.numEmployees || '',
+          areasOfOperation: formData.areasOfOperation || [],
+        },
+        documents: {
+          organizationLogoName: uploadedDocs.organizationLogoName || '',
+          certificateOfIncorporationName: uploadedDocs.certificateOfIncorporationName || '',
+          taxClearanceCertificateName: uploadedDocs.taxClearanceCertificateName || '',
+          auditedFinancialStatementName: uploadedDocs.auditedFinancialStatementName || '',
+          proofOfAddressName: uploadedDocs.proofOfAddressName || '',
+          bankStatementName: uploadedDocs.bankStatementName || '',
+          businessPlanName: uploadedDocs.businessPlanName || '',
+        },
+        partnerships: {
+          hasPartnership: formData.hasPartnership || false,
+          partnershipDetails: formData.partnershipDetails || '',
+        },
+      },
+    });
+  } catch (backendError) {
+    console.error('Failed to save to backend:', backendError);
+    console.error('Backend error details:', backendError instanceof Error ? backendError.message : backendError);
+  }
+};

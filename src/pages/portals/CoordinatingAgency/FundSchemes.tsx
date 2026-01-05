@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import PortalLayout from '../../../components/PortalLayout';
 import { generateReport } from '../../../utils/quickActions';
-import { schemeAPI } from '../../../utils/api';
+import { schemeAPI, userAPI, notificationAPI } from '../../../utils/api';
 import { useNotifications } from '../../../context/NotificationContext';
-import { getInsuranceCompanies, InsuranceCompanyRecord, getPFIs, PFIRecord } from '../../../utils/localDatabase';
 
 type DurationUnit = 'Days' | 'Weeks' | 'Months' | 'Years';
 type LocationType = 'state' | 'lga' | 'ward';
@@ -309,6 +308,7 @@ interface BeneficiaryApplication {
 
 interface FundScheme {
   id: string;
+  schemeId: string;
   name: string;
   fundProvider: string;
   amount: string;
@@ -420,419 +420,16 @@ const FundSchemes: React.FC = () => {
     { title: 'Recovery Rate', value: '89.2%', change: '+3.5%', icon: '📈' }
   ];
 
-  // Load schemes from localStorage or use default
-  // Migration function to add workflow fields to existing schemes
-  const migrateScheme = (scheme: any): FundScheme => {
-    // Handle schemes with old workflow stages (stage1, stage2)
-    if (scheme.workflowStage === 'stage1' || scheme.workflowStage === 'stage2') {
-      return {
-        ...scheme,
-        workflowStage: 'completed' as SchemeWorkflowStage, // Convert old stages to completed
-        selectedInsuranceCompanyIds: scheme.selectedInsuranceCompanyIds || [],
-        insuranceCompanySubmissions: scheme.insuranceCompanySubmissions || [],
-        approvedInsuranceCompanyId: scheme.approvedInsuranceCompanyId,
-        pfiApplications: scheme.pfiApplications || [],
-        selectedPFIIds: scheme.selectedPFIIds || [],
-        beneficiaryApplications: scheme.beneficiaryApplications || []
-      };
-    }
-
-    // If scheme already has valid workflow fields, return as is
-    if (scheme.workflowStage === 'initial' || scheme.workflowStage === 'completed') {
-      return scheme as FundScheme;
-    }
-
-    // Add default workflow fields to old schemes without workflow data
-    return {
-      ...scheme,
-      workflowStage: 'completed' as SchemeWorkflowStage, // Old schemes are considered completed
-      selectedInsuranceCompanyIds: scheme.selectedInsuranceCompanyIds || [],
-      insuranceCompanySubmissions: scheme.insuranceCompanySubmissions || [],
-      approvedInsuranceCompanyId: scheme.approvedInsuranceCompanyId,
-      pfiApplications: scheme.pfiApplications || [],
-      selectedPFIIds: scheme.selectedPFIIds || [],
-      beneficiaryApplications: scheme.beneficiaryApplications || []
-    };
-  };
-
-  const loadSchemesFromStorage = (): FundScheme[] | null => {
-    try {
-      const stored = localStorage.getItem('fundSchemes');
-      if (stored) {
-        const schemes = JSON.parse(stored);
-        // Migrate all schemes to include workflow fields
-        return Array.isArray(schemes) ? schemes.map(migrateScheme) : null;
-      }
-    } catch (error) {
-      console.error('Error loading schemes from localStorage:', error);
-    }
-    return null;
-  };
-
   // Fund Schemes state
-  const [fundSchemes, setFundSchemes] = useState<FundScheme[]>(() => {
-    const stored = loadSchemesFromStorage();
-    if (stored) return stored;
-
-    // Default schemes with workflow fields
-    const defaultSchemes: FundScheme[] = [
-      {
-        id: 'FS001',
-        name: 'Rice Value Chain Financing',
-        fundProvider: 'CBN Agricultural Finance',
-        amount: '₦25.5B',
-        beneficiaries: 12450,
-        status: 'Active',
-        state: 'Multi-State',
-        startDate: 'Jan 2024',
-        recoveryRate: '92%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS002',
-        name: 'Cassava Production Support',
-        fundProvider: 'BOA Agric Investment',
-        amount: '₦18.3B',
-        beneficiaries: 8920,
-        status: 'Active',
-        state: 'Ogun, Oyo, Ondo',
-        startDate: 'Mar 2024',
-        recoveryRate: '88%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS003',
-        name: 'Maize Farmers Credit Scheme',
-        fundProvider: 'Sterling Bank Agric Fund',
-        amount: '₦12.7B',
-        beneficiaries: 6780,
-        status: 'Active',
-        state: 'Kaduna, Kano, Katsina',
-        startDate: 'Feb 2024',
-        recoveryRate: '85%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS004',
-        name: 'Poultry Expansion Program',
-        fundProvider: 'Access Bank Agric',
-        amount: '₦9.8B',
-        beneficiaries: 3450,
-        status: 'Active',
-        state: 'Lagos, Ogun',
-        startDate: 'Apr 2024',
-        recoveryRate: '91%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS005',
-        name: 'Tomato Processing Scheme',
-        fundProvider: 'Zenith Bank Agric Finance',
-        amount: '₦8.2B',
-        beneficiaries: 2340,
-        status: 'Active',
-        state: 'Kano, Jigawa',
-        startDate: 'May 2024',
-        recoveryRate: '87%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS006',
-        name: 'Cocoa Farmers Support',
-        fundProvider: 'FMARD Special Fund',
-        amount: '₦15.6B',
-        beneficiaries: 5620,
-        status: 'Active',
-        state: 'Cross River, Ondo, Ekiti',
-        startDate: 'Jan 2024',
-        recoveryRate: '94%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS007',
-        name: 'Fish Farming Initiative',
-        fundProvider: 'UBA Agric Development',
-        amount: '₦7.4B',
-        beneficiaries: 1890,
-        status: 'Active',
-        state: 'Delta, Rivers, Bayelsa',
-        startDate: 'Mar 2024',
-        recoveryRate: '83%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS008',
-        name: 'Sorghum Production Boost',
-        fundProvider: 'First Bank Agric',
-        amount: '₦6.9B',
-        beneficiaries: 4560,
-        status: 'Completed',
-        state: 'Borno, Yobe, Adamawa',
-        startDate: 'Nov 2023',
-        recoveryRate: '79%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS009',
-        name: 'Vegetable Farming Credit',
-        fundProvider: 'GTBank Agricultural Fund',
-        amount: '₦5.3B',
-        beneficiaries: 3210,
-        status: 'Active',
-        state: 'Plateau, Benue',
-        startDate: 'Jun 2024',
-        recoveryRate: '90%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS010',
-        name: 'Dairy Development Scheme',
-        fundProvider: 'NIRSAL Agric Fund',
-        amount: '₦11.2B',
-        beneficiaries: 2780,
-        status: 'Active',
-        state: 'Adamawa, Taraba',
-        startDate: 'Feb 2024',
-        recoveryRate: '86%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS011',
-        name: 'Oil Palm Expansion',
-        fundProvider: 'CBN Anchor Borrowers',
-        amount: '₦13.8B',
-        beneficiaries: 4920,
-        status: 'Active',
-        state: 'Edo, Delta, Imo',
-        startDate: 'Apr 2024',
-        recoveryRate: '88%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      },
-      {
-        id: 'FS012',
-        name: 'Youth Agripreneur Fund',
-        fundProvider: 'BOI Youth Fund',
-        amount: '₦9.1B',
-        beneficiaries: 6340,
-        status: 'Active',
-        state: 'Multi-State',
-        startDate: 'May 2024',
-        recoveryRate: '82%',
-        workflowStage: 'completed',
-        selectedInsuranceCompanyIds: [],
-        insuranceCompanySubmissions: [],
-        pfiApplications: [],
-        selectedPFIIds: [],
-        beneficiaryApplications: []
-      }
-    ];
-
-    return defaultSchemes;
-  });
-
-  // Save schemes to localStorage whenever they change
-  // IMPORTANT: Merge external submissions (from IC/PFI portals) to prevent overwriting
-  useEffect(() => {
-    try {
-      // Read current localStorage to preserve external submissions
-      const storedSchemes = localStorage.getItem('fundSchemes');
-      const externalSchemes = storedSchemes ? JSON.parse(storedSchemes) : [];
-
-      // DEBUG: Log IC submissions in state vs localStorage
-      const stateICCount = fundSchemes.reduce((count, s) => count + (s.insuranceCompanySubmissions?.length || 0), 0);
-      const externalICCount = externalSchemes.reduce((count: number, s: any) => count + (s.insuranceCompanySubmissions?.length || 0), 0);
-      console.log('[FundSchemes Merge] State IC count:', stateICCount, 'External IC count:', externalICCount);
-
-      // Helper function to merge submissions (defined inline to avoid hoisting issues)
-      const mergeArrays = (stateArr: any[], externalArr: any[], idKey: string): any[] => {
-        const merged = [...stateArr];
-        externalArr.forEach((external: any) => {
-          const existsInState = stateArr.some(
-            s => s[idKey] === external[idKey] && s.submittedAt === external.submittedAt
-          );
-          if (!existsInState) {
-            merged.push(external);
-          }
-        });
-        return merged;
-      };
-
-      // Merge: For each scheme in our state, preserve external submissions
-      const mergedSchemes = fundSchemes.map(scheme => {
-        const externalScheme = externalSchemes.find((s: any) => s.id === scheme.id);
-        if (externalScheme) {
-          const merged = {
-            ...scheme,
-            // Preserve external IC submissions not in our state
-            insuranceCompanySubmissions: mergeArrays(
-              scheme.insuranceCompanySubmissions || [],
-              externalScheme.insuranceCompanySubmissions || [],
-              'insuranceCompanyId'
-            ),
-            // Preserve external PFI applications not in our state
-            pfiApplications: mergeArrays(
-              scheme.pfiApplications || [],
-              externalScheme.pfiApplications || [],
-              'pfiId'
-            )
-          };
-
-          // DEBUG: Log merge results for schemes with submissions
-          if (externalScheme.insuranceCompanySubmissions?.length > 0 || scheme.insuranceCompanySubmissions?.length > 0) {
-            console.log(`[FundSchemes Merge] Scheme "${scheme.name}":`, {
-              stateIC: scheme.insuranceCompanySubmissions?.length || 0,
-              externalIC: externalScheme.insuranceCompanySubmissions?.length || 0,
-              mergedIC: merged.insuranceCompanySubmissions?.length || 0
-            });
-          }
-
-          return merged;
-        }
-        return scheme;
-      });
-
-      // DEBUG: Log final IC count after merge
-      const mergedICCount = mergedSchemes.reduce((count, s) => count + (s.insuranceCompanySubmissions?.length || 0), 0);
-      console.log('[FundSchemes Merge] After merge - IC count:', mergedICCount);
-
-      localStorage.setItem('fundSchemes', JSON.stringify(mergedSchemes));
-    } catch (error) {
-      console.error('Error saving schemes to localStorage:', error);
-    }
-  }, [fundSchemes]);
-
-  // Listen for storage changes from other portals (IC/PFI submissions)
-  useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'fundSchemes' && event.newValue) {
-        try {
-          const updatedSchemes = JSON.parse(event.newValue);
-
-          // Inline merge function
-          const mergeArrays = (stateArr: any[], externalArr: any[], idKey: string): any[] => {
-            const merged = [...stateArr];
-            externalArr.forEach((external: any) => {
-              const existsInState = stateArr.some(
-                s => s[idKey] === external[idKey] && s.submittedAt === external.submittedAt
-              );
-              if (!existsInState) {
-                merged.push(external);
-              }
-            });
-            return merged;
-          };
-
-          // Update our state with the new schemes (preserving our local changes)
-          setFundSchemes(prevSchemes => {
-            return prevSchemes.map(scheme => {
-              const updated = updatedSchemes.find((s: any) => s.id === scheme.id);
-              if (updated) {
-                return {
-                  ...scheme,
-                  // Merge new submissions from other portals
-                  insuranceCompanySubmissions: mergeArrays(
-                    scheme.insuranceCompanySubmissions || [],
-                    updated.insuranceCompanySubmissions || [],
-                    'insuranceCompanyId'
-                  ),
-                  pfiApplications: mergeArrays(
-                    scheme.pfiApplications || [],
-                    updated.pfiApplications || [],
-                    'pfiId'
-                  )
-                };
-              }
-              return scheme;
-            });
-          });
-        } catch (error) {
-          console.error('Error handling storage change:', error);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  // CRITICAL: Listen for same-window fundSchemes updates from IC/PFI portals
-  useEffect(() => {
-    const handleFundSchemesUpdate = () => {
-      console.log('[FundSchemes] Received fundSchemes-updated event - refreshing from localStorage');
-      try {
-        const storedSchemes = localStorage.getItem('fundSchemes');
-        if (storedSchemes) {
-          const updatedSchemes = JSON.parse(storedSchemes);
-          setFundSchemes(updatedSchemes);
-          console.log('[FundSchemes] State refreshed from localStorage');
-        }
-      } catch (error) {
-        console.error('[FundSchemes] Error refreshing from localStorage:', error);
-      }
-    };
-    window.addEventListener('fundSchemes-updated', handleFundSchemesUpdate);
-    return () => window.removeEventListener('fundSchemes-updated', handleFundSchemesUpdate);
-  }, []);
-
-  const { addNotification } = useNotifications();
+  const [fundSchemes, setFundSchemes] = useState<FundScheme[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+
+  // No longer using localStorage syncing as MongoDB is now the single source of truth
+
+
+  const { addNotification } = useNotifications();
 
   // State management for Available Schemes
   const [schemeSearch, setSchemeSearch] = useState('');
@@ -1021,6 +618,28 @@ const FundSchemes: React.FC = () => {
   const [insurancePremiumType, setInsurancePremiumType] = useState<'fixed' | 'rate'>('rate');
   const [selectedPFIIds, setSelectedPFIIds] = useState<string[]>([]);
   const [pfiRequirements, setPfiRequirements] = useState<string>('');
+
+  const [verifiedInsuranceCompanies, setVerifiedInsuranceCompanies] = useState<any[]>([]);
+  const [verifiedPFIs, setVerifiedPFIs] = useState<any[]>([]);
+
+  // Fetch verified Insurance Companies and PFIs for the creation flow
+  useEffect(() => {
+    const fetchStakeholders = async () => {
+      try {
+        const [icRes, pfiRes] = await Promise.all([
+          userAPI.list({ userType: 'insurance', isVerified: 'true', limit: 1000 }),
+          userAPI.list({ userType: 'pfi', isVerified: 'true', limit: 1000 })
+        ]);
+
+        if (icRes.success) setVerifiedInsuranceCompanies(icRes.data);
+        if (pfiRes.success) setVerifiedPFIs(pfiRes.data);
+      } catch (err) {
+        console.error('Failed to fetch insurance/PFIs:', err);
+      }
+    };
+
+    fetchStakeholders();
+  }, []);
 
   // Review Modal State
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -1889,13 +1508,28 @@ const FundSchemes: React.FC = () => {
 
 
   // Handle scheme completion
-  const handleCompleteScheme = (schemeId: string) => {
-    setFundSchemes(prev => prev.map(scheme =>
-      scheme.id === schemeId
-        ? { ...scheme, status: 'Completed' }
-        : scheme
-    ));
-    alert(`Scheme has been marked as completed and moved to completed schemes.`);
+  // Handle scheme completion
+  const handleCompleteScheme = async (schemeId: string) => {
+    try {
+      const response = await schemeAPI.updateStatus(schemeId, 'Completed');
+      if (response.success) {
+        setFundSchemes(prev => prev.map(scheme =>
+          scheme.id === schemeId
+            ? { ...scheme, status: 'Completed' }
+            : scheme
+        ));
+
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('fundSchemes-updated'));
+
+        alert(`Scheme has been marked as completed and moved to completed schemes.`);
+      } else {
+        alert(response.error || 'Failed to complete scheme');
+      }
+    } catch (err) {
+      console.error('Error completing scheme:', err);
+      alert('An error occurred while completing the scheme');
+    }
   };
 
   // Handle scheme deletion
@@ -1905,143 +1539,128 @@ const FundSchemes: React.FC = () => {
   };
 
   // Confirm deletion
-  const confirmDelete = () => {
+  // Confirm deletion
+  const confirmDelete = async () => {
     if (schemeToDelete) {
-      setFundSchemes(prev => prev.filter(scheme => scheme.id !== schemeToDelete.id));
-      setShowDeleteModal(false);
-      setSchemeToDelete(null);
-      alert(`Scheme "${schemeToDelete.name}" has been permanently deleted.`);
+      try {
+        const response = await schemeAPI.delete(schemeToDelete.id);
+        if (response.success) {
+          setFundSchemes(prev => prev.filter(scheme => scheme.id !== schemeToDelete.id));
+          setShowDeleteModal(false);
+          setSchemeToDelete(null);
+
+          // Dispatch event to notify other components
+          window.dispatchEvent(new CustomEvent('fundSchemes-updated'));
+
+          alert(`Scheme "${schemeToDelete.name}" has been permanently deleted.`);
+        } else {
+          alert(response.error || 'Failed to delete scheme');
+        }
+      } catch (err) {
+        console.error('Error deleting scheme:', err);
+        alert('An error occurred while deleting the scheme');
+      }
     }
   };
 
   // Handle scheme progression - Open scheme to beneficiaries
-  const handleProgression = () => {
+  const handleProgression = async () => {
     if (!schemeToProgress) return;
 
     const { id, progressionType } = schemeToProgress;
     const scheme = fundSchemes.find(s => s.id === id);
     if (!scheme) return;
 
-    // In consolidated Stage 0 workflow, only beneficiary opening is supported
-    // PFIs are selected during scheme creation (Step 7)
     if (progressionType === 'beneficiaries') {
-      // Update scheme workflow stage to completed
-      setFundSchemes(prev => prev.map(s => {
-        if (s.id === id) {
-          return {
-            ...s,
-            workflowStage: 'completed' as SchemeWorkflowStage
-          };
+      try {
+        // Update scheme in backend
+        const response = await schemeAPI.update(id, {
+          workflowStage: 'completed',
+          openToBeneficiaries: true
+        });
+
+        if (response.success) {
+          // Update local state
+          setFundSchemes(prev => prev.map(s => {
+            if (s.id === id) {
+              return {
+                ...s,
+                workflowStage: 'completed' as SchemeWorkflowStage,
+                openToBeneficiaries: true
+              };
+            }
+            return s;
+          }));
+
+          // Notify all verified Beneficiaries via backend APIs
+          try {
+            const [anchorsRes, leadFirmsRes, producersRes, cooperativesRes] = await Promise.all([
+              userAPI.list({ userType: 'anchor', isVerified: 'true', limit: 1000 }),
+              userAPI.list({ userType: 'lead-firm', isVerified: 'true', limit: 1000 }),
+              userAPI.list({ userType: 'producer', isVerified: 'true', limit: 1000 }),
+              userAPI.list({ userType: 'cooperative', isVerified: 'true', limit: 1000 }),
+            ]);
+
+            const broadcastData = {
+              title: 'New Scheme Available',
+              message: `New scheme "${scheme.name}" (${scheme.amount}) is now open for applications. Click to view details and apply.`,
+              type: 'info',
+              priority: 'high',
+              actionUrl: `/portal/beneficiary/schemes/${id}`,
+              metadata: {
+                type: 'beneficiary_application_available',
+                actionType: 'beneficiary_application_available',
+                schemeId: id,
+                schemeName: scheme.name
+              }
+            };
+
+            // Broadcast to each group
+            if (anchorsRes.success && anchorsRes.data.length > 0) {
+              await notificationAPI.broadcast({
+                ...broadcastData,
+                userIds: anchorsRes.data.map((u: any) => u.id),
+                metadata: { ...broadcastData.metadata, targetRole: 'anchor' }
+              });
+            }
+
+            if (leadFirmsRes.success && leadFirmsRes.data.length > 0) {
+              await notificationAPI.broadcast({
+                ...broadcastData,
+                userIds: leadFirmsRes.data.map((u: any) => u.id),
+                metadata: { ...broadcastData.metadata, targetRole: 'lead-firm' }
+              });
+            }
+
+            if (producersRes.success && producersRes.data.length > 0) {
+              await notificationAPI.broadcast({
+                ...broadcastData,
+                userIds: producersRes.data.map((u: any) => u.id),
+                metadata: { ...broadcastData.metadata, targetRole: 'producer' }
+              });
+            }
+
+            if (cooperativesRes.success && cooperativesRes.data.length > 0) {
+              await notificationAPI.broadcast({
+                ...broadcastData,
+                userIds: cooperativesRes.data.map((u: any) => u.id),
+                metadata: { ...broadcastData.metadata, targetRole: 'cooperative' }
+              });
+            }
+          } catch (notifErr) {
+            console.error('Failed to send broadcast notifications:', notifErr);
+            // We don't alert here to not block the UI if only notification fails
+          }
+
+          // Dispatch event to notify other components
+          window.dispatchEvent(new CustomEvent('fundSchemes-updated'));
+        } else {
+          alert(response.error || 'Failed to open scheme to beneficiaries');
         }
-        return s;
-      }));
-
-      // Notify all verified Beneficiaries (Anchors, Lead Firms, Producers, Cooperatives)
-      const { getAnchors, getLeadFirms, getProducers, getCooperativeGroups } = require('../../../utils/localDatabase');
-      const verifiedAnchors = getAnchors().filter((a: any) => a.status === 'verified');
-      const verifiedLeadFirms = getLeadFirms().filter((lf: any) => lf.status === 'verified');
-      const verifiedProducers = getProducers().filter((p: any) => p.status === 'verified');
-      const verifiedCooperatives = getCooperativeGroups().filter((cg: any) => cg.status === 'verified');
-
-      // Send notifications to Anchors
-      verifiedAnchors.forEach((anchor: any) => {
-        addNotification({
-          role: '🏛️ Coordinating Agency',
-          targetRole: 'anchor',
-          message: `New scheme "${scheme.name}" (${scheme.amount}) is now open for applications. Click to view details and apply.`,
-          applicantName: 'Coordinating Agency',
-          applicantType: 'Company' as const,
-          companyName: 'Agricultural Finance Coordination Framework',
-          companyId: 'CA-001',
-          organization: 'Coordinating Agency',
-          schemeId: id,
-          schemeName: scheme.name,
-          metadata: {
-            type: 'beneficiary_application_available',
-            actionType: 'beneficiary_application_available',
-            schemeId: id,
-            anchorId: anchor.id
-          }
-        });
-      });
-
-      // Send notifications to Lead Firms
-      verifiedLeadFirms.forEach((leadFirm: any) => {
-        addNotification({
-          role: '🏛️ Coordinating Agency',
-          targetRole: 'lead-firm',
-          message: `New scheme "${scheme.name}" (${scheme.amount}) is now open for applications. Click to view details and apply.`,
-          applicantName: 'Coordinating Agency',
-          applicantType: 'Company' as const,
-          companyName: 'Agricultural Finance Coordination Framework',
-          companyId: 'CA-001',
-          organization: 'Coordinating Agency',
-          schemeId: id,
-          schemeName: scheme.name,
-          metadata: {
-            type: 'beneficiary_application_available',
-            actionType: 'beneficiary_application_available',
-            schemeId: id,
-            leadFirmId: leadFirm.id
-          }
-        });
-      });
-
-      // Send notifications to Producers/Farmers
-      verifiedProducers.forEach((producer: any) => {
-        addNotification({
-          role: '🏛️ Coordinating Agency',
-          targetRole: 'producer',
-          message: `New scheme "${scheme.name}" (${scheme.amount}) is now open for applications. Click to view details and apply.`,
-          applicantName: 'Coordinating Agency',
-          applicantType: 'Company' as const,
-          companyName: 'Agricultural Finance Coordination Framework',
-          companyId: 'CA-001',
-          organization: 'Coordinating Agency',
-          schemeId: id,
-          schemeName: scheme.name,
-          metadata: {
-            type: 'beneficiary_application_available',
-            actionType: 'beneficiary_application_available',
-            schemeId: id,
-            producerId: producer.id
-          }
-        });
-      });
-
-      // Send notifications to Cooperative Groups
-      verifiedCooperatives.forEach((cooperative: any) => {
-        addNotification({
-          role: '🏛️ Coordinating Agency',
-          targetRole: 'cooperative',
-          message: `New scheme "${scheme.name}" (${scheme.amount}) is now open for applications. Click to view details and apply.`,
-          applicantName: 'Coordinating Agency',
-          applicantType: 'Company' as const,
-          companyName: 'Agricultural Finance Coordination Framework',
-          companyId: 'CA-001',
-          organization: 'Coordinating Agency',
-          schemeId: id,
-          schemeName: scheme.name,
-          metadata: {
-            type: 'beneficiary_application_available',
-            actionType: 'beneficiary_application_available',
-            schemeId: id,
-            cooperativeId: cooperative.id
-          }
-        });
-      });
-
-      // Save to localStorage
-      const updatedSchemes = fundSchemes.map(s => {
-        if (s.id === id) {
-          return {
-            ...s,
-            workflowStage: 'completed' as SchemeWorkflowStage
-          };
-        }
-        return s;
-      });
-      localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
+      } catch (err) {
+        console.error('Error in handleProgression:', err);
+        alert('An error occurred while updating the scheme stage');
+      }
     }
 
     setShowProgressionModal(false);
@@ -2121,190 +1740,221 @@ const FundSchemes: React.FC = () => {
     };
   }, [fundSchemes]);
 
-  const handleApproveSubmission = () => {
+  const handleApproveSubmission = async () => {
     if (!reviewSubmission) return;
     setIsReviewing(true);
 
-    // Update scheme data
-    const updatedSchemes = fundSchemes.map(scheme => {
-      if (scheme.id === reviewSubmission.schemeId) {
-        const updatedScheme = { ...scheme };
+    try {
+      // Update scheme data locally
+      let updatedSchemeData: any = null;
+      const updatedSchemes = fundSchemes.map(scheme => {
+        if (scheme.id === reviewSubmission.schemeId) {
+          const updatedScheme = { ...scheme };
 
-        if (reviewSubmission.entityType === 'Insurance Company') {
-          updatedScheme.insuranceCompanySubmissions = scheme.insuranceCompanySubmissions?.map((sub: any) => {
-            // Match by submittedAt or ID
-            if (sub.submittedAt === reviewSubmission.submittedAt || sub.insuranceCompanyId === reviewSubmission.insuranceCompanyId) {
-              return { ...sub, status: 'approved', reviewNotes, reviewedAt: new Date().toISOString() };
-            }
-            return sub;
-          });
+          if (reviewSubmission.entityType === 'Insurance Company') {
+            updatedScheme.insuranceCompanySubmissions = scheme.insuranceCompanySubmissions?.map((sub: any) => {
+              if (sub.submittedAt === reviewSubmission.submittedAt || sub.insuranceCompanyId === reviewSubmission.insuranceCompanyId) {
+                return { ...sub, status: 'approved', reviewNotes, reviewedAt: new Date().toISOString() };
+              }
+              return sub;
+            });
 
-          // Notify Insurance Company
-          addNotification({
-            role: '🏛️ Coordinating Agency',
-            targetRole: 'insurance',
-            message: `Your submission for scheme "${scheme.name}" has been APPROVED.`,
-            metadata: {
-              type: 'submission_approved',
-              schemeId: scheme.id,
-              insuranceCompanyId: reviewSubmission.insuranceCompanyId
-            }
-          });
-        } else if (reviewSubmission.entityType === 'PFI') {
-          updatedScheme.pfiApplications = scheme.pfiApplications?.map((app: any) => {
-            if (app.submittedAt === reviewSubmission.submittedAt || app.pfiId === reviewSubmission.pfiId) {
-              return { ...app, status: 'approved', reviewNotes, reviewedAt: new Date().toISOString() };
-            }
-            return app;
-          });
+            // Notify Insurance Company
+            addNotification({
+              role: '🏛️ Coordinating Agency',
+              targetRole: 'insurance',
+              message: `Your submission for scheme "${scheme.name}" has been APPROVED.`,
+              metadata: {
+                type: 'submission_approved',
+                schemeId: scheme.id,
+                insuranceCompanyId: reviewSubmission.insuranceCompanyId
+              }
+            });
+          } else if (reviewSubmission.entityType === 'PFI') {
+            updatedScheme.pfiApplications = scheme.pfiApplications?.map((app: any) => {
+              if (app.submittedAt === reviewSubmission.submittedAt || app.pfiId === reviewSubmission.pfiId) {
+                return { ...app, status: 'approved', reviewNotes, reviewedAt: new Date().toISOString() };
+              }
+              return app;
+            });
 
-          // Notify PFI
-          addNotification({
-            role: '🏛️ Coordinating Agency',
-            targetRole: 'pfi',
-            message: `Your application for scheme "${scheme.name}" has been APPROVED.`,
-            metadata: {
-              type: 'application_approved',
-              schemeId: scheme.id,
-              pfiId: reviewSubmission.pfiId
-            }
+            // Notify PFI
+            addNotification({
+              role: '🏛️ Coordinating Agency',
+              targetRole: 'pfi',
+              message: `Your application for scheme "${scheme.name}" has been APPROVED.`,
+              metadata: {
+                type: 'application_approved',
+                schemeId: scheme.id,
+                pfiId: reviewSubmission.pfiId
+              }
+            });
+          }
+
+          updatedSchemeData = updatedScheme;
+          return updatedScheme;
+        }
+        return scheme;
+      });
+
+      // Update backend
+      if (updatedSchemeData) {
+        // Find the mongo ID if available, otherwise use schemeId (backup)
+        const schemeToUpdate = updatedSchemes.find(s => s.id === reviewSubmission.schemeId);
+        if (schemeToUpdate) {
+          await schemeAPI.update(schemeToUpdate.id, {
+            insuranceCompanySubmissions: schemeToUpdate.insuranceCompanySubmissions,
+            pfiApplications: schemeToUpdate.pfiApplications
           });
         }
-
-        return updatedScheme;
       }
-      return scheme;
-    });
 
-    setFundSchemes(updatedSchemes);
-    localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
+      setFundSchemes(updatedSchemes);
 
-    // Dispatch event to notify other components (e.g., PFI portal) that schemes have been updated
-    window.dispatchEvent(new CustomEvent('fundSchemes-updated'));
+      // Dispatch event to notify other components
+      window.dispatchEvent(new CustomEvent('fundSchemes-updated'));
 
-    setIsReviewing(false);
-    setShowReviewModal(false);
-    setReviewSubmission(null);
-  };
-
-  const handleRejectSubmission = () => {
-    if (!reviewSubmission) return;
-    setIsReviewing(true);
-
-    // Update scheme data
-    const updatedSchemes = fundSchemes.map(scheme => {
-      if (scheme.id === reviewSubmission.schemeId) {
-        const updatedScheme = { ...scheme };
-
-        if (reviewSubmission.entityType === 'Insurance Company') {
-          updatedScheme.insuranceCompanySubmissions = scheme.insuranceCompanySubmissions?.map((sub: any) => {
-            if (sub.submittedAt === reviewSubmission.submittedAt || sub.insuranceCompanyId === reviewSubmission.insuranceCompanyId) {
-              return { ...sub, status: 'rejected', reviewNotes, reviewedAt: new Date().toISOString() };
-            }
-            return sub;
-          });
-
-          // Notify Insurance Company
-          addNotification({
-            role: '🏛️ Coordinating Agency',
-            targetRole: 'insurance',
-            message: `Your submission for scheme "${scheme.name}" has been REJECTED. Reason: ${reviewNotes}`,
-            metadata: {
-              type: 'submission_rejected',
-              schemeId: scheme.id,
-              insuranceCompanyId: reviewSubmission.insuranceCompanyId
-            }
-          });
-        } else if (reviewSubmission.entityType === 'PFI') {
-          updatedScheme.pfiApplications = scheme.pfiApplications?.map((app: any) => {
-            if (app.submittedAt === reviewSubmission.submittedAt || app.pfiId === reviewSubmission.pfiId) {
-              return { ...app, status: 'rejected', reviewNotes, reviewedAt: new Date().toISOString() };
-            }
-            return app;
-          });
-
-          // Notify PFI
-          addNotification({
-            role: '🏛️ Coordinating Agency',
-            targetRole: 'pfi',
-            message: `Your application for scheme "${scheme.name}" has been REJECTED. Reason: ${reviewNotes}`,
-            metadata: {
-              type: 'application_rejected',
-              schemeId: scheme.id,
-              pfiId: reviewSubmission.pfiId
-            }
-          });
-        }
-
-        return updatedScheme;
-      }
-      return scheme;
-    });
-
-    setFundSchemes(updatedSchemes);
-    localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
-
-    // Dispatch event to notify other components (e.g., PFI portal) that schemes have been updated
-    window.dispatchEvent(new CustomEvent('fundSchemes-updated'));
-
-    setIsReviewing(false);
-    setShowReviewModal(false);
-    setReviewSubmission(null);
-  };
-
-
-
-  // Fetch schemes from API
-  // Only fetch from API on initial load if localStorage is empty
-  useEffect(() => {
-    const hasStoredSchemes = localStorage.getItem('fundSchemes');
-
-    // If we have stored schemes, don't fetch from API (preserve local changes)
-    if (hasStoredSchemes) {
-      setLoading(false);
-      return;
+      setIsReviewing(false);
+      setShowReviewModal(false);
+      setReviewSubmission(null);
+    } catch (err) {
+      console.error('Error approving submission:', err);
+      alert('Failed to approve submission. Please try again.');
+      setIsReviewing(false);
     }
+  };
 
-    // Only fetch from API if localStorage is empty (initial load)
+  const handleRejectSubmission = async () => {
+    if (!reviewSubmission) return;
+    setIsReviewing(true);
+
+    try {
+      // Update scheme data locally
+      let updatedSchemeData: any = null;
+      const updatedSchemes = fundSchemes.map(scheme => {
+        if (scheme.id === reviewSubmission.schemeId) {
+          const updatedScheme = { ...scheme };
+
+          if (reviewSubmission.entityType === 'Insurance Company') {
+            updatedScheme.insuranceCompanySubmissions = scheme.insuranceCompanySubmissions?.map((sub: any) => {
+              if (sub.submittedAt === reviewSubmission.submittedAt || sub.insuranceCompanyId === reviewSubmission.insuranceCompanyId) {
+                return { ...sub, status: 'rejected', reviewNotes, reviewedAt: new Date().toISOString() };
+              }
+              return sub;
+            });
+
+            // Notify Insurance Company
+            addNotification({
+              role: '🏛️ Coordinating Agency',
+              targetRole: 'insurance',
+              message: `Your submission for scheme "${scheme.name}" has been REJECTED. Reason: ${reviewNotes}`,
+              metadata: {
+                type: 'submission_rejected',
+                schemeId: scheme.id,
+                insuranceCompanyId: reviewSubmission.insuranceCompanyId
+              }
+            });
+          } else if (reviewSubmission.entityType === 'PFI') {
+            updatedScheme.pfiApplications = scheme.pfiApplications?.map((app: any) => {
+              if (app.submittedAt === reviewSubmission.submittedAt || app.pfiId === reviewSubmission.pfiId) {
+                return { ...app, status: 'rejected', reviewNotes, reviewedAt: new Date().toISOString() };
+              }
+              return app;
+            });
+
+            // Notify PFI
+            addNotification({
+              role: '🏛️ Coordinating Agency',
+              targetRole: 'pfi',
+              message: `Your application for scheme "${scheme.name}" has been REJECTED. Reason: ${reviewNotes}`,
+              metadata: {
+                type: 'application_rejected',
+                schemeId: scheme.id,
+                pfiId: reviewSubmission.pfiId
+              }
+            });
+          }
+
+          updatedSchemeData = updatedScheme;
+          return updatedScheme;
+        }
+        return scheme;
+      });
+
+      // Update backend
+      if (updatedSchemeData) {
+        await schemeAPI.update(updatedSchemeData.id, {
+          insuranceCompanySubmissions: updatedSchemeData.insuranceCompanySubmissions,
+          pfiApplications: updatedSchemeData.pfiApplications
+        });
+      }
+
+      setFundSchemes(updatedSchemes);
+
+      // Dispatch event to notify other components
+      window.dispatchEvent(new CustomEvent('fundSchemes-updated'));
+
+      setIsReviewing(false);
+      setShowReviewModal(false);
+      setReviewSubmission(null);
+    } catch (err) {
+      console.error('Error rejecting submission:', err);
+      alert('Failed to reject submission. Please try again.');
+      setIsReviewing(false);
+    }
+  };
+
+
+
+  // Fetch schemes from API - ALWAYS fetch from API on initial load
+  useEffect(() => {
     const fetchSchemes = async () => {
       try {
         setLoading(true);
         setError(null);
         const response = await schemeAPI.getAll({
           page: 1,
-          limit: 100,
-          status: stateFilter === 'All' ? undefined : stateFilter
+          limit: 100
         });
 
         if (response.success && response.data) {
           // Transform API data to match the component's expected format
           const transformedSchemes: FundScheme[] = response.data.map((scheme: any) => ({
-            id: scheme.schemeId,
+            id: scheme.id, // Use mongo id for updates
+            schemeId: scheme.schemeId, // Keep business ID for display/search if needed
             name: scheme.schemeName,
             fundProvider: scheme.fundProvider || 'Not Assigned',
             amount: scheme.amount,
             beneficiaries: scheme.beneficiaries || 0,
             status: scheme.status as 'Active' | 'Completed',
             state: scheme.state || scheme.states?.join(', ') || 'Multi-State',
-            startDate: new Date(scheme.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-            recoveryRate: scheme.recoveryRate || '0%'
+            startDate: scheme.startDate ? new Date(scheme.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A',
+            recoveryRate: scheme.recoveryRate || '0%',
+            description: scheme.description,
+            applicationDeadline: scheme.applicationDeadline,
+            metadata: scheme.metadata,
+            workflowStage: scheme.workflowStage || 'initial',
+            selectedInsuranceCompanyIds: scheme.selectedInsuranceCompanyIds || [],
+            insuranceCompanySubmissions: scheme.insuranceCompanySubmissions || [],
+            approvedInsuranceCompanyId: scheme.approvedInsuranceCompanyId,
+            insuranceCompanyRequirements: scheme.insuranceCompanyRequirements,
+            insuranceCompanyPremiumType: scheme.insuranceCompanyPremiumType,
+            pfiApplications: scheme.pfiApplications || [],
+            selectedPFIIds: scheme.selectedPFIIds || [],
+            beneficiaryApplications: scheme.beneficiaryApplications || [],
+            openToBeneficiaries: scheme.openToBeneficiaries || false
           }));
           setFundSchemes(transformedSchemes);
-        } else {
-          // If response is not successful, keep existing schemes from localStorage
-          // Do not clear schemes if we have localStorage data
         }
       } catch (err: any) {
-        // Log error to console for debugging, but don't display to user
         console.error('Error fetching schemes:', err);
-        // Don't overwrite localStorage data on error - keep existing schemes
       } finally {
         setLoading(false);
       }
     };
 
     fetchSchemes();
-  }, []); // Only run on initial mount, not when stateFilter changes
+  }, []); // Only run on initial mount
 
   const nigerianStates = [
     'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'FCT Abuja'
@@ -2412,7 +2062,7 @@ const FundSchemes: React.FC = () => {
     const documentItems = documents.items.filter(item => item.fileName || stripHtmlContent(item.description).length > 0);
 
     // Check if user is authenticated
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('authToken');
     if (!token) {
       setError('You must be logged in to create schemes. Please log in first.');
       return;
@@ -2423,7 +2073,7 @@ const FundSchemes: React.FC = () => {
       setError(null);
 
       // Check if scheme ID already exists
-      const existingScheme = fundSchemes.find(s => s.id === schemeDetails.schemeId);
+      const existingScheme = fundSchemes.find(s => s.schemeId === schemeDetails.schemeId);
       if (existingScheme) {
         setError(`Scheme with ID "${schemeDetails.schemeId}" already exists. Please use a different ID.`);
         setIsCreating(false);
@@ -2444,21 +2094,16 @@ const FundSchemes: React.FC = () => {
         }
       };
 
-      // Create the scheme locally first (will be saved to localStorage)
-      const newScheme: FundScheme = {
-        id: schemeDetails.schemeId,
-        name: schemeDetails.schemeName,
-        fundProvider: 'Not Assigned',
-        amount: formattedAmount,
-        beneficiaries: totalBeneficiaries,
-        status: 'Active',
-        state: schemeLocationSummary,
-        startDate: formattedStartDate,
-        recoveryRate: '0%',
+      // Create the scheme via API
+      const response = await schemeAPI.create({
+        schemeName: schemeDetails.schemeName,
+        schemeId: schemeDetails.schemeId,
         description: descriptionForScheme,
+        amount: formattedAmount,
+        states: stateAllocation.selectedStates,
+        startDate: schemeDetails.startDate,
         applicationDeadline: schemeDetails.applicationDeadline,
         metadata: schemeMetadata,
-        // Workflow fields
         workflowStage: 'initial',
         selectedInsuranceCompanyIds: selectedInsuranceCompanyIds,
         insuranceCompanySubmissions: [],
@@ -2466,116 +2111,97 @@ const FundSchemes: React.FC = () => {
         insuranceCompanyPremiumType: insurancePremiumType,
         pfiApplications: [],
         selectedPFIIds: selectedPFIIds,
-        beneficiaryApplications: []
-      };
+        beneficiaryApplications: [],
+        openToBeneficiaries: false
+      });
 
-      // Add to local state immediately (will be saved to localStorage via useEffect)
-      setFundSchemes(prev => [newScheme, ...prev]);
+      if (response.success && response.data) {
+        // Transform the newly created scheme from API data
+        const apiScheme = response.data;
+        const newScheme: FundScheme = {
+          id: apiScheme.id, // Mongo ID
+          schemeId: apiScheme.schemeId,
+          name: apiScheme.schemeName,
+          fundProvider: apiScheme.fundProvider || 'Not Assigned',
+          amount: apiScheme.amount,
+          beneficiaries: apiScheme.beneficiaries || 0,
+          status: apiScheme.status as 'Active' | 'Completed',
+          state: apiScheme.state || apiScheme.states?.join(', ') || 'Multi-State',
+          startDate: apiScheme.startDate ? new Date(apiScheme.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : formattedStartDate,
+          recoveryRate: apiScheme.recoveryRate || '0%',
+          description: apiScheme.description,
+          applicationDeadline: apiScheme.applicationDeadline,
+          metadata: apiScheme.metadata,
+          workflowStage: apiScheme.workflowStage || 'initial',
+          selectedInsuranceCompanyIds: apiScheme.selectedInsuranceCompanyIds || [],
+          insuranceCompanySubmissions: apiScheme.insuranceCompanySubmissions || [],
+          approvedInsuranceCompanyId: apiScheme.approvedInsuranceCompanyId,
+          insuranceCompanyRequirements: apiScheme.insuranceCompanyRequirements,
+          insuranceCompanyPremiumType: apiScheme.insuranceCompanyPremiumType,
+          pfiApplications: apiScheme.pfiApplications || [],
+          selectedPFIIds: apiScheme.selectedPFIIds || [],
+          beneficiaryApplications: apiScheme.beneficiaryApplications || [],
+          openToBeneficiaries: apiScheme.openToBeneficiaries || false
+        };
 
-      // Try to create via API (but don't fail if it doesn't work)
-      try {
-        const response = await schemeAPI.create({
-          schemeName: schemeDetails.schemeName,
-          schemeId: schemeDetails.schemeId,
-          description: descriptionForScheme,
-          amount: formattedAmount,
-          states: stateAllocation.selectedStates,
-          startDate: schemeDetails.startDate,
-          applicationDeadline: schemeDetails.applicationDeadline
-        });
+        // Add to local state
+        setFundSchemes(prev => [newScheme, ...prev]);
 
-        // If API call succeeds, update the scheme with any additional data from the response
-        if (response.success && response.data) {
-          setFundSchemes(prev =>
-            prev.map(scheme =>
-              scheme.id === schemeDetails.schemeId
-                ? {
-                  ...scheme,
-                  fundProvider: response.data.fundProvider || scheme.fundProvider,
-                  beneficiaries: response.data.beneficiaries || scheme.beneficiaries,
-                  recoveryRate: response.data.recoveryRate || scheme.recoveryRate
-                }
-                : scheme
-            )
-          );
-        }
-      } catch (apiError: any) {
-        const errorMessage = apiError.message || '';
-        if (
-          errorMessage.includes('already exists') ||
-          errorMessage.includes('duplicate') ||
-          errorMessage.includes('Scheme ID already exists')
-        ) {
-          setFundSchemes(prev => prev.filter(scheme => scheme.id !== schemeDetails.schemeId));
-          setError(`Scheme with ID "${schemeDetails.schemeId}" already exists in the system. Please use a different ID.`);
-          setCreateStep(totalCreateSteps);
-          return;
-        }
-        console.warn('Scheme created locally, but API call failed:', apiError.message);
-      }
-
-      // Create notifications for selected Insurance Companies
-      const insuranceCompanies = getInsuranceCompanies();
-      selectedInsuranceCompanyIds.forEach(icId => {
-        const ic = insuranceCompanies.find(i => i.id === icId);
-        if (ic) {
+        // Create notifications for selected Insurance Companies and PFIs
+        // (Notifications are sent via context which is already localStorage-free)
+        selectedInsuranceCompanyIds.forEach(icId => {
           addNotification({
             role: '🏛️ Coordinating Agency',
             targetRole: 'insurance',
             message: `You have been selected to provide insurance coverage for scheme "${schemeDetails.schemeName}" (${formattedAmount}). Please submit your premium rates and insurance policies.`,
             applicantName: 'Coordinating Agency',
-            applicantType: 'Company' as const,
+            applicantType: 'Company',
             companyName: 'Agricultural Finance Coordination Framework',
             companyId: 'CA-001',
             organization: 'Coordinating Agency',
-            schemeId: schemeDetails.schemeId,
+            schemeId: apiScheme.id, // Use mongo ID for consistency
             schemeName: schemeDetails.schemeName,
             metadata: {
               type: 'insurance_submission_required',
               actionType: 'insurance_submission_required',
-              insuranceCompanyId: icId, // Critical: This ensures the notification is filtered correctly
-              schemeId: schemeDetails.schemeId
+              insuranceCompanyId: icId,
+              schemeId: apiScheme.id
             }
           });
-        }
-      });
+        });
 
-      // Create notifications for selected PFIs (Stage 0 - consolidated workflow)
-      const pfis = getPFIs();
-      console.log('[handleCreateScheme] Selected PFI IDs:', selectedPFIIds);
-      console.log('[handleCreateScheme] Available PFIs:', pfis);
-
-      selectedPFIIds.forEach(pfiId => {
-        const pfi = pfis.find(p => p.id === pfiId);
-        if (pfi) {
-          console.log(`[handleCreateScheme] Sending notification to PFI: ${pfi.formData.organizationName} (${pfiId})`);
+        selectedPFIIds.forEach(pfiId => {
           addNotification({
             role: '🏛️ Coordinating Agency',
             targetRole: 'pfi',
-            message: `You have been selected to participate in scheme \"${schemeDetails.schemeName}\" (${formattedAmount}). Please submit your proposed interest rate and lending policies.`,
+            message: `You have been selected to participate in scheme "${schemeDetails.schemeName}" (${formattedAmount}). Please submit your proposed interest rate and lending policies.`,
             applicantName: 'Coordinating Agency',
-            applicantType: 'Company' as const,
+            applicantType: 'Company',
             companyName: 'Agricultural Finance Coordination Framework',
             companyId: 'CA-001',
             organization: 'Coordinating Agency',
-            schemeId: schemeDetails.schemeId,
+            schemeId: apiScheme.id,
             schemeName: schemeDetails.schemeName,
             metadata: {
               type: 'pfi_submission_required',
               actionType: 'pfi_submission_required',
-              pfiId: pfiId, // Critical: This ensures the notification is filtered correctly
-              schemeId: schemeDetails.schemeId
+              pfiId: pfiId,
+              schemeId: apiScheme.id
             }
           });
-        }
-      });
+        });
 
-      // Note: Beneficiary notifications will be sent when CA clicks "Open Scheme to Beneficiaries"
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('fundSchemes-updated'));
 
-      setShowConfirmCreate(false);
-      resetCreateFlow();
+        setShowConfirmCreate(false);
+        resetCreateFlow();
+      } else {
+        setError(response.error || 'Failed to create scheme. Please try again.');
+      }
     } catch (err: any) {
-      console.error('Error in post-creation steps:', err);
+      console.error('Error creating scheme:', err);
+      setError('An error occurred while creating the scheme. Please try again.');
     } finally {
       setIsCreating(false);
     }
@@ -3860,135 +3486,124 @@ const FundSchemes: React.FC = () => {
                     Select one or more Insurance Companies from the pre-approved list. Selected insurers will be notified to submit their premium rates and policies. Specify any additional information or conditions they must provide.
                   </p>
 
-                  {(() => {
-                    const verifiedInsuranceCompanies = getInsuranceCompanies().filter(ic => ic.status === 'verified');
-
-                    if (verifiedInsuranceCompanies.length === 0) {
-                      return (
-                        <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-6 text-center">
-                          <p className="text-gray-300 font-sans mb-2">No verified Insurance Companies available.</p>
-                          <p className="text-sm text-gray-400 font-serif">
-                            Please verify Insurance Companies in the Applicants section before creating schemes.
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="space-y-4">
-                        <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <label className="text-sm font-medium text-gray-300 font-sans">
-                              Select Insurance Companies <span className="text-red-500">*</span>
-                            </label>
-                            <span className="text-xs text-gray-400 font-serif">
-                              {selectedInsuranceCompanyIds.length} selected
-                            </span>
-                          </div>
-                          <div className="max-h-64 overflow-y-auto space-y-2">
-                            {verifiedInsuranceCompanies.map((ic) => (
-                              <label
-                                key={ic.id}
-                                className="flex items-start gap-3 px-4 py-3 rounded-md bg-primary-800 border border-primary-600 hover:border-accent-500 cursor-pointer transition-colors"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={selectedInsuranceCompanyIds.includes(ic.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedInsuranceCompanyIds(prev => [...prev, ic.id]);
-                                    } else {
-                                      setSelectedInsuranceCompanyIds(prev => prev.filter(id => id !== ic.id));
-                                    }
-                                  }}
-                                  className="mt-1 h-4 w-4 text-accent-500 rounded border-primary-500 bg-primary-800"
-                                />
-                                <div className="flex-1">
-                                  <div className="text-sm font-semibold text-gray-100 font-sans">
-                                    {ic.formData.organizationName}
-                                  </div>
-                                  <div className="text-xs text-gray-400 font-serif mt-1">
-                                    {ic.formData.officialEmail} • {ic.formData.officePhone}
-                                  </div>
-                                  <div className="text-xs text-gray-500 font-serif mt-1">
-                                    {ic.formData.hqState}, {ic.formData.hqCountry}
-                                  </div>
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                          {selectedInsuranceCompanyIds.length === 0 && (
-                            <p className="text-xs text-red-400 font-serif mt-2">
-                              Please select at least one Insurance Company to proceed.
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Premium Type Selection Card */}
-                        <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-4">
-                          <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
-                            Premium Type for Insurance Company <span className="text-red-500">*</span>
+                  {verifiedInsuranceCompanies.length === 0 ? (
+                    <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-6 text-center">
+                      <p className="text-gray-300 font-sans mb-2">No verified Insurance Companies available.</p>
+                      <p className="text-sm text-gray-400 font-serif">
+                        Please verify Insurance Companies in the Applicants section before creating schemes.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="text-sm font-medium text-gray-300 font-sans">
+                            Select Insurance Companies <span className="text-red-500">*</span>
                           </label>
-                          <p className="text-xs text-gray-400 font-serif mb-3">
-                            Specify how Insurance Companies should provide their premium when submitting their application.
-                          </p>
-                          <div className="space-y-2">
-                            <label className="flex items-center gap-3 px-4 py-3 rounded-md bg-primary-800 border border-primary-600 hover:border-accent-500 cursor-pointer transition-colors">
+                          <span className="text-xs text-gray-400 font-serif">
+                            {selectedInsuranceCompanyIds.length} selected
+                          </span>
+                        </div>
+                        <div className="max-h-64 overflow-y-auto space-y-2">
+                          {verifiedInsuranceCompanies.map((ic) => (
+                            <label
+                              key={ic.id}
+                              className="flex items-start gap-3 px-4 py-3 rounded-md bg-primary-800 border border-primary-600 hover:border-accent-500 cursor-pointer transition-colors"
+                            >
                               <input
-                                type="radio"
-                                name="premiumType"
-                                value="fixed"
-                                checked={insurancePremiumType === 'fixed'}
-                                onChange={(e) => setInsurancePremiumType(e.target.value as 'fixed' | 'rate')}
-                                className="h-4 w-4 text-accent-500 border-primary-500 bg-primary-800"
+                                type="checkbox"
+                                checked={selectedInsuranceCompanyIds.includes(ic.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedInsuranceCompanyIds(prev => [...prev, ic.id]);
+                                  } else {
+                                    setSelectedInsuranceCompanyIds(prev => prev.filter(id => id !== ic.id));
+                                  }
+                                }}
+                                className="mt-1 h-4 w-4 text-accent-500 rounded border-primary-500 bg-primary-800"
                               />
-                              <div>
+                              <div className="flex-1">
                                 <div className="text-sm font-semibold text-gray-100 font-sans">
-                                  Premium Fixed Amount
+                                  {ic.organizationName || `${ic.firstName} ${ic.lastName}`}
                                 </div>
                                 <div className="text-xs text-gray-400 font-serif mt-1">
-                                  Insurance Companies will provide a fixed amount in Naira (₦)
+                                  {ic.email} • {ic.phone || 'No phone'}
                                 </div>
                               </div>
                             </label>
-                            <label className="flex items-center gap-3 px-4 py-3 rounded-md bg-primary-800 border border-primary-600 hover:border-accent-500 cursor-pointer transition-colors">
-                              <input
-                                type="radio"
-                                name="premiumType"
-                                value="rate"
-                                checked={insurancePremiumType === 'rate'}
-                                onChange={(e) => setInsurancePremiumType(e.target.value as 'fixed' | 'rate')}
-                                className="h-4 w-4 text-accent-500 border-primary-500 bg-primary-800"
-                              />
-                              <div>
-                                <div className="text-sm font-semibold text-gray-100 font-sans">
-                                  Premium Rate
-                                </div>
-                                <div className="text-xs text-gray-400 font-serif mt-1">
-                                  Insurance Companies will provide a percentage rate (%)
-                                </div>
-                              </div>
-                            </label>
-                          </div>
+                          ))}
                         </div>
-
-                        <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-4">
-                          <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
-                            Additional Requirements / Conditions for Insurance Companies
-                          </label>
-                          <p className="text-xs text-gray-400 font-serif mb-3">
-                            Specify any additional information, conditions, or requirements that selected Insurance Companies must provide when responding to this scheme.
+                        {selectedInsuranceCompanyIds.length === 0 && (
+                          <p className="text-xs text-red-400 font-serif mt-2">
+                            Please select at least one Insurance Company to proceed.
                           </p>
-                          <RichTextEditor
-                            value={insuranceCompanyRequirements}
-                            onChange={setInsuranceCompanyRequirements}
-                            rows={6}
-                            placeholder="e.g., Minimum coverage amount, specific policy types required, compliance requirements, documentation needed, etc."
-                          />
+                        )}
+                      </div>
+
+                      {/* Premium Type Selection Card */}
+                      <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-4">
+                        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                          Premium Type for Insurance Company <span className="text-red-500">*</span>
+                        </label>
+                        <p className="text-xs text-gray-400 font-serif mb-3">
+                          Specify how Insurance Companies should provide their premium when submitting their application.
+                        </p>
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-3 px-4 py-3 rounded-md bg-primary-800 border border-primary-600 hover:border-accent-500 cursor-pointer transition-colors">
+                            <input
+                              type="radio"
+                              name="premiumType"
+                              value="fixed"
+                              checked={insurancePremiumType === 'fixed'}
+                              onChange={(e) => setInsurancePremiumType(e.target.value as 'fixed' | 'rate')}
+                              className="h-4 w-4 text-accent-500 border-primary-500 bg-primary-800"
+                            />
+                            <div>
+                              <div className="text-sm font-semibold text-gray-100 font-sans">
+                                Premium Fixed Amount
+                              </div>
+                              <div className="text-xs text-gray-400 font-serif mt-1">
+                                Insurance Companies will provide a fixed amount in Naira (₦)
+                              </div>
+                            </div>
+                          </label>
+                          <label className="flex items-center gap-3 px-4 py-3 rounded-md bg-primary-800 border border-primary-600 hover:border-accent-500 cursor-pointer transition-colors">
+                            <input
+                              type="radio"
+                              name="premiumType"
+                              value="rate"
+                              checked={insurancePremiumType === 'rate'}
+                              onChange={(e) => setInsurancePremiumType(e.target.value as 'fixed' | 'rate')}
+                              className="h-4 w-4 text-accent-500 border-primary-500 bg-primary-800"
+                            />
+                            <div>
+                              <div className="text-sm font-semibold text-gray-100 font-sans">
+                                Premium Percentage Rate
+                              </div>
+                              <div className="text-xs text-gray-400 font-serif mt-1">
+                                Insurance Companies will provide a percentage rate (%) based on the loan amount
+                              </div>
+                            </div>
+                          </label>
                         </div>
                       </div>
-                    );
-                  })()}
+
+                      <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-4">
+                        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                          Additional Requirements / Conditions for Insurance Companies
+                        </label>
+                        <p className="text-xs text-gray-400 font-serif mb-3">
+                          Specify any additional information, conditions, or requirements that selected Insurance Companies must provide when responding to this scheme.
+                        </p>
+                        <RichTextEditor
+                          value={insuranceCompanyRequirements}
+                          onChange={setInsuranceCompanyRequirements}
+                          rows={6}
+                          placeholder="e.g., Minimum coverage amount, specific policy types required, compliance requirements, documentation needed, etc."
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -3999,87 +3614,76 @@ const FundSchemes: React.FC = () => {
                     Select one or more Participating Financial Institutions (PFIs) from the pre-approved list. Selected PFIs will be notified to submit their proposed interest rates and lending policies. Specify any additional information or conditions they must provide.
                   </p>
 
-                  {(() => {
-                    const verifiedPFIs = getPFIs().filter(pfi => pfi.status === 'verified');
-
-                    if (verifiedPFIs.length === 0) {
-                      return (
-                        <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-6 text-center">
-                          <p className="text-gray-300 font-sans mb-2">No verified PFIs available.</p>
-                          <p className="text-sm text-gray-400 font-serif">
-                            Please verify PFIs in the Applicants section before creating schemes.
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="space-y-4">
-                        <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <label className="text-sm font-medium text-gray-300 font-sans">
-                              Select PFIs <span className="text-red-500">*</span>
-                            </label>
-                            <span className="text-xs text-gray-400 font-serif">
-                              {selectedPFIIds.length} selected
-                            </span>
-                          </div>
-                          <div className="max-h-64 overflow-y-auto space-y-2">
-                            {verifiedPFIs.map((pfi) => (
-                              <label
-                                key={pfi.id}
-                                className="flex items-start gap-3 px-4 py-3 rounded-md bg-primary-800 border border-primary-600 hover:border-accent-500 cursor-pointer transition-colors"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={selectedPFIIds.includes(pfi.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedPFIIds(prev => [...prev, pfi.id]);
-                                    } else {
-                                      setSelectedPFIIds(prev => prev.filter(id => id !== pfi.id));
-                                    }
-                                  }}
-                                  className="mt-1 h-4 w-4 text-accent-500 rounded border-primary-500 bg-primary-800"
-                                />
-                                <div className="flex-1">
-                                  <div className="text-sm font-semibold text-gray-100 font-sans">
-                                    {pfi.formData.organizationName}
-                                  </div>
-                                  <div className="text-xs text-gray-400 font-serif mt-1">
-                                    {pfi.formData.officialEmail} • {pfi.formData.officePhone}
-                                  </div>
-                                  <div className="text-xs text-gray-500 font-serif mt-1">
-                                    {pfi.formData.hqState}, {pfi.formData.hqCountry}
-                                  </div>
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                          {selectedPFIIds.length === 0 && (
-                            <p className="text-xs text-red-400 font-serif mt-2">
-                              Please select at least one PFI to proceed.
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-4">
-                          <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
-                            Additional Requirements / Conditions for PFIs
+                  {verifiedPFIs.length === 0 ? (
+                    <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-6 text-center">
+                      <p className="text-gray-300 font-sans mb-2">No verified PFIs available.</p>
+                      <p className="text-sm text-gray-400 font-serif">
+                        Please verify PFIs in the Applicants section before creating schemes.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="text-sm font-medium text-gray-300 font-sans">
+                            Select PFIs <span className="text-red-500">*</span>
                           </label>
-                          <p className="text-xs text-gray-400 font-serif mb-3">
-                            Specify any additional information, conditions, or requirements that selected PFIs must provide when responding to this scheme.
-                          </p>
-                          <RichTextEditor
-                            value={pfiRequirements}
-                            onChange={setPfiRequirements}
-                            rows={6}
-                            placeholder="e.g., Maximum interest rate, minimum loan tenure, collateral requirements, documentation needed, compliance standards, etc."
-                          />
+                          <span className="text-xs text-gray-400 font-serif">
+                            {selectedPFIIds.length} selected
+                          </span>
                         </div>
+                        <div className="max-h-64 overflow-y-auto space-y-2">
+                          {verifiedPFIs.map((pfi) => (
+                            <label
+                              key={pfi.id}
+                              className="flex items-start gap-3 px-4 py-3 rounded-md bg-primary-800 border border-primary-600 hover:border-accent-500 cursor-pointer transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedPFIIds.includes(pfi.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedPFIIds(prev => [...prev, pfi.id]);
+                                  } else {
+                                    setSelectedPFIIds(prev => prev.filter(id => id !== pfi.id));
+                                  }
+                                }}
+                                className="mt-1 h-4 w-4 text-accent-500 rounded border-primary-500 bg-primary-800"
+                              />
+                              <div className="flex-1">
+                                <div className="text-sm font-semibold text-gray-100 font-sans">
+                                  {pfi.organizationName || `${pfi.firstName} ${pfi.lastName}`}
+                                </div>
+                                <div className="text-xs text-gray-400 font-serif mt-1">
+                                  {pfi.email} • {pfi.phone || 'No phone'}
+                                </div>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                        {selectedPFIIds.length === 0 && (
+                          <p className="text-xs text-red-400 font-serif mt-2">
+                            Please select at least one PFI to proceed.
+                          </p>
+                        )}
                       </div>
-                    );
-                  })()}
+
+                      <div className="bg-primary-700/60 border border-primary-600 rounded-lg p-4">
+                        <label className="block text-sm font-medium text-gray-300 mb-2 font-sans">
+                          Additional Requirements / Conditions for PFIs
+                        </label>
+                        <p className="text-xs text-gray-400 font-serif mb-3">
+                          Specify any additional information, conditions, or requirements that selected PFIs must provide when responding to this scheme.
+                        </p>
+                        <RichTextEditor
+                          value={pfiRequirements}
+                          onChange={setPfiRequirements}
+                          rows={6}
+                          placeholder="e.g., Maximum interest rate, minimum loan tenure, collateral requirements, documentation needed, compliance standards, etc."
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

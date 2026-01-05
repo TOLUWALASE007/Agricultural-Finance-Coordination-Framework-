@@ -1,10 +1,10 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IDocument extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId | null;
   filename: string;
   originalName: string;
-  filePath: string;
+  fileData: Buffer;
   fileSize: number;
   mimeType: string;
   documentType: string;
@@ -17,10 +17,10 @@ export interface IDocument extends Document {
 }
 
 const DocumentSchema = new Schema<IDocument>({
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: false, index: true, default: null },
   filename: { type: String, required: true },
   originalName: { type: String, required: true },
-  filePath: { type: String, required: true },
+  fileData: { type: Buffer, required: true },
   fileSize: { type: Number, required: true },
   mimeType: { type: String, required: true },
   documentType: {
@@ -29,6 +29,7 @@ const DocumentSchema = new Schema<IDocument>({
     enum: [
       'identification',
       'business_registration',
+      'organization_logo',
       'tax_certificate',
       'financial_statement',
       'bank_statement',

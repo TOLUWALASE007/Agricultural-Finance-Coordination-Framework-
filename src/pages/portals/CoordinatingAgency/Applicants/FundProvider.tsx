@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import PortalLayout from '../../../../components/PortalLayout';
-import { getFundProviders, updateFundProviderStatus, buildFundProviderApplicationData, FundProviderRecord } from '../../../../utils/localDatabase';
 import { useNotifications } from '../../../../context/NotificationContext';
+import { userAPI, notificationAPI } from '../../../../utils/api';
 
 const FundProviderApplicants: React.FC = () => {
   const sidebarItems = [
@@ -103,7 +103,7 @@ const FundProviderApplicants: React.FC = () => {
     documents: { label: string; name: string; type: string }[];
   } | null>(null);
 
-  const { addNotification } = useNotifications();
+  const { notifications, addNotification } = useNotifications();
 
 
   const [restrictSearch, setRestrictSearch] = useState('');
@@ -138,20 +138,6 @@ const FundProviderApplicants: React.FC = () => {
   const [showBatchRestrictionModal, setShowBatchRestrictionModal] = useState(false);
   const [batchRestrictionReason, setBatchRestrictionReason] = useState('');
   const [batchRestrictionRemarks, setBatchRestrictionRemarks] = useState('');
-
-  // Get all Fund Provider records
-  const [fundProviderRecords, setFundProviderRecords] = useState<FundProviderRecord[]>([]);
-
-  useEffect(() => {
-    const records = getFundProviders();
-    setFundProviderRecords(records);
-  }, []);
-
-  // Refresh records when status changes
-  const refreshFundProviders = () => {
-    const records = getFundProviders();
-    setFundProviderRecords(records);
-  };
 
   const pageSize = 3;
 
@@ -351,39 +337,42 @@ const FundProviderApplicants: React.FC = () => {
     'Taraba', 'Yobe', 'Zamfara'
   ];
 
-  // Transform Fund Provider records to display format
+  // Transform Fund Provider records from MongoDB notifications only
   const fundProviderApplicants = useMemo(() => {
-    return fundProviderRecords.map(record => {
-      // Normalize formData to ensure areasOfOperation is an array
-      const normalizedFormData = {
-        ...record.formData,
-        areasOfOperation: Array.isArray(record.formData.areasOfOperation)
-          ? record.formData.areasOfOperation
-          : (record.formData.areasOfOperation ? [record.formData.areasOfOperation] : [])
-      };
-
-      return {
-        id: record.id,
-        name: record.formData.organizationName || record.formData.fullName,
-        email: record.email,
-        phone: record.formData.phone,
-        state: record.formData.state,
-        companyId: record.formData.registrationNumber,
-        fullAddress: `${record.formData.address}, ${record.formData.city}, ${record.formData.state}, ${record.formData.country}`,
-        organizationProfile: record.formData.missionStatement || 'Not provided',
-        contactPersonName: record.formData.fullName,
-        contactPersonEmail: record.formData.email,
-        contactPersonPhone: record.formData.phone,
-        companyEmail: record.formData.officialEmail,
-        registrationDate: record.lastSubmittedAt,
-        organization: record.formData.organizationName || record.formData.fullName,
+    return notifications
+      .filter(n => n.metadata?.type === 'fund-providerRegistration' || (n.metadata?.targetRole === 'coordinating-agency' && n.role?.includes('Fund Provider')))
+      .map(n => ({
+        id: n.id,
+        name: n.applicantName || n.organization || 'New Applicant',
+        email: n.contactPersonEmail || n.metadata?.email || 'No email',
+        phone: n.contactPersonPhone || n.metadata?.phone || 'N/A',
+        state: n.metadata?.state || 'N/A',
+        companyId: n.companyId || n.metadata?.registrationNumber || 'N/A',
+        fullAddress: n.fullAddress || n.metadata?.address || 'N/A',
+        organizationProfile: n.organizationProfile || n.metadata?.organizationProfile || 'New stakeholder registration request.',
+        contactPersonName: n.applicantName || 'N/A',
+        contactPersonEmail: n.contactPersonEmail || n.metadata?.email || 'N/A',
+        contactPersonPhone: n.contactPersonPhone || n.metadata?.phone || 'N/A',
+        companyEmail: n.companyEmail || n.metadata?.officialEmail || 'N/A',
+        registrationDate: n.receivedAt ? new Date(n.receivedAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        organization: n.organization || n.companyName || 'N/A',
         role: 'Fund Provider',
-        status: record.status, // 'verified' or 'unverified'
-        record: record, // Store full record for access
-        applicationData: buildFundProviderApplicationData(normalizedFormData)
-      };
-    });
-  }, [fundProviderRecords]);
+        status: 'unverified' as 'verified' | 'unverified',
+        record: null as any,
+        metadata: n.metadata,
+        applicationData: n.applicationData || {
+          step1: {
+            fullName: n.applicantName,
+            email: n.contactPersonEmail,
+            phone: n.contactPersonPhone,
+          },
+          step2: {
+            organizationName: n.organization,
+            registrationNumber: n.companyId,
+          }
+        }
+      }));
+  }, [notifications]);
 
   // Filter and paginate functions for Approve Access - ALL Fund Providers
   const filteredApproveUsers = useMemo(() => {
@@ -455,7 +444,6 @@ const FundProviderApplicants: React.FC = () => {
     // Handle mass approval if needed
     alert(`Approved ${selectedApproveUsers.length} Fund Provider applications`);
     setSelectedApproveUsers([]);
-    refreshFundProviders();
   };
 
   // Process approval/rejection
@@ -463,7 +451,7 @@ const FundProviderApplicants: React.FC = () => {
     if (!approvalDecision) return;
 
     const user = fundProviderApplicants.find(u => u.id === userId);
-    if (!user || !user.record) return;
+    if (!user) return;
 
     const trimmedRemarks = approvalRemarks.trim();
     const isApproved = approvalDecision === 'approve';
@@ -473,28 +461,22 @@ const FundProviderApplicants: React.FC = () => {
       return;
     }
 
-    // Update Fund Provider status
-    updateFundProviderStatus(user.record.id, isApproved ? 'verified' : 'unverified', {
-      rejectionReason: isApproved ? undefined : trimmedRemarks,
-      pendingNotificationId: null,
-    });
+    // Handle Backend Record
+    {
+      const backendUserId = user.metadata?.userId;
+      if (backendUserId) {
+        if (isApproved) {
+          userAPI.verify(backendUserId).catch(err => console.error('Failed to verify backend user:', err));
+        } else {
+          userAPI.deactivate(backendUserId).catch(err => console.error('Failed to reject backend user:', err));
+        }
 
-    // Send notification to Fund Provider
-    const message = isApproved
-      ? 'Your registration has been approved. You now have full access.'
-      : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+        // Update notification status in backend too
+        notificationAPI.updateStatus(user.id, isApproved ? 'approved' : 'rejected')
+          .catch(err => console.error('Failed to update notification status:', err));
+      }
+    }
 
-    addNotification({
-      role: '🏛️ Coordinating Agency',
-      targetRole: 'fund-provider',
-      message,
-      metadata: {
-        type: 'fundProviderRegistrationResponse',
-        fundProviderId: user.record.id,
-      },
-    });
-
-    refreshFundProviders();
     setShowApprovalModal(null);
     setApprovalDecision('');
     setApprovalRemarks('');
@@ -551,11 +533,11 @@ const FundProviderApplicants: React.FC = () => {
     const user = fundProviderApplicants.find(u => u.id === userId);
     if (!user || !user.record) return;
 
-    // Change status from verified to unverified
-    updateFundProviderStatus(user.record.id, 'unverified', {
-      rejectionReason: restrictRemarks || 'Access restricted by Coordinating Agency',
-      pendingNotificationId: null,
-    });
+    // Restrict access via backend API
+    const backendUserId = user.metadata?.userId;
+    if (backendUserId) {
+      userAPI.deactivate(backendUserId).catch(err => console.error('Failed to restrict user:', err));
+    }
 
     // Send notification
     addNotification({
@@ -568,7 +550,6 @@ const FundProviderApplicants: React.FC = () => {
       },
     });
 
-    refreshFundProviders();
     setShowRestrictModal(null);
     setRestrictReason('');
     setRestrictRemarks('');
@@ -598,31 +579,28 @@ const FundProviderApplicants: React.FC = () => {
     const selectedUsers = filteredRestrictUsers.filter(u => selectedRestrictUsers.includes(u.id));
 
     selectedUsers.forEach(user => {
-      if (user.record) {
-        const restrictionMessage = `RESTRICTED: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`;
-        updateFundProviderStatus(user.record.id, 'unverified', {
-          rejectionReason: restrictionMessage,
-          pendingNotificationId: null,
-        });
-
-        addNotification({
-          role: '🏛️ Coordinating Agency',
-          targetRole: 'fund-provider',
-          message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
-          metadata: {
-            type: 'fundProviderAccessRestricted',
-            fundProviderId: user.record.id,
-            reason: batchRestrictionReason.trim(),
-          },
-        });
+      const backendUserId = user.metadata?.userId;
+      if (backendUserId) {
+        userAPI.deactivate(backendUserId).catch(err => console.error('Failed to restrict user:', err));
       }
+
+      // Send notification to Fund Provider
+      addNotification({
+        role: '🏛️ Coordinating Agency',
+        targetRole: 'fund-provider',
+        message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
+        metadata: {
+          type: 'fundProviderAccessRestricted',
+          fundProviderId: user.id,
+          reason: batchRestrictionReason.trim(),
+        },
+      });
     });
 
     setShowBatchRestrictionModal(false);
     setBatchRestrictionReason('');
     setBatchRestrictionRemarks('');
     setSelectedRestrictUsers([]);
-    refreshFundProviders();
 
     setRestrictToast(`🚫 Successfully restricted access for ${selectedUsers.length} Fund Provider users`);
     setTimeout(() => setRestrictToast(null), 3000);
@@ -1171,6 +1149,26 @@ const FundProviderApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Backend Registration Documents */}
+                    {(user as any).metadata?.documentFilenames && (user as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(user as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* View Full Application Section */}
@@ -1284,6 +1282,26 @@ const FundProviderApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Backend Registration Documents (Approval View) */}
+                    {(user as any).metadata?.documentFilenames && (user as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(user as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* View Full Application Section */}

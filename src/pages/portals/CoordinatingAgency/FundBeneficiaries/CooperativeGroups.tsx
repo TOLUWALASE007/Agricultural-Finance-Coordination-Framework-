@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import PortalLayout from '../../../../components/PortalLayout';
 import CreateMEProjectModal from '../../../../components/CreateMEProjectModal';
-import { getCooperativeGroups, updateCooperativeGroupStatus, buildCooperativeGroupApplicationData, CooperativeGroupRecord } from '../../../../utils/localDatabase';
+
 import { useNotifications } from '../../../../context/NotificationContext';
+import { userAPI, notificationAPI } from '../../../../utils/api';
 
 const CooperativeGroups: React.FC = () => {
   const sidebarItems = [
@@ -91,7 +92,7 @@ const CooperativeGroups: React.FC = () => {
     notificationId?: string;
   } | null>(null);
 
-  const { addNotification } = useNotifications();
+  const { notifications, addNotification, updateNotificationStatus } = useNotifications();
 
   const [restrictSearch, setRestrictSearch] = useState('');
   const [restrictPage, setRestrictPage] = useState(1);
@@ -131,18 +132,12 @@ const CooperativeGroups: React.FC = () => {
   const nigerianStates = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT Abuja', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'];
 
   // Get all Cooperative Group records
-  const [cooperativeGroupRecords, setCooperativeGroupRecords] = useState<CooperativeGroupRecord[]>([]);
 
-  useEffect(() => {
-    const records = getCooperativeGroups();
-    setCooperativeGroupRecords(records);
-  }, []);
+
+
 
   // Refresh records when status changes
-  const refreshCooperativeGroups = () => {
-    const records = getCooperativeGroups();
-    setCooperativeGroupRecords(records);
-  };
+
 
   // Helper function to render full application view for Cooperative Group (5 steps)
   const renderFullApplicationView = (applicationData: any) => {
@@ -329,37 +324,33 @@ const CooperativeGroups: React.FC = () => {
 
   // Transform Cooperative Group records to display format
   const cooperativeGroups = useMemo(() => {
-    return cooperativeGroupRecords.map(record => {
-      // Normalize formData to ensure areasOfOperation is an array
-      const normalizedFormData = {
-        ...record.formData,
-        areasOfOperation: Array.isArray(record.formData.areasOfOperation)
-          ? record.formData.areasOfOperation
-          : (record.formData.areasOfOperation ? [record.formData.areasOfOperation] : [])
-      };
-
-      return {
-        id: record.id,
-        name: record.formData.organizationName || record.formData.fullName,
-        email: record.email,
-        phone: record.formData.phone,
-        state: record.formData.state,
-        companyId: record.formData.registrationNumber,
-        fullAddress: `${record.formData.address}, ${record.formData.city}, ${record.formData.state}, ${record.formData.country}`,
-        organizationProfile: record.formData.missionStatement || 'Not provided',
-        contactPersonName: record.formData.fullName,
-        contactPersonEmail: record.formData.email,
-        contactPersonPhone: record.formData.phone,
-        companyEmail: record.formData.officialEmail,
-        registrationDate: record.lastSubmittedAt,
-        organization: record.formData.organizationName || record.formData.fullName,
+    return notifications
+      .filter(n => n.metadata?.type === 'cooperative-groupRegistration' || (n.metadata?.targetRole === 'coordinating-agency' && n.role?.includes('Cooperative') && n.message.includes('registration')))
+      .map(n => ({
+        id: n.id,
+        name: n.applicantName || n.organization || 'New Applicant',
+        email: n.contactPersonEmail || n.metadata?.email || 'No email',
+        phone: n.contactPersonPhone || n.metadata?.phone || 'N/A',
+        state: n.metadata?.state || 'N/A',
+        companyId: n.companyId || n.metadata?.registrationNumber || 'N/A',
+        fullAddress: n.fullAddress || n.metadata?.address || 'N/A',
+        organizationProfile: n.organizationProfile || n.metadata?.organizationProfile || 'New stakeholder registration request.',
+        contactPersonName: n.applicantName || 'N/A',
+        contactPersonEmail: n.contactPersonEmail || n.metadata?.email || 'N/A',
+        contactPersonPhone: n.contactPersonPhone || n.metadata?.phone || 'N/A',
+        companyEmail: n.companyEmail || n.metadata?.officialEmail || 'N/A',
+        registrationDate: n.receivedAt ? new Date(n.receivedAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        organization: n.organization || n.companyName || 'N/A',
         role: 'Cooperative Group',
-        status: record.status, // 'verified' or 'unverified'
-        record: record, // Store full record for access
-        applicationData: buildCooperativeGroupApplicationData(normalizedFormData)
-      };
-    });
-  }, [cooperativeGroupRecords]);
+        status: 'unverified' as 'verified' | 'unverified',
+        record: null as any,
+        metadata: n.metadata,
+        applicationData: n.applicationData || {
+          step1: { fullName: n.applicantName, email: n.contactPersonEmail, phone: n.contactPersonPhone },
+          step4: { organizationName: n.organization, registrationNumber: n.companyId }
+        }
+      }));
+  }, [notifications]);
 
   // Filters and pagination (Approve) - ALL Cooperative Groups
   const filteredApproveUsers = useMemo(() => {
@@ -450,7 +441,6 @@ const CooperativeGroups: React.FC = () => {
     if (selectedApproveUsers.length === 0) return;
     alert(`Approved ${selectedApproveUsers.length} Cooperative Group applications`);
     setSelectedApproveUsers([]);
-    refreshCooperativeGroups();
   };
 
   // Process approval/rejection
@@ -458,7 +448,7 @@ const CooperativeGroups: React.FC = () => {
     if (!approvalDecision) return;
 
     const user = cooperativeGroups.find(u => u.id === userId);
-    if (!user || !user.record) return;
+    if (!user) return;
 
     const trimmedRemarks = approvalRemarks.trim();
     const isApproved = approvalDecision === 'approve';
@@ -468,28 +458,20 @@ const CooperativeGroups: React.FC = () => {
       return;
     }
 
-    // Update Cooperative Group status
-    updateCooperativeGroupStatus(user.record.id, isApproved ? 'verified' : 'unverified', {
-      rejectionReason: isApproved ? undefined : trimmedRemarks,
-      pendingNotificationId: null,
-    });
+    // Backend handling
+    const backendUserId = user.metadata?.userId;
+    if (backendUserId) {
+      if (isApproved) {
+        userAPI.verify(backendUserId).catch(err => console.error('Failed to verify backend Cooperative Group user:', err));
+      } else {
+        userAPI.deactivate(backendUserId).catch(err => console.error('Failed to reject backend Cooperative Group user:', err));
+      }
 
-    // Send notification to Cooperative Group
-    const message = isApproved
-      ? 'Your registration has been approved. You now have full access.'
-      : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+      // Update notification status
+      notificationAPI.updateStatus(user.id, isApproved ? 'approved' : 'rejected')
+        .catch(err => console.error('Failed to update notification status:', err));
+    }
 
-    addNotification({
-      role: '🏛️ Coordinating Agency',
-      targetRole: 'cooperative',
-      message,
-      metadata: {
-        type: 'cooperativeGroupRegistrationResponse',
-        cooperativeGroupId: user.record.id,
-      },
-    });
-
-    refreshCooperativeGroups();
     setShowApprovalModal(null);
     setApprovalDecision('');
     setApprovalRemarks('');
@@ -544,13 +526,13 @@ const CooperativeGroups: React.FC = () => {
   // Handle restrict access
   const handleRestrictAccess = (userId: string) => {
     const user = cooperativeGroups.find(u => u.id === userId);
-    if (!user || !user.record) return;
+    if (!user) return;
 
-    // Change status from verified to unverified
-    updateCooperativeGroupStatus(user.record.id, 'unverified', {
-      rejectionReason: restrictRemarks || 'Access restricted by Coordinating Agency',
-      pendingNotificationId: null,
-    });
+    // Restrict via backend
+    const backendUserId = user.metadata?.userId;
+    if (backendUserId) {
+      userAPI.deactivate(backendUserId).catch(err => console.error('Failed to restrict user:', err));
+    }
 
     // Send notification
     addNotification({
@@ -563,7 +545,6 @@ const CooperativeGroups: React.FC = () => {
       },
     });
 
-    refreshCooperativeGroups();
     setShowRestrictModal(null);
     setRestrictReason('');
     setRestrictRemarks('');
@@ -585,31 +566,27 @@ const CooperativeGroups: React.FC = () => {
     const selectedUsers = filteredRestrictUsers.filter(u => selectedRestrictUsers.includes(u.id));
 
     selectedUsers.forEach(user => {
-      if (user.record) {
-        const restrictionMessage = `RESTRICTED: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`;
-        updateCooperativeGroupStatus(user.record.id, 'unverified', {
-          rejectionReason: restrictionMessage,
-          pendingNotificationId: null,
-        });
-
-        addNotification({
-          role: '🏛️ Coordinating Agency',
-          targetRole: 'cooperative',
-          message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
-          metadata: {
-            type: 'cooperativeGroupAccessRestricted',
-            cooperativeGroupId: user.record.id,
-            reason: batchRestrictionReason.trim(),
-          },
-        });
+      const backendUserId = user.metadata?.userId;
+      if (backendUserId) {
+        userAPI.deactivate(backendUserId).catch(err => console.error('Failed to restrict user:', err));
       }
+
+      addNotification({
+        role: '🏛️ Coordinating Agency',
+        targetRole: 'cooperative',
+        message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
+        metadata: {
+          type: 'cooperativeGroupAccessRestricted',
+          cooperativeGroupId: user.id,
+          reason: batchRestrictionReason.trim(),
+        },
+      });
     });
 
     setShowBatchRestrictionModal(false);
     setBatchRestrictionReason('');
     setBatchRestrictionRemarks('');
     setSelectedRestrictUsers([]);
-    refreshCooperativeGroups();
 
     setRestrictToast(`🚫 Successfully restricted access for ${selectedUsers.length} Cooperative Group users`);
     setTimeout(() => setRestrictToast(null), 3000);
@@ -984,6 +961,26 @@ const CooperativeGroups: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Backend Registration Documents (Approval View) */}
+                    {(user as any).metadata?.documentFilenames && (user as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(user as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* View Full Application Section */}
@@ -1463,6 +1460,26 @@ const CooperativeGroups: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Backend Registration Documents (Restriction Info View) */}
+                    {(user as any).metadata?.documentFilenames && (user as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(user as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* View Full Application Section */}
@@ -1762,4 +1779,5 @@ const CooperativeGroups: React.FC = () => {
 };
 
 export default CooperativeGroups;
+
 

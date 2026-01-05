@@ -1,18 +1,15 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import PortalLayout from '../../../components/PortalLayout';
 import { useNotifications } from '../../../context/NotificationContext';
 import {
     MEMemberRecord,
     MEProject,
-    getActiveMEMemberRecord,
     getMEProjectsByMemberId,
     submitMEEvaluationReport,
     updateMEProjectStatus,
     findMEProjectById,
-    saveMEMemberSession,
-    clearMEMemberSession,
-    authenticateMEMember,
 } from '../../../utils/localDatabase';
+import { authAPI } from '../../../utils/api';
 
 const MEMemberPortal: React.FC = () => {
     const { addNotification } = useNotifications();
@@ -43,16 +40,26 @@ const MEMemberPortal: React.FC = () => {
 
     // Check for existing session
     useEffect(() => {
-        const member = getActiveMEMemberRecord();
-        if (member) {
-            setCurrentMember(member);
-            setIsLoggedIn(true);
+        const rawMember = sessionStorage.getItem('user');
+        const token = sessionStorage.getItem('authToken');
+        if (rawMember && token) {
+            try {
+                const member = JSON.parse(rawMember);
+                if (member.userType === 'me_member') {
+                    setCurrentMember(member);
+                    setIsLoggedIn(true);
+                }
+            } catch (e) {
+                console.error('Failed to parse M&E session', e);
+            }
         }
     }, []);
 
     // Load projects when logged in
     useEffect(() => {
         if (currentMember) {
+            // NOTE: Ideally this would also come from the backend, 
+            // but for now we're focusing on the Login/Auth part as requested.
             const memberProjects = getMEProjectsByMemberId(currentMember.id);
             setProjects(memberProjects);
         }
@@ -60,11 +67,11 @@ const MEMemberPortal: React.FC = () => {
 
     // Sidebar items for M&E member
     const sidebarItems = [
-        { id: 'dashboard', name: 'My Projects', icon: '📂', href: '/portal/me-member' },
-        { id: 'assigned', name: 'Assigned Projects', icon: '📋', href: '#assigned' },
-        { id: 'in-progress', name: 'In Progress', icon: '🔄', href: '#in-progress' },
-        { id: 'completed', name: 'Completed', icon: '✅', href: '#completed' },
-        { id: 'logout', name: 'Logout', icon: '🚪', href: '#logout' },
+        { id: 'dashboard', name: 'My Projects', icon: '??', href: '/portal/me-member' },
+        { id: 'assigned', name: 'Assigned Projects', icon: '??', href: '#assigned' },
+        { id: 'in-progress', name: 'In Progress', icon: '??', href: '#in-progress' },
+        { id: 'completed', name: 'Completed', icon: '?', href: '#completed' },
+        { id: 'logout', name: 'Logout', icon: '??', href: '#logout' },
     ];
 
     // Refresh function
@@ -77,24 +84,35 @@ const MEMemberPortal: React.FC = () => {
     };
 
     // Handle login
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoginError('');
 
-        const member = authenticateMEMember(loginEmail, loginPassword);
-        if (member) {
-            saveMEMemberSession(member);
-            setCurrentMember(member);
-            setIsLoggedIn(true);
-            showToast(`✅ Welcome, ${member.formData.fullName}!`);
-        } else {
-            setLoginError('Invalid email or password, or account is not active.');
+        try {
+            const response = await authAPI.login({
+                email: loginEmail,
+                password: loginPassword,
+                role: 'M&E Member'
+            });
+
+            if (response.success && response.token) {
+                sessionStorage.setItem('authToken', response.token);
+                sessionStorage.setItem('user', JSON.stringify(response.user));
+                setCurrentMember(response.user);
+                setIsLoggedIn(true);
+                showToast(`? Welcome, ${response.user.formData?.fullName || response.user.firstName}!`);
+            } else {
+                setLoginError(response.error || 'Invalid email or password.');
+            }
+        } catch (error: any) {
+            setLoginError(error.message || 'Connection error to backend server.');
         }
     };
 
     // Handle logout
     const handleLogout = () => {
-        clearMEMemberSession();
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('user');
         setCurrentMember(null);
         setIsLoggedIn(false);
         setProjects([]);
@@ -120,10 +138,10 @@ const MEMemberPortal: React.FC = () => {
     const handleStartEvaluation = (projectId: string) => {
         try {
             updateMEProjectStatus(projectId, 'in-progress');
-            showToast('✅ Evaluation started. Project moved to In Progress.');
+            showToast('? Evaluation started. Project moved to In Progress.');
             refreshData();
         } catch (error: any) {
-            showToast(`❌ ${error.message}`);
+            showToast(`? ${error.message}`);
         }
     };
 
@@ -134,17 +152,17 @@ const MEMemberPortal: React.FC = () => {
         if (!selectedProject || !currentMember) return;
 
         if (!reportForm.findings.trim()) {
-            showToast('❌ Please provide your findings');
+            showToast('? Please provide your findings');
             return;
         }
 
         if (reportForm.recommendation === 'pending') {
-            showToast('❌ Please select a recommendation (Approve or Reject)');
+            showToast('? Please select a recommendation (Approve or Reject)');
             return;
         }
 
         if (!reportForm.recommendationReason.trim()) {
-            showToast('❌ Please provide a reason for your recommendation');
+            showToast('? Please provide a reason for your recommendation');
             return;
         }
 
@@ -160,7 +178,7 @@ const MEMemberPortal: React.FC = () => {
 
             // Send notification to CA
             addNotification({
-                role: `📋 M&E Team - ${currentMember.formData.fullName}`,
+                role: `?? M&E Team - ${currentMember.formData.fullName}`,
                 targetRole: 'coordinating-agency',
                 message: `M&E evaluation report submitted for "${selectedProject.name}". Recommendation: ${reportForm.recommendation.toUpperCase()}`,
                 metadata: {
@@ -171,7 +189,7 @@ const MEMemberPortal: React.FC = () => {
                 },
             });
 
-            showToast('✅ Evaluation report submitted successfully!');
+            showToast('? Evaluation report submitted successfully!');
             setShowReportModal(false);
             setSelectedProject(null);
             setReportForm({
@@ -182,7 +200,7 @@ const MEMemberPortal: React.FC = () => {
             });
             refreshData();
         } catch (error: any) {
-            showToast(`❌ ${error.message}`);
+            showToast(`? ${error.message}`);
         }
     };
 
@@ -422,7 +440,7 @@ const MEMemberPortal: React.FC = () => {
                 <div className="w-full max-w-md">
                     <div className="bg-primary-800 rounded-lg p-8 border border-primary-700">
                         <div className="text-center mb-6">
-                            <div className="text-5xl mb-4">📋</div>
+                            <div className="text-5xl mb-4">??</div>
                             <h1 className="text-2xl font-bold text-white">M&E Member Portal</h1>
                             <p className="text-gray-400 mt-2">Login to access your assigned projects</p>
                         </div>
@@ -455,7 +473,7 @@ const MEMemberPortal: React.FC = () => {
                                 />
                             </div>
                             <button type="submit" className="w-full btn-primary py-3">
-                                🔐 Login
+                                ?? Login
                             </button>
                         </form>
 
@@ -470,7 +488,7 @@ const MEMemberPortal: React.FC = () => {
 
     // Main Portal UI
     return (
-        <PortalLayout role={`M&E Member - ${currentMember?.formData.fullName}`} roleIcon="📋" sidebarItems={sidebarItems}>
+        <PortalLayout role={`M&E Member - ${currentMember?.formData.fullName}`} roleIcon="??" sidebarItems={sidebarItems}>
             <div className="space-y-6">
                 {/* Toast notification */}
                 {toast && (
@@ -484,7 +502,7 @@ const MEMemberPortal: React.FC = () => {
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold text-white mb-2">
-                                👋 Welcome, {currentMember?.formData.fullName}
+                                ?? Welcome, {currentMember?.formData.fullName}
                             </h1>
                             <p className="text-gray-200">
                                 {currentMember?.formData.position || 'M&E Team Member'} | {currentMember?.formData.state || 'Nigeria'}
@@ -492,10 +510,10 @@ const MEMemberPortal: React.FC = () => {
                         </div>
                         <div className="flex gap-3">
                             <button onClick={refreshData} className="btn-secondary">
-                                🔄 Refresh
+                                ?? Refresh
                             </button>
                             <button onClick={handleLogout} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                                🚪 Logout
+                                ?? Logout
                             </button>
                         </div>
                     </div>
@@ -511,7 +529,7 @@ const MEMemberPortal: React.FC = () => {
                                     {projects.filter(p => p.status === 'pending').length}
                                 </p>
                             </div>
-                            <div className="text-3xl">📋</div>
+                            <div className="text-3xl">??</div>
                         </div>
                     </div>
                     <div className="bg-primary-800 rounded-lg p-4">
@@ -522,7 +540,7 @@ const MEMemberPortal: React.FC = () => {
                                     {projects.filter(p => p.status === 'in-progress').length}
                                 </p>
                             </div>
-                            <div className="text-3xl">🔄</div>
+                            <div className="text-3xl">??</div>
                         </div>
                     </div>
                     <div className="bg-primary-800 rounded-lg p-4">
@@ -533,7 +551,7 @@ const MEMemberPortal: React.FC = () => {
                                     {projects.filter(p => p.status === 'evaluation-complete' || p.status === 'archived').length}
                                 </p>
                             </div>
-                            <div className="text-3xl">✅</div>
+                            <div className="text-3xl">?</div>
                         </div>
                     </div>
                 </div>
@@ -546,21 +564,21 @@ const MEMemberPortal: React.FC = () => {
                             className={`px-4 py-2 rounded-md font-medium transition-colors ${activeTab === 'assigned' ? 'bg-accent-600 text-white' : 'text-gray-300 hover:bg-primary-700'
                                 }`}
                         >
-                            📋 Assigned ({projects.filter(p => p.status === 'pending').length})
+                            ?? Assigned ({projects.filter(p => p.status === 'pending').length})
                         </button>
                         <button
                             onClick={() => setActiveTab('in-progress')}
                             className={`px-4 py-2 rounded-md font-medium transition-colors ${activeTab === 'in-progress' ? 'bg-accent-600 text-white' : 'text-gray-300 hover:bg-primary-700'
                                 }`}
                         >
-                            🔄 In Progress ({projects.filter(p => p.status === 'in-progress').length})
+                            ?? In Progress ({projects.filter(p => p.status === 'in-progress').length})
                         </button>
                         <button
                             onClick={() => setActiveTab('completed')}
                             className={`px-4 py-2 rounded-md font-medium transition-colors ${activeTab === 'completed' ? 'bg-accent-600 text-white' : 'text-gray-300 hover:bg-primary-700'
                                 }`}
                         >
-                            ✅ Completed ({projects.filter(p => p.status === 'evaluation-complete' || p.status === 'archived').length})
+                            ? Completed ({projects.filter(p => p.status === 'evaluation-complete' || p.status === 'archived').length})
                         </button>
                     </div>
                 </div>
@@ -594,7 +612,7 @@ const MEMemberPortal: React.FC = () => {
                                                     <h3 className="text-white font-semibold">{project.name}</h3>
                                                     {isLeadME && (
                                                         <span className="px-2 py-0.5 rounded text-xs font-bold bg-gradient-to-r from-yellow-500 to-orange-500 text-black">
-                                                            ⭐ YOU ARE THE LEAD M&E
+                                                            ? YOU ARE THE LEAD M&E
                                                         </span>
                                                     )}
                                                     <span className={`px-2 py-0.5 rounded-full text-xs text-white ${getStatusBadge(project.status)}`}>
@@ -639,14 +657,14 @@ const MEMemberPortal: React.FC = () => {
                                                 {isLeadME && (
                                                     <div className="mt-3 p-2 bg-yellow-900/30 border border-yellow-600/50 rounded text-sm">
                                                         <span className="text-yellow-300">
-                                                            💡 As the Lead M&E, your report will be marked as priority for the Coordinating Agency.
+                                                            ?? As the Lead M&E, your report will be marked as priority for the Coordinating Agency.
                                                         </span>
                                                     </div>
                                                 )}
 
                                                 {hasSubmittedReport(project) && (
                                                     <div className="mt-3 p-2 bg-green-900/30 border border-green-700 rounded text-sm">
-                                                        <span className="text-green-400">✅ You have submitted your evaluation report</span>
+                                                        <span className="text-green-400">? You have submitted your evaluation report</span>
                                                         <span className="text-gray-400 ml-2">
                                                             (Recommendation: {getMemberReport(project)?.recommendation})
                                                         </span>
@@ -659,7 +677,7 @@ const MEMemberPortal: React.FC = () => {
                                                     onClick={() => setSelectedProject(project)}
                                                     className="btn-secondary text-sm py-1"
                                                 >
-                                                    👁️ View Details
+                                                    ??? View Details
                                                 </button>
 
                                                 {project.status === 'pending' && (
@@ -667,7 +685,7 @@ const MEMemberPortal: React.FC = () => {
                                                         onClick={() => handleStartEvaluation(project.id)}
                                                         className="btn-primary text-sm py-1"
                                                     >
-                                                        ▶️ Start Evaluation
+                                                        ?? Start Evaluation
                                                     </button>
                                                 )}
 
@@ -679,7 +697,7 @@ const MEMemberPortal: React.FC = () => {
                                                         }}
                                                         className="btn-primary text-sm py-1"
                                                     >
-                                                        📝 Submit Report
+                                                        ?? Submit Report
                                                     </button>
                                                 )}
                                             </div>
@@ -697,8 +715,8 @@ const MEMemberPortal: React.FC = () => {
                         <div className="min-h-screen flex items-center justify-center py-8">
                             <div className="w-full max-w-3xl bg-primary-900 rounded-lg border border-primary-700 p-6" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold text-white">📂 Project Details</h3>
-                                    <button onClick={() => setSelectedProject(null)} className="text-gray-400 hover:text-white">✖</button>
+                                    <h3 className="text-lg font-semibold text-white">?? Project Details</h3>
+                                    <button onClick={() => setSelectedProject(null)} className="text-gray-400 hover:text-white">?</button>
                                 </div>
 
                                 <div className="space-y-4">
@@ -760,7 +778,7 @@ const MEMemberPortal: React.FC = () => {
                                     {/* Submission Data */}
                                     {selectedProject.submissionData && Object.keys(selectedProject.submissionData).length > 0 && (
                                         <div className="bg-primary-800 rounded-lg p-4">
-                                            <h5 className="text-gray-400 text-sm mb-3">📄 Attached Submission Data</h5>
+                                            <h5 className="text-gray-400 text-sm mb-3">?? Attached Submission Data</h5>
                                             <div className="max-h-96 overflow-y-auto">
                                                 {renderFullApplicationView(selectedProject.submissionData, selectedProject.projectType)}
                                             </div>
@@ -777,7 +795,7 @@ const MEMemberPortal: React.FC = () => {
                                                 }}
                                                 className="btn-primary"
                                             >
-                                                ▶️ Start Evaluation
+                                                ?? Start Evaluation
                                             </button>
                                         )}
                                         {selectedProject.status === 'in-progress' && !hasSubmittedReport(selectedProject) && (
@@ -785,7 +803,7 @@ const MEMemberPortal: React.FC = () => {
                                                 onClick={() => setShowReportModal(true)}
                                                 className="btn-primary"
                                             >
-                                                📝 Submit Report
+                                                ?? Submit Report
                                             </button>
                                         )}
                                         <button onClick={() => setSelectedProject(null)} className="btn-secondary">
@@ -804,8 +822,8 @@ const MEMemberPortal: React.FC = () => {
                         <div className="min-h-screen flex items-center justify-center py-8">
                             <div className="w-full max-w-2xl bg-primary-900 rounded-lg border border-primary-700 p-6" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold text-white">📝 Submit Evaluation Report</h3>
-                                    <button onClick={() => setShowReportModal(false)} className="text-gray-400 hover:text-white">✖</button>
+                                    <h3 className="text-lg font-semibold text-white">?? Submit Evaluation Report</h3>
+                                    <button onClick={() => setShowReportModal(false)} className="text-gray-400 hover:text-white">?</button>
                                 </div>
 
                                 <div className="bg-primary-800 rounded-lg p-3 mb-4">
@@ -838,7 +856,7 @@ const MEMemberPortal: React.FC = () => {
                                                     onChange={(e) => setReportForm(prev => ({ ...prev, recommendation: 'approve' }))}
                                                     className="text-green-500"
                                                 />
-                                                <span className="text-green-400">✅ Approve</span>
+                                                <span className="text-green-400">? Approve</span>
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input
@@ -849,7 +867,7 @@ const MEMemberPortal: React.FC = () => {
                                                     onChange={(e) => setReportForm(prev => ({ ...prev, recommendation: 'reject' }))}
                                                     className="text-red-500"
                                                 />
-                                                <span className="text-red-400">❌ Reject</span>
+                                                <span className="text-red-400">? Reject</span>
                                             </label>
                                         </div>
                                     </div>
@@ -882,7 +900,7 @@ const MEMemberPortal: React.FC = () => {
                                             Cancel
                                         </button>
                                         <button type="submit" className="btn-primary">
-                                            📤 Submit Report
+                                            ?? Submit Report
                                         </button>
                                     </div>
                                 </form>

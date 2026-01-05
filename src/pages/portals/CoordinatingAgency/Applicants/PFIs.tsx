@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import PortalLayout from '../../../../components/PortalLayout';
-import { getPFIs, updatePFIStatus, buildPFIApplicationData, PFIRecord } from '../../../../utils/localDatabase';
+
 import { useNotifications } from '../../../../context/NotificationContext';
+import { userAPI, notificationAPI } from '../../../../utils/api';
 
 const PFIApplicants: React.FC = () => {
   const sidebarItems = [
@@ -103,7 +104,7 @@ const PFIApplicants: React.FC = () => {
     documents: { label: string; name: string; type: string }[];
   } | null>(null);
 
-  const { addNotification, getNotificationsByRole } = useNotifications();
+  const { notifications, addNotification, getNotificationsByRole, updateNotificationStatus } = useNotifications();
 
   const [restrictSearch, setRestrictSearch] = useState('');
   const [restrictPage, setRestrictPage] = useState(1);
@@ -139,18 +140,12 @@ const PFIApplicants: React.FC = () => {
   const [batchRestrictionRemarks, setBatchRestrictionRemarks] = useState('');
 
   // Get all PFI records
-  const [pfiRecords, setPfiRecords] = useState<PFIRecord[]>([]);
 
-  useEffect(() => {
-    const records = getPFIs();
-    setPfiRecords(records);
-  }, []);
+
+
 
   // Refresh records when status changes
-  const refreshPFIs = () => {
-    const records = getPFIs();
-    setPfiRecords(records);
-  };
+
 
   const pageSize = 3;
 
@@ -408,39 +403,36 @@ const PFIApplicants: React.FC = () => {
     'Taraba', 'Yobe', 'Zamfara'
   ];
 
-  // Transform PFI records to display format
+  // Transform PFI records from MongoDB notifications only
   const pfiApplicants = useMemo(() => {
-    return pfiRecords.map(record => {
-      // Normalize formData to ensure areasOfOperation is an array
-      const normalizedFormData = {
-        ...record.formData,
-        areasOfOperation: Array.isArray(record.formData.areasOfOperation)
-          ? record.formData.areasOfOperation
-          : (record.formData.areasOfOperation ? [record.formData.areasOfOperation] : [])
-      };
-
-      return {
-        id: record.id,
-        name: record.formData.organizationName || record.formData.fullName,
-        email: record.email,
-        phone: record.formData.phone,
-        state: record.formData.state,
-        companyId: record.formData.registrationNumber,
-        fullAddress: `${record.formData.address}, ${record.formData.city}, ${record.formData.state}, ${record.formData.country}`,
-        organizationProfile: record.formData.missionStatement || 'Not provided',
-        contactPersonName: record.formData.fullName,
-        contactPersonEmail: record.formData.email,
-        contactPersonPhone: record.formData.phone,
-        companyEmail: record.formData.officialEmail,
-        registrationDate: record.lastSubmittedAt,
-        organization: record.formData.organizationName || record.formData.fullName,
+    return notifications
+      .filter(n => n.metadata?.type === 'pfiRegistration' || (n.metadata?.targetRole === 'coordinating-agency' && n.role?.includes('PFI') && n.message.includes('registration')))
+      .map(n => ({
+        id: n.id,
+        name: n.applicantName || n.organization || 'New Applicant',
+        email: n.contactPersonEmail || n.metadata?.email || 'No email',
+        phone: n.contactPersonPhone || n.metadata?.phone || 'N/A',
+        state: n.metadata?.state || 'N/A',
+        companyId: n.companyId || n.metadata?.registrationNumber || 'N/A',
+        fullAddress: n.fullAddress || n.metadata?.address || 'N/A',
+        organizationProfile: n.organizationProfile || n.metadata?.organizationProfile || 'New stakeholder registration request.',
+        contactPersonName: n.applicantName || 'N/A',
+        contactPersonEmail: n.contactPersonEmail || n.metadata?.email || 'N/A',
+        contactPersonPhone: n.contactPersonPhone || n.metadata?.phone || 'N/A',
+        companyEmail: n.companyEmail || n.metadata?.officialEmail || 'N/A',
+        registrationDate: n.receivedAt ? new Date(n.receivedAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        organization: n.organization || n.companyName || 'N/A',
         role: 'PFI',
-        status: record.status, // 'verified' or 'unverified'
-        record: record, // Store full record for access
-        applicationData: buildPFIApplicationData(normalizedFormData)
-      };
-    });
-  }, [pfiRecords]);
+        status: 'unverified' as 'verified' | 'unverified',
+        record: null as any,
+        metadata: n.metadata,
+        applicationData: n.applicationData || {
+          step1: { fullName: n.applicantName },
+          step2: { email: n.contactPersonEmail, phone: n.contactPersonPhone },
+          step4: { organizationName: n.organization, registrationNumber: n.companyId }
+        }
+      }));
+  }, [notifications]);
 
   // Filter and paginate functions for Approve Access - ALL PFIs
   const filteredApproveUsers = useMemo(() => {
@@ -533,144 +525,43 @@ const PFIApplicants: React.FC = () => {
   }, [getNotificationsByRole]);
 
   const filteredApprovalRightsUsers: ApprovalRightsUser[] = useMemo(() => {
-    // Load schemes to check submission status
-    const storedSchemes = localStorage.getItem('fundSchemes');
-    const schemes = storedSchemes ? JSON.parse(storedSchemes) : [];
-
-    // Step 1: Build a map of all applications (pending, approved, rejected) from scheme data
-    // This is the source of truth for application status
-    const applicationsMap = new Map<string, {
-      schemeId: string;
-      pfiId: string;
-      submittedAt: string;
-      status: 'pending' | 'approved' | 'rejected';
-    }>();
-    schemes.forEach((scheme: any) => {
-      if (scheme.pfiApplications) {
-        scheme.pfiApplications.forEach((app: any) => {
-          const key = `${scheme.id}_${app.pfiId}`;
-          // Keep the most recent application for each scheme+PFI combination
-          const existing = applicationsMap.get(key);
-          if (!existing || (app.submittedAt && (!existing.submittedAt || app.submittedAt > existing.submittedAt))) {
-            applicationsMap.set(key, {
-              schemeId: scheme.id,
-              pfiId: app.pfiId,
-              submittedAt: app.submittedAt,
-              status: app.status || 'pending'
-            });
-          }
-        });
-      }
-    });
-
-    // Step 2: Filter notifications to only those matching applications in scheme data
-    // and deduplicate by schemeId + pfiId
-    const notificationMap = new Map<string, typeof pfiSchemeNotifications[0]>();
-    const seenNotificationIds = new Set<string>();
+    // deduplicate by schemeId + pfiId using notification status as source of truth
+    const userMap = new Map<string, ApprovalRightsUser & { notification?: any; submissionStatus?: string }>();
 
     pfiSchemeNotifications.forEach(notif => {
-      // Skip if we've already seen this notification ID
-      if (seenNotificationIds.has(notif.id)) {
-        return;
-      }
-      seenNotificationIds.add(notif.id);
-
       // Normalize keys
       const schemeId = String(notif.schemeId || '').trim();
       const pfiId = String(notif.metadata?.pfiId || '').trim();
-      const uniqueKey = `${schemeId}_${pfiId}`;
+      const uniqueUserId = `submission_${schemeId}_${pfiId}`;
 
       // Skip if key is invalid
       if (!schemeId || !pfiId) {
         return;
       }
 
-      // Check if this application exists in scheme data
-      const application = applicationsMap.get(uniqueKey);
-      if (!application) {
-        // This application doesn't exist in scheme data (scheme may have been deleted)
-        return;
-      }
+      // Check if we already have a user for this application
+      const existing = userMap.get(uniqueUserId);
 
-      // Check if the scheme still exists (not deleted)
-      const scheme = schemes.find((s: any) => s.id === schemeId);
-      if (!scheme) {
-        // Scheme has been deleted - don't show this application
-        return;
-      }
+      // Map display status: 'approved' -> 'Approved', others -> 'Pending'
+      const displayStatus = notif.status === 'approved' ? 'Approved' : 'Pending';
 
-      // Keep ALL applications (pending, approved, rejected) - they all remain visible
-      // Check if we already have a notification for this application
-      const existing = notificationMap.get(uniqueKey);
-      if (!existing) {
-        // First notification for this application - add it
-        notificationMap.set(uniqueKey, notif);
-      } else {
-        // We already have a notification - keep the best one
-        // Priority: pending > read, then most recent
-        const existingIsPending = existing.status === 'pending';
-        const currentIsPending = notif.status === 'pending';
-
-        if (currentIsPending && !existingIsPending) {
-          // Current is pending, existing is read - keep current
-          notificationMap.set(uniqueKey, notif);
-        } else if (!currentIsPending && existingIsPending) {
-          // Current is read, existing is pending - keep existing
-          // Do nothing
-        } else {
-          // Both have same status - keep the most recent one
-          const existingTime = existing.receivedAt || '';
-          const currentTime = notif.receivedAt || '';
-          if (currentTime > existingTime) {
-            notificationMap.set(uniqueKey, notif);
-          }
-        }
+      if (!existing || (notif.receivedAt > (existing.notification?.receivedAt || ''))) {
+        const user: ApprovalRightsUser & { notification?: any; submissionStatus?: string } = {
+          id: uniqueUserId,
+          name: notif.applicantName || notif.companyName || 'Unknown',
+          email: notif.contactPersonEmail || notif.companyEmail || '',
+          role: 'PFI',
+          state: notif.metadata?.state || 'N/A',
+          organization: notif.companyName || 'Unknown',
+          canApprove: true,
+          notification: notif,
+          submissionStatus: displayStatus
+        };
+        userMap.set(uniqueUserId, user);
       }
     });
 
-    // Step 3: Get final unique list
-    const finalUniqueNotifications = Array.from(notificationMap.values());
-
-    // Map to Approval Rights Users, using schemeId + pfiId as the unique ID
-    // This ensures that even if there are multiple notifications, we only show one user entry
-    const userMap = new Map<string, ApprovalRightsUser & { notification?: any; submissionStatus?: string }>();
-
-    finalUniqueNotifications.forEach(notif => {
-      const schemeId = String(notif.schemeId || '').trim();
-      const pfiId = String(notif.metadata?.pfiId || '').trim();
-      const uniqueUserId = `submission_${schemeId}_${pfiId}`;
-
-      // Skip if we already have a user for this application
-      if (userMap.has(uniqueUserId)) {
-        return;
-      }
-
-      const pfiRecord = pfiApplicants.find(r => r.record?.id === pfiId);
-      const application = applicationsMap.get(`${schemeId}_${pfiId}`);
-      const applicationStatus = application?.status || 'pending';
-
-      // Status display rules:
-      // - Approved → show "Approved"
-      // - Rejected → show "Pending" (because PFI can reapply, so CA is still waiting)
-      // - Pending → show "Pending"
-      const displayStatus = applicationStatus === 'approved' ? 'Approved' : 'Pending';
-
-      const user: ApprovalRightsUser & { notification?: any; submissionStatus?: string } = {
-        id: uniqueUserId, // Use stable unique ID based on application, not notification
-        name: notif.applicantName || notif.companyName || pfiRecord?.name || 'Unknown',
-        email: notif.contactPersonEmail || notif.companyEmail || pfiRecord?.email || '',
-        role: 'PFI',
-        state: pfiRecord?.state || 'N/A',
-        organization: notif.companyName || pfiRecord?.organization || 'Unknown',
-        canApprove: true,
-        notification: notif, // Store the full notification for access
-        submissionStatus: displayStatus // Display status according to rules
-      };
-
-      userMap.set(uniqueUserId, user);
-    });
-
-    return Array.from(userMap.values()).filter((user): user is ApprovalRightsUser & { notification?: any; submissionStatus?: string } => {
+    return Array.from(userMap.values()).filter((user) => {
       // Filter by search
       const matchesSearch = !approvalRightsSearch ||
         user.name.toLowerCase().includes(approvalRightsSearch.toLowerCase()) ||
@@ -683,7 +574,7 @@ const PFIApplicants: React.FC = () => {
 
       return matchesSearch && matchesState;
     });
-  }, [pfiSchemeNotifications, pfiApplicants, approvalRightsSearch, approvalRightsStateFilter]);
+  }, [pfiSchemeNotifications, approvalRightsSearch, approvalRightsStateFilter]);
 
   const paginatedApprovalRightsUsers = useMemo(() => {
     const startIndex = (approvalRightsPage - 1) * pageSize;
@@ -693,11 +584,8 @@ const PFIApplicants: React.FC = () => {
   const totalApprovalRightsPages = Math.ceil(filteredApprovalRightsUsers.length / pageSize);
 
   // Build submission history from all schemes
+  // Build submission history from all notifications
   const submissionHistory = useMemo(() => {
-    const storedSchemes = localStorage.getItem('fundSchemes');
-    if (!storedSchemes) return [];
-
-    const schemes = JSON.parse(storedSchemes);
     const history: Array<{
       date: string;
       pfiName: string;
@@ -707,37 +595,33 @@ const PFIApplicants: React.FC = () => {
       reviewedAt: string;
     }> = [];
 
-    schemes.forEach((scheme: any) => {
-      if (scheme.pfiApplications) {
-        scheme.pfiApplications.forEach((app: any) => {
-          // Only include applications that have been reviewed (approved or rejected)
-          if (app.reviewedAt && (app.status === 'approved' || app.status === 'rejected')) {
-            const pfiRecord = pfiApplicants.find(r => r.record?.id === app.pfiId);
-            const pfiName = pfiRecord?.name || pfiRecord?.organization || 'Unknown PFI';
+    // Filter for all PFI scheme applications that have been processed
+    const processedNotifications = getNotificationsByRole('coordinating-agency').filter(n =>
+      n.metadata?.type === 'pfiSchemeApplication' &&
+      (n.status === 'approved' || n.status === 'rejected')
+    );
 
-            history.push({
-              date: new Date(app.reviewedAt).toLocaleString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              }).replace(',', ''),
-              pfiName,
-              schemeName: scheme.name || 'Unknown Scheme',
-              action: app.status === 'approved' ? 'Approved' : 'Rejected',
-              rejectionReason: app.reviewNotes || undefined,
-              reviewedAt: app.reviewedAt
-            });
-          }
-        });
-      }
+    processedNotifications.forEach((notif) => {
+      history.push({
+        date: new Date(notif.receivedAt || Date.now()).toLocaleString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(',', ''),
+        pfiName: notif.applicantName || notif.companyName || 'Unknown PFI',
+        schemeName: notif.schemeName || 'Unknown Scheme',
+        action: notif.status === 'approved' ? 'Approved' : 'Rejected',
+        rejectionReason: notif.metadata?.remarks || undefined,
+        reviewedAt: notif.receivedAt || ''
+      });
     });
 
     // Sort by reviewedAt (most recent first)
     return history.sort((a, b) => new Date(b.reviewedAt).getTime() - new Date(a.reviewedAt).getTime());
-  }, [pfiApplicants]);
+  }, [getNotificationsByRole]);
 
   // Check for sessionStorage flag to open modal only when explicitly triggered by notification click
   // (must be after pfiSchemeNotifications and filteredApprovalRightsUsers declaration)
@@ -795,7 +679,6 @@ const PFIApplicants: React.FC = () => {
     // Handle mass approval if needed
     alert(`Approved ${selectedApproveUsers.length} PFI applications`);
     setSelectedApproveUsers([]);
-    refreshPFIs();
   };
 
   // Process approval/rejection for scheme applications
@@ -814,72 +697,32 @@ const PFIApplicants: React.FC = () => {
 
     const trimmedRemarks = approvalRemarks.trim();
     const isApproved = approvalDecision === 'approve';
-    const schemeId = notification.schemeId;
-    const pfiId = notification.metadata?.pfiId as string | undefined;
+    const pfiId = notification.metadata?.pfiId;
 
     if (!isApproved && !trimmedRemarks) {
       alert('Please provide a reason for rejecting this PFI application.');
       return;
     }
 
-    if (schemeId && pfiId) {
-      // Update scheme in localStorage
-      const storedSchemes = localStorage.getItem('fundSchemes');
-      if (storedSchemes) {
-        const schemes = JSON.parse(storedSchemes);
-        const updatedSchemes = schemes.map((scheme: any) => {
-          if (scheme.id === schemeId) {
-            const updatedApplications = (scheme.pfiApplications || []).map((app: any) => {
-              if (app.pfiId === pfiId && app.submittedAt === (notification.applicationData as any)?.submittedAt) {
-                return {
-                  ...app,
-                  status: isApproved ? 'approved' : 'rejected',
-                  reviewedAt: new Date().toISOString(),
-                  reviewNotes: trimmedRemarks || undefined
-                };
-              }
-              return app;
-            });
+    // Update notification status (backend call via context)
+    updateNotificationStatus(notificationId, isApproved ? 'approved' : 'rejected');
 
-            const updatedScheme: any = {
-              ...scheme,
-              pfiApplications: updatedApplications
-            };
-
-            // If approved, check if this is the first approved PFI (scheme becomes eligible for Beneficiaries)
-            if (isApproved) {
-              // Check if this is the first approved PFI
-              const approvedPFICount = updatedApplications.filter((app: any) => app.status === 'approved').length;
-              const wasFirstApproval = approvedPFICount === 1;
-
-              if (wasFirstApproval && scheme.workflowStage === 'stage1') {
-                // Notify CA that scheme is ready to open for Beneficiaries
-                addNotification({
-                  role: '🏛️ Coordinating Agency',
-                  targetRole: 'coordinating-agency',
-                  message: `A scheme is now ready to open for Beneficiary applications.`,
-                  schemeId: schemeId,
-                  schemeName: scheme.name,
-                  metadata: {
-                    type: 'schemeReadyForBeneficiaries',
-                    schemeId: schemeId,
-                    actionType: 'open_for_beneficiaries'
-                  }
-                });
-              }
-            }
-
-            // If approved, add to selectedPFIIds
-            if (isApproved) {
-              updatedScheme.selectedPFIIds = [...(scheme.selectedPFIIds || []), pfiId];
-            }
-
-            return updatedScheme;
-          }
-          return scheme;
-        });
-        localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
-      }
+    if (isApproved) {
+      // Notify CA that scheme is ready to open for Beneficiaries
+      // We send this notification every time a PFI is approved for now, 
+      // the CA dashboard can handle deduplication or checking if it's already open
+      addNotification({
+        role: '🏛️ Coordinating Agency',
+        targetRole: 'coordinating-agency',
+        message: `A scheme is now ready to open for Beneficiary applications.`,
+        schemeId: notification.schemeId,
+        schemeName: notification.schemeName,
+        metadata: {
+          type: 'schemeReadyForBeneficiaries',
+          schemeId: notification.schemeId,
+          actionType: 'open_for_beneficiaries'
+        }
+      });
     }
 
     // Notify PFI
@@ -897,6 +740,7 @@ const PFIApplicants: React.FC = () => {
         type: 'pfiSchemeApplicationResponse',
         pfiId,
         relatedNotificationId: notification.id,
+        remarks: trimmedRemarks || undefined
       },
     });
 
@@ -917,7 +761,7 @@ const PFIApplicants: React.FC = () => {
     if (!approvalDecision) return;
 
     const user = pfiApplicants.find(u => u.id === userId);
-    if (!user || !user.record) return;
+    if (!user) return;
 
     const trimmedRemarks = approvalRemarks.trim();
     const isApproved = approvalDecision === 'approve';
@@ -927,28 +771,20 @@ const PFIApplicants: React.FC = () => {
       return;
     }
 
-    // Update PFI status
-    updatePFIStatus(user.record.id, isApproved ? 'verified' : 'unverified', {
-      rejectionReason: isApproved ? undefined : trimmedRemarks,
-      pendingNotificationId: null,
-    });
+    // Backend handling
+    const backendUserId = (user as any).metadata?.userId;
+    if (backendUserId) {
+      if (isApproved) {
+        userAPI.verify(backendUserId).catch(err => console.error('Failed to verify backend PFI user:', err));
+      } else {
+        userAPI.deactivate(backendUserId).catch(err => console.error('Failed to reject backend PFI user:', err));
+      }
 
-    // Send notification to PFI
-    const message = isApproved
-      ? 'Your registration has been approved. You now have full access.'
-      : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+      // Update notification status
+      notificationAPI.updateStatus(user.id, isApproved ? 'approved' : 'rejected')
+        .catch(err => console.error('Failed to update notification status:', err));
+    }
 
-    addNotification({
-      role: '🏛️ Coordinating Agency',
-      targetRole: 'pfi',
-      message,
-      metadata: {
-        type: 'pfiRegistrationResponse',
-        pfiId: user.record.id,
-      },
-    });
-
-    refreshPFIs();
     setShowApprovalModal(null);
     setApprovalDecision('');
     setApprovalRemarks('');
@@ -1030,11 +866,11 @@ const PFIApplicants: React.FC = () => {
     const user = pfiApplicants.find(u => u.id === userId);
     if (!user || !user.record) return;
 
-    // Change status from verified to unverified
-    updatePFIStatus(user.record.id, 'unverified', {
-      rejectionReason: restrictRemarks || 'Access restricted by Coordinating Agency',
-      pendingNotificationId: null,
-    });
+    // Restrict via backend
+    const backendUserId = user.metadata?.userId;
+    if (backendUserId) {
+      userAPI.deactivate(backendUserId).catch(err => console.error('Failed to restrict user:', err));
+    }
 
     // Send notification
     addNotification({
@@ -1047,7 +883,6 @@ const PFIApplicants: React.FC = () => {
       },
     });
 
-    refreshPFIs();
     setShowRestrictModal(null);
     setRestrictReason('');
     setRestrictRemarks('');
@@ -1077,31 +912,28 @@ const PFIApplicants: React.FC = () => {
     const selectedUsers = filteredRestrictUsers.filter(u => selectedRestrictUsers.includes(u.id));
 
     selectedUsers.forEach(user => {
-      if (user.record) {
-        const restrictionMessage = `RESTRICTED: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`;
-        updatePFIStatus(user.record.id, 'unverified', {
-          rejectionReason: restrictionMessage,
-          pendingNotificationId: null,
-        });
-
-        addNotification({
-          role: '🏛️ Coordinating Agency',
-          targetRole: 'pfi',
-          message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
-          metadata: {
-            type: 'pfiAccessRestricted',
-            pfiId: user.record.id,
-            reason: batchRestrictionReason.trim(),
-          },
-        });
+      const backendUserId = user.metadata?.userId;
+      if (backendUserId) {
+        userAPI.deactivate(backendUserId).catch(err => console.error('Failed to restrict user:', err));
       }
+
+      // Send notification to PFI
+      addNotification({
+        role: '🏛️ Coordinating Agency',
+        targetRole: 'pfi',
+        message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
+        metadata: {
+          type: 'pfiAccessRestricted',
+          pfiId: user.id,
+          reason: batchRestrictionReason.trim(),
+        },
+      });
     });
 
     setShowBatchRestrictionModal(false);
     setBatchRestrictionReason('');
     setBatchRestrictionRemarks('');
     setSelectedRestrictUsers([]);
-    refreshPFIs();
 
     setRestrictToast(`🚫 Successfully restricted access for ${selectedUsers.length} PFI users`);
     setTimeout(() => setRestrictToast(null), 3000);
@@ -1142,8 +974,6 @@ const PFIApplicants: React.FC = () => {
     setShowBatchApprovalModal(true);
   };
 
-  const { updateNotificationStatus } = useNotifications();
-
   const processBatchApproval = () => {
     if (!batchApprovalRemarks.trim()) {
       alert('Please provide remarks for batch approval.');
@@ -1153,67 +983,32 @@ const PFIApplicants: React.FC = () => {
     const selectedUsers = filteredApprovalRightsUsers.filter(u => selectedApprovalRightsUsers.includes(u.id));
 
     let successCount = 0;
-    const storedSchemes = localStorage.getItem('fundSchemes');
-    if (storedSchemes) {
-      let schemes = JSON.parse(storedSchemes);
+    selectedUsers.forEach(user => {
+      const notification = user.notification;
+      if (!notification) return;
 
-      selectedUsers.forEach(user => {
-        const notification = user.notification;
-        if (!notification) return;
+      updateNotificationStatus(notification.id, 'approved');
 
-        const schemeId = notification.schemeId;
-        const pfiId = notification.metadata?.pfiId;
-
-        if (schemeId && pfiId) {
-          schemes = schemes.map((scheme: any) => {
-            if (scheme.id === schemeId) {
-              const updatedApplications = (scheme.pfiApplications || []).map((app: any) => {
-                if (app.pfiId === pfiId && app.status === 'pending') {
-                  return {
-                    ...app,
-                    status: 'approved',
-                    reviewedAt: new Date().toISOString(),
-                    reviewNotes: batchApprovalRemarks.trim()
-                  };
-                }
-                return app;
-              });
-
-              return {
-                ...scheme,
-                pfiApplications: updatedApplications
-              };
-            }
-            return scheme;
-          });
-
-          updateNotificationStatus(notification.id, 'approved');
-
-          addNotification({
-            role: '🏛️ Coordinating Agency',
-            targetRole: 'pfi',
-            message: `Your application for scheme "${notification.schemeName}" has been approved.`,
-            schemeId: notification.schemeId,
-            schemeName: notification.schemeName,
-            metadata: {
-              type: 'pfiSchemeApplicationResponse',
-              pfiId,
-              relatedNotificationId: notification.id,
-              isApproved: true,
-            },
-          });
-
-          successCount++;
-        }
+      addNotification({
+        role: '🏛️ Coordinating Agency',
+        targetRole: 'pfi',
+        message: `Your application for scheme "${notification.schemeName}" has been approved.`,
+        schemeId: notification.schemeId,
+        schemeName: notification.schemeName,
+        metadata: {
+          type: 'pfiSchemeApplicationResponse',
+          pfiId: notification.metadata?.pfiId,
+          relatedNotificationId: notification.id,
+          isApproved: true,
+        },
       });
 
-      localStorage.setItem('fundSchemes', JSON.stringify(schemes));
-    }
+      successCount++;
+    });
 
     setShowBatchApprovalModal(false);
     setBatchApprovalRemarks('');
     setSelectedApprovalRightsUsers([]);
-    refreshPFIs();
 
     setFinalApprovalNotice(`✅ Successfully approved ${successCount} PFI applications`);
     setTimeout(() => setFinalApprovalNotice(null), 3000);
@@ -1320,6 +1115,26 @@ const PFIApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Backend Registration Documents */}
+                    {(user as any).metadata?.documentFilenames && (user as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(user as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* View Full Application Section */}
@@ -1456,6 +1271,26 @@ const PFIApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Backend Registration Documents (Approval View) */}
+                    {(userData as any).metadata?.documentFilenames && (userData as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(userData as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* View Full Application Section */}
@@ -2391,4 +2226,5 @@ const PFIApplicants: React.FC = () => {
 };
 
 export default PFIApplicants;
+
 

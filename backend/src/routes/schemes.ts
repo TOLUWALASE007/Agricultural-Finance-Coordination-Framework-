@@ -10,7 +10,7 @@ const router: Router = express.Router();
 // @route   POST /api/schemes
 // @desc    Create a new scheme
 // @access  Private (Coordinating Agency only)
-router.post('/', 
+router.post('/',
   authenticateToken,
   [
     body('schemeName').trim().notEmpty().withMessage('Scheme name is required'),
@@ -35,7 +35,12 @@ router.post('/',
         return;
       }
 
-      const { schemeName, schemeId, description, amount, states, startDate, applicationDeadline, fundProvider } = req.body;
+      const {
+        schemeName, schemeId, description, amount, states, startDate, applicationDeadline, fundProvider,
+        metadata, workflowStage, selectedInsuranceCompanyIds, insuranceCompanySubmissions,
+        approvedInsuranceCompanyId, insuranceCompanyRequirements, insuranceCompanyPremiumType,
+        pfiApplications, selectedPFIIds, beneficiaryApplications, openToBeneficiaries
+      } = req.body;
 
       // Check if scheme ID already exists
       const existingScheme = await Scheme.findOne({ schemeId });
@@ -56,7 +61,18 @@ router.post('/',
         createdBy: new mongoose.Types.ObjectId(req.user!.userId),
         fundProvider: fundProvider || undefined,
         beneficiaries: 0,
-        recoveryRate: '0%'
+        recoveryRate: '0%',
+        metadata,
+        workflowStage,
+        selectedInsuranceCompanyIds,
+        insuranceCompanySubmissions,
+        approvedInsuranceCompanyId,
+        insuranceCompanyRequirements,
+        insuranceCompanyPremiumType,
+        pfiApplications,
+        selectedPFIIds,
+        beneficiaryApplications,
+        openToBeneficiaries
       });
 
       await scheme.save();
@@ -79,6 +95,17 @@ router.post('/',
           fundProvider: scheme.fundProvider,
           beneficiaries: scheme.beneficiaries,
           recoveryRate: scheme.recoveryRate,
+          metadata: scheme.metadata,
+          workflowStage: scheme.workflowStage,
+          selectedInsuranceCompanyIds: scheme.selectedInsuranceCompanyIds,
+          insuranceCompanySubmissions: scheme.insuranceCompanySubmissions,
+          approvedInsuranceCompanyId: scheme.approvedInsuranceCompanyId,
+          insuranceCompanyRequirements: scheme.insuranceCompanyRequirements,
+          insuranceCompanyPremiumType: scheme.insuranceCompanyPremiumType,
+          pfiApplications: scheme.pfiApplications,
+          selectedPFIIds: scheme.selectedPFIIds,
+          beneficiaryApplications: scheme.beneficiaryApplications,
+          openToBeneficiaries: scheme.openToBeneficiaries,
           createdAt: scheme.createdAt,
           updatedAt: scheme.updatedAt
         }
@@ -105,11 +132,11 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const limitNum = parseInt(limit as string);
 
     const filter: any = {};
-    
+
     if (status) {
       filter.status = status;
     }
-    
+
     if (state && state !== 'All') {
       filter.states = { $in: [state] };
     }
@@ -146,6 +173,17 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         fundProvider: scheme.fundProvider,
         beneficiaries: scheme.beneficiaries || 0,
         recoveryRate: scheme.recoveryRate || '0%',
+        metadata: scheme.metadata,
+        workflowStage: scheme.workflowStage,
+        selectedInsuranceCompanyIds: scheme.selectedInsuranceCompanyIds,
+        insuranceCompanySubmissions: scheme.insuranceCompanySubmissions,
+        approvedInsuranceCompanyId: scheme.approvedInsuranceCompanyId,
+        insuranceCompanyRequirements: scheme.insuranceCompanyRequirements,
+        insuranceCompanyPremiumType: scheme.insuranceCompanyPremiumType,
+        pfiApplications: scheme.pfiApplications,
+        selectedPFIIds: scheme.selectedPFIIds,
+        beneficiaryApplications: scheme.beneficiaryApplications,
+        openToBeneficiaries: scheme.openToBeneficiaries,
         createdAt: scheme.createdAt,
         updatedAt: scheme.updatedAt
       })),
@@ -193,6 +231,17 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
         fundProvider: scheme.fundProvider,
         beneficiaries: scheme.beneficiaries || 0,
         recoveryRate: scheme.recoveryRate || '0%',
+        metadata: scheme.metadata,
+        workflowStage: scheme.workflowStage,
+        selectedInsuranceCompanyIds: scheme.selectedInsuranceCompanyIds,
+        insuranceCompanySubmissions: scheme.insuranceCompanySubmissions,
+        approvedInsuranceCompanyId: scheme.approvedInsuranceCompanyId,
+        insuranceCompanyRequirements: scheme.insuranceCompanyRequirements,
+        insuranceCompanyPremiumType: scheme.insuranceCompanyPremiumType,
+        pfiApplications: scheme.pfiApplications,
+        selectedPFIIds: scheme.selectedPFIIds,
+        beneficiaryApplications: scheme.beneficiaryApplications,
+        openToBeneficiaries: scheme.openToBeneficiaries,
         createdBy: scheme.createdBy,
         createdAt: scheme.createdAt,
         updatedAt: scheme.updatedAt
@@ -301,7 +350,12 @@ router.put('/:id',
       }
 
       // Update allowed fields
-      const { schemeName, description, amount, states, startDate, applicationDeadline, fundProvider } = req.body;
+      const {
+        schemeName, description, amount, states, startDate, applicationDeadline, fundProvider,
+        metadata, workflowStage, selectedInsuranceCompanyIds, insuranceCompanySubmissions,
+        approvedInsuranceCompanyId, insuranceCompanyRequirements, insuranceCompanyPremiumType,
+        pfiApplications, selectedPFIIds, beneficiaryApplications, openToBeneficiaries
+      } = req.body;
 
       if (schemeName) scheme.schemeName = schemeName;
       if (description) scheme.description = description;
@@ -310,6 +364,17 @@ router.put('/:id',
       if (startDate) scheme.startDate = new Date(startDate);
       if (applicationDeadline) scheme.applicationDeadline = new Date(applicationDeadline);
       if (fundProvider !== undefined) scheme.fundProvider = fundProvider;
+      if (metadata !== undefined) scheme.metadata = metadata;
+      if (workflowStage !== undefined) scheme.workflowStage = workflowStage;
+      if (selectedInsuranceCompanyIds !== undefined) scheme.selectedInsuranceCompanyIds = selectedInsuranceCompanyIds;
+      if (insuranceCompanySubmissions !== undefined) scheme.insuranceCompanySubmissions = insuranceCompanySubmissions;
+      if (approvedInsuranceCompanyId !== undefined) scheme.approvedInsuranceCompanyId = approvedInsuranceCompanyId;
+      if (insuranceCompanyRequirements !== undefined) scheme.insuranceCompanyRequirements = insuranceCompanyRequirements;
+      if (insuranceCompanyPremiumType !== undefined) scheme.insuranceCompanyPremiumType = insuranceCompanyPremiumType;
+      if (pfiApplications !== undefined) scheme.pfiApplications = pfiApplications;
+      if (selectedPFIIds !== undefined) scheme.selectedPFIIds = selectedPFIIds;
+      if (beneficiaryApplications !== undefined) scheme.beneficiaryApplications = beneficiaryApplications;
+      if (openToBeneficiaries !== undefined) scheme.openToBeneficiaries = openToBeneficiaries;
 
       await scheme.save();
 
@@ -331,12 +396,63 @@ router.put('/:id',
           fundProvider: scheme.fundProvider,
           beneficiaries: scheme.beneficiaries,
           recoveryRate: scheme.recoveryRate,
+          metadata: scheme.metadata,
+          workflowStage: scheme.workflowStage,
+          selectedInsuranceCompanyIds: scheme.selectedInsuranceCompanyIds,
+          insuranceCompanySubmissions: scheme.insuranceCompanySubmissions,
+          approvedInsuranceCompanyId: scheme.approvedInsuranceCompanyId,
+          insuranceCompanyRequirements: scheme.insuranceCompanyRequirements,
+          insuranceCompanyPremiumType: scheme.insuranceCompanyPremiumType,
+          pfiApplications: scheme.pfiApplications,
+          selectedPFIIds: scheme.selectedPFIIds,
+          beneficiaryApplications: scheme.beneficiaryApplications,
+          openToBeneficiaries: scheme.openToBeneficiaries,
           updatedAt: scheme.updatedAt
         }
       });
 
     } catch (error: any) {
       logger.error('Update scheme error:', error);
+      if (error.name === 'CastError') {
+        res.status(400).json({ error: 'Invalid scheme ID' });
+        return;
+      }
+      res.status(500).json({ error: 'Server error' });
+    }
+  }
+);
+
+// @route   DELETE /api/schemes/:id
+// @desc    Delete a scheme
+// @access  Private (Coordinating Agency only)
+router.delete('/:id',
+  authenticateToken,
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      // Check if user is coordinating agency
+      if (req.user!.userType !== 'coordinating_agency') {
+        res.status(403).json({ error: 'Access denied. Only Coordinating Agency can delete schemes.' });
+        return;
+      }
+
+      const scheme = await Scheme.findById(req.params.id);
+
+      if (!scheme) {
+        res.status(404).json({ error: 'Scheme not found' });
+        return;
+      }
+
+      await Scheme.deleteOne({ _id: req.params.id });
+
+      logger.info(`Scheme ${scheme.schemeId} deleted by user ${req.user!.userId}`);
+
+      res.json({
+        success: true,
+        message: 'Scheme deleted successfully'
+      });
+
+    } catch (error: any) {
+      logger.error('Delete scheme error:', error);
       if (error.name === 'CastError') {
         res.status(400).json({ error: 'Invalid scheme ID' });
         return;

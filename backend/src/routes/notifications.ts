@@ -33,6 +33,35 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response): Prom
   }
 });
 
+router.get('/by-role/:targetRole', authenticateToken, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { targetRole } = req.params;
+    const { page = 1, limit = 50, type, requiresDecision } = req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+
+    const filter: any = { 'metadata.targetRole': targetRole };
+    if (type) filter['metadata.type'] = type;
+    if (requiresDecision !== undefined) filter['metadata.requiresDecision'] = requiresDecision === 'true';
+
+    const count = await Notification.countDocuments(filter);
+    const notifications = await Notification.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
+      .lean();
+
+    res.json({
+      success: true,
+      data: notifications.map(n => ({ id: String(n._id), ...n })),
+      pagination: { page: pageNum, limit: limitNum, total: count, pages: Math.ceil(count / limitNum) }
+    });
+  } catch (error: any) {
+    logger.error('Get notifications by role error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/unread-count', authenticateToken, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const count = await Notification.countDocuments({ userId: req.user!.userId, isRead: false });
@@ -77,6 +106,39 @@ router.put('/:id/read', authenticateToken, async (req: AuthRequest, res: Respons
     res.json({ success: true, message: 'Notification marked as read', data: notification.toObject() });
   } catch (error: any) {
     logger.error('Mark notification as read error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   PUT /api/notifications/:id/status
+// @desc    Update notification status (e.g., approved, rejected)
+// @access  Private
+router.put('/:id/status', authenticateToken, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['admin', 'coordinating-agency'].includes(req.user!.userType)) {
+      res.status(403).json({ error: 'Access denied' });
+      return;
+    }
+
+    const notification = await Notification.findById(id);
+    if (!notification) {
+      res.status(404).json({ error: 'Notification not found' });
+      return;
+    }
+
+    if (!notification.metadata) notification.metadata = {};
+    notification.metadata.status = status;
+    notification.isRead = true; // Automatically mark as read once decision is made
+    notification.readAt = new Date();
+
+    await notification.save();
+
+    res.json({ success: true, data: notification });
+  } catch (error: any) {
+    logger.error('Update notification status error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

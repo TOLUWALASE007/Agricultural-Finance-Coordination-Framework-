@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import PortalLayout from '../../../../components/PortalLayout';
-import { getProducers, updateProducerStatus, buildProducerApplicationData, ProducerRecord } from '../../../../utils/localDatabase';
+
 import { useNotifications } from '../../../../context/NotificationContext';
 import CreateMEProjectModal from '../../../../components/CreateMEProjectModal';
+import { userAPI, notificationAPI } from '../../../../utils/api';
 
 const ProducersFarmers: React.FC = () => {
   const sidebarItems = [
@@ -79,7 +80,7 @@ const ProducersFarmers: React.FC = () => {
     documents: { label: string; name: string; type: string }[];
   } | null>(null);
 
-  const { addNotification, getNotificationsByRole, updateNotificationStatus } = useNotifications();
+  const { notifications, addNotification, getNotificationsByRole, updateNotificationStatus } = useNotifications();
 
   const [restrictSearch, setRestrictSearch] = useState('');
   const [restrictPage, setRestrictPage] = useState(1);
@@ -135,18 +136,12 @@ const ProducersFarmers: React.FC = () => {
   const nigerianStates = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT Abuja', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'];
 
   // Get all Producer records
-  const [producerRecords, setProducerRecords] = useState<ProducerRecord[]>([]);
 
-  useEffect(() => {
-    const records = getProducers();
-    setProducerRecords(records);
-  }, []);
+
+
 
   // Refresh records when status changes
-  const refreshProducers = () => {
-    const records = getProducers();
-    setProducerRecords(records);
-  };
+
 
   // Helper function to render full application view for Producer (7 steps)
   const renderFullApplicationView = (applicationData: any, isSchemeApplication: boolean = false) => {
@@ -361,29 +356,33 @@ const ProducersFarmers: React.FC = () => {
 
   // Transform Producer records to display format
   const producersFarmers = useMemo(() => {
-    return producerRecords.map(record => {
-      return {
-        id: record.id,
-        name: record.formData.fullName,
-        email: record.email || record.formData.phone,
-        phone: record.formData.phone,
-        state: record.formData.state,
-        companyId: record.formData.idNumber || 'N/A',
-        fullAddress: `${record.formData.address}, ${record.formData.city}, ${record.formData.state}, ${record.formData.country}`,
-        organizationProfile: record.formData.farmBusinessName || 'Not provided',
-        contactPersonName: record.formData.fullName,
-        contactPersonEmail: record.formData.email || record.formData.phone,
-        contactPersonPhone: record.formData.phone,
-        companyEmail: record.formData.email || record.formData.phone,
-        registrationDate: record.lastSubmittedAt,
-        organization: record.formData.farmBusinessName || record.formData.fullName,
+    return notifications
+      .filter(n => n.metadata?.type === 'producerRegistration' || (n.metadata?.targetRole === 'coordinating-agency' && n.role?.includes('Producer') && n.message.includes('registration')))
+      .map(n => ({
+        id: n.id,
+        name: n.applicantName || n.organization || 'New Applicant',
+        email: n.contactPersonEmail || n.metadata?.email || 'No email',
+        phone: n.contactPersonPhone || n.metadata?.phone || 'N/A',
+        state: n.metadata?.state || 'N/A',
+        companyId: n.companyId || n.metadata?.idNumber || 'N/A',
+        fullAddress: n.fullAddress || n.metadata?.address || 'N/A',
+        organizationProfile: n.organizationProfile || n.metadata?.organizationProfile || 'New stakeholder registration request.',
+        contactPersonName: n.applicantName || 'N/A',
+        contactPersonEmail: n.contactPersonEmail || n.metadata?.email || 'N/A',
+        contactPersonPhone: n.contactPersonPhone || n.metadata?.phone || 'N/A',
+        companyEmail: n.companyEmail || n.metadata?.email || 'N/A',
+        registrationDate: n.receivedAt ? new Date(n.receivedAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        organization: n.organization || n.companyName || 'N/A',
         role: 'Producer/Farmer',
-        status: record.status, // 'verified' or 'unverified'
-        record: record, // Store full record for access
-        applicationData: buildProducerApplicationData(record.formData)
-      };
-    });
-  }, [producerRecords]);
+        status: 'unverified' as 'verified' | 'unverified',
+        record: null as any,
+        metadata: n.metadata,
+        applicationData: n.applicationData || {
+          step1: { fullName: n.applicantName, email: n.contactPersonEmail, phone: n.contactPersonPhone },
+          step2: { farmBusinessName: n.organization }
+        }
+      }));
+  }, [notifications]);
 
   // Filters and pagination (Approve) - ALL Producers/Farmers
   const filteredApproveUsers = useMemo(() => {
@@ -460,57 +459,17 @@ const ProducersFarmers: React.FC = () => {
   }, [getNotificationsByRole]);
 
   const filteredApprovalRightsUsers: ApprovalRightsUser[] = useMemo(() => {
-    console.log('[ProducersFarmers] Recalculating filteredApprovalRightsUsers - refreshTrigger:', refreshTrigger);
-    const storedSchemes = localStorage.getItem('fundSchemes');
-    const schemes = storedSchemes ? JSON.parse(storedSchemes) : [];
-    console.log('[ProducersFarmers] Read schemes from localStorage:', schemes.length, 'schemes');
-
-    // Step 1: Build a map of all Producer applications from scheme data
-    const applicationsMap = new Map<string, {
-      schemeId: string;
-      beneficiaryId: string;
-      submittedAt: string;
-      status: 'pending' | 'approved' | 'rejected';
-    }>();
-    schemes.forEach((scheme: any) => {
-      if (scheme.beneficiaryApplications) {
-        scheme.beneficiaryApplications.forEach((app: any) => {
-          if (app.beneficiaryType === 'Producer/Farmer') {
-            const key = `${scheme.id}_${app.beneficiaryId}`;
-            // Keep the most recent application for each scheme+Producer combination
-            const existing = applicationsMap.get(key);
-            if (!existing || (app.submittedAt && (!existing.submittedAt || app.submittedAt > existing.submittedAt))) {
-              applicationsMap.set(key, {
-                schemeId: scheme.id,
-                beneficiaryId: app.beneficiaryId,
-                submittedAt: app.submittedAt,
-                status: app.status || 'pending'
-              });
-            }
-          }
-        });
-      }
-    });
-
-    // Step 2: Map notifications to ApprovalRightsUser, ensuring one entry per scheme+Producer
+    // Map notifications to ApprovalRightsUser
     const userMap = new Map<string, ApprovalRightsUser & { notification?: any; submissionStatus?: string }>();
 
     producerSchemeNotifications.forEach(notif => {
       const schemeId = String(notif.schemeId || '').trim();
       const beneficiaryId = String(notif.metadata?.beneficiaryId || '').trim();
-      const uniqueUserId = `submission_${schemeId}_${beneficiaryId}`; // Stable unique ID
+      const uniqueUserId = `submission_${schemeId}_${beneficiaryId}`;
 
       if (!schemeId || !beneficiaryId) return;
 
-      // Check if the scheme still exists (not deleted)
-      const scheme = schemes.find((s: any) => s.id === schemeId);
-      if (!scheme) {
-        return; // Scheme has been deleted - don't show this submission
-      }
-
-      const producerRecord = producersFarmers.find(r => r.record?.id === beneficiaryId);
-      const application = applicationsMap.get(`${schemeId}_${beneficiaryId}`);
-      const submissionStatus = application?.status || 'pending';
+      const submissionStatus = notif.status || 'pending';
 
       // Status display rules:
       // - Pending → show "Pending"
@@ -520,47 +479,22 @@ const ProducersFarmers: React.FC = () => {
         submissionStatus === 'rejected' ? 'Rejected' :
           'Pending';
 
-      console.log(`[ProducersFarmers] Beneficiary ${beneficiaryId} for scheme ${schemeId}: status=${submissionStatus}, display=${displayStatus}`);
-
       const user: ApprovalRightsUser & { notification?: any; submissionStatus?: string } = {
-        id: uniqueUserId, // Use stable unique ID based on submission
-        name: notif.applicantName || notif.companyName || producerRecord?.name || 'Unknown',
-        email: notif.contactPersonEmail || notif.companyEmail || producerRecord?.email || '',
+        id: uniqueUserId,
+        name: notif.applicantName || notif.companyName || 'Unknown',
+        email: notif.contactPersonEmail || notif.companyEmail || '',
         role: 'Producer/Farmer',
-        state: producerRecord?.state || 'N/A',
-        organization: notif.companyName || producerRecord?.organization || 'Unknown',
+        state: notif.metadata?.state || 'N/A',
+        organization: notif.companyName || 'Unknown',
         canApprove: true,
-        notification: notif, // Store the full notification for access
-        submissionStatus: displayStatus // Display status according to rules
+        notification: notif,
+        submissionStatus: displayStatus
       };
 
       userMap.set(uniqueUserId, user);
     });
 
-    // Step 3: Add registration applications (if any)
-    const registrationUsers = producersFarmers
-      .filter(user => user.status === 'unverified' && !user.record.pendingNotificationId) // Only unverified registrations without scheme notifications
-      .map(user => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: 'Producer/Farmer',
-        state: user.state,
-        organization: user.organization,
-        canApprove: true,
-        submissionStatus: 'Pending', // For registration, it's always pending
-        companyId: user.companyId,
-        fullAddress: user.fullAddress,
-        organizationProfile: user.organizationProfile,
-        contactPersonName: user.contactPersonName,
-        contactPersonEmail: user.contactPersonEmail,
-        contactPersonPhone: user.contactPersonPhone,
-        companyEmail: user.companyEmail,
-        applicationData: user.applicationData
-      }));
-
-    // Combine scheme applications and registration applications
-    return [...Array.from(userMap.values()), ...registrationUsers].filter((user): user is ApprovalRightsUser => {
+    return Array.from(userMap.values()).filter((user): user is ApprovalRightsUser => {
       const matchesSearch = !approvalRightsSearch ||
         user.name.toLowerCase().includes(approvalRightsSearch.toLowerCase()) ||
         user.email.toLowerCase().includes(approvalRightsSearch.toLowerCase()) ||
@@ -571,7 +505,7 @@ const ProducersFarmers: React.FC = () => {
 
       return matchesSearch && matchesState;
     });
-  }, [producerSchemeNotifications, producersFarmers, approvalRightsSearch, approvalRightsStateFilter, refreshTrigger]);
+  }, [producerSchemeNotifications, approvalRightsSearch, approvalRightsStateFilter, refreshTrigger]);
 
   const paginatedApprovalRightsUsers = useMemo(() => {
     const startIndex = (approvalRightsPage - 1) * pageSize;
@@ -618,7 +552,6 @@ const ProducersFarmers: React.FC = () => {
     if (selectedApproveUsers.length === 0) return;
     alert(`Approved ${selectedApproveUsers.length} Producer/Farmer applications`);
     setSelectedApproveUsers([]);
-    refreshProducers();
   };
 
   // Process approval/rejection for scheme applications
@@ -634,25 +567,6 @@ const ProducersFarmers: React.FC = () => {
     const schemeId = notification.schemeId;
     const beneficiaryId = notification.metadata?.beneficiaryId as string | undefined;
 
-    // Get submittedAt from the actual scheme application, not from notification
-    let submittedAt: string | undefined;
-    if (schemeId && beneficiaryId) {
-      const storedSchemes = localStorage.getItem('fundSchemes');
-      if (storedSchemes) {
-        const schemes = JSON.parse(storedSchemes);
-        const scheme = schemes.find((s: any) => s.id === schemeId);
-        if (scheme?.beneficiaryApplications) {
-          const application = scheme.beneficiaryApplications.find((app: any) =>
-            app.beneficiaryId === beneficiaryId &&
-            app.beneficiaryType === 'Producer/Farmer'
-          );
-          submittedAt = application?.submittedAt;
-        }
-      }
-    }
-
-    console.log('[ProducersFarmers] Processing:', { isApproved, schemeId, beneficiaryId, submittedAt });
-
     const trimmedRemarks = approvalRemarks.trim();
 
     if (!isApproved && !trimmedRemarks) {
@@ -663,77 +577,6 @@ const ProducersFarmers: React.FC = () => {
     if (isApproved && !disbursementAmount.trim()) {
       alert('Please specify the amount to be disbursed.');
       return;
-    }
-
-    if (schemeId && beneficiaryId) {
-      console.log('[ProducersFarmers] Updating localStorage for scheme:', schemeId);
-      const storedSchemes = localStorage.getItem('fundSchemes');
-      if (storedSchemes) {
-        const schemes = JSON.parse(storedSchemes);
-        console.log('[ProducersFarmers] Current schemes count:', schemes.length);
-        const updatedSchemes = schemes.map((scheme: any) => {
-          if (scheme.id === schemeId) {
-            console.log('[ProducersFarmers] Found matching scheme, updating applications');
-            console.log('[ProducersFarmers] Scheme beneficiaryApplications:', scheme.beneficiaryApplications);
-            console.log('[ProducersFarmers] Looking for beneficiaryId:', beneficiaryId, 'beneficiaryType: Producer/Farmer');
-
-            // Initialize beneficiaryApplications if it doesn't exist
-            if (!scheme.beneficiaryApplications) {
-              scheme.beneficiaryApplications = [];
-            }
-
-            // Find existing application or create new entry
-            let applicationFound = false;
-            const updatedApplications = scheme.beneficiaryApplications.map((app: any) => {
-              console.log('[ProducersFarmers] Checking app:', { beneficiaryId: app.beneficiaryId, beneficiaryType: app.beneficiaryType, status: app.status });
-              if (app.beneficiaryId === beneficiaryId &&
-                app.beneficiaryType === 'Producer/Farmer') {
-                applicationFound = true;
-                console.log('[ProducersFarmers] Updating application status to:', isApproved ? 'approved' : 'rejected');
-                return {
-                  ...app,
-                  status: isApproved ? 'approved' : 'rejected',
-                  reviewedAt: new Date().toISOString(),
-                  reviewNotes: isApproved
-                    ? `Amount to be Disbursed: ${disbursementAmount}${trimmedRemarks ? ` | ${trimmedRemarks}` : ''}`
-                    : trimmedRemarks || undefined,
-                  disbursementAmount: isApproved ? disbursementAmount : undefined
-                };
-              }
-              return app;
-            });
-
-            // If application wasn't found, create it
-            if (!applicationFound) {
-              console.log('[ProducersFarmers] Application not found in array, creating new entry');
-              updatedApplications.push({
-                beneficiaryId,
-                beneficiaryType: 'Producer/Farmer',
-                status: isApproved ? 'approved' : 'rejected',
-                submittedAt: new Date().toISOString(),
-                reviewedAt: new Date().toISOString(),
-                reviewNotes: isApproved
-                  ? `Amount to be Disbursed: ${disbursementAmount}${trimmedRemarks ? ` | ${trimmedRemarks}` : ''}`
-                  : trimmedRemarks || undefined,
-                disbursementAmount: isApproved ? disbursementAmount : undefined
-              });
-            }
-
-            return {
-              ...scheme,
-              beneficiaryApplications: updatedApplications
-            };
-          }
-          return scheme;
-        });
-        console.log('[ProducersFarmers] Saving updated schemes to localStorage');
-        localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
-
-        console.log('[ProducersFarmers] Dispatching fundSchemes-updated event');
-        // Dispatch event to notify other components of the update
-        window.dispatchEvent(new Event('fundSchemes-updated'));
-        console.log('[ProducersFarmers] Event dispatched successfully');
-      }
     }
 
     // Update notification status
@@ -762,7 +605,6 @@ const ProducersFarmers: React.FC = () => {
     });
 
     // Refresh and close modals
-    refreshProducers();
     setShowApprovalModal(null);
     setApprovalDecision('');
     setApprovalRemarks('');
@@ -779,7 +621,7 @@ const ProducersFarmers: React.FC = () => {
     if (!approvalDecision) return;
 
     const user = producersFarmers.find(u => u.id === userId);
-    if (!user || !user.record) return;
+    if (!user) return;
 
     const trimmedRemarks = approvalRemarks.trim();
     const isApproved = approvalDecision === 'approve';
@@ -789,28 +631,20 @@ const ProducersFarmers: React.FC = () => {
       return;
     }
 
-    // Update Producer status
-    updateProducerStatus(user.record.id, isApproved ? 'verified' : 'unverified', {
-      rejectionReason: isApproved ? undefined : trimmedRemarks,
-      pendingNotificationId: null,
-    });
+    // Backend handling
+    const backendUserId = (user as any).metadata?.userId;
+    if (backendUserId) {
+      if (isApproved) {
+        userAPI.verify(backendUserId).catch(err => console.error('Failed to verify backend Producer user:', err));
+      } else {
+        userAPI.deactivate(backendUserId).catch(err => console.error('Failed to reject backend Producer user:', err));
+      }
 
-    // Send notification to Producer
-    const message = isApproved
-      ? 'Your registration has been approved. You now have full access.'
-      : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+      // Update notification status
+      notificationAPI.updateStatus(user.id, isApproved ? 'approved' : 'rejected')
+        .catch(err => console.error('Failed to update notification status:', err));
+    }
 
-    addNotification({
-      role: '🏛️ Coordinating Agency',
-      targetRole: 'producer',
-      message,
-      metadata: {
-        type: 'producerRegistrationResponse',
-        producerId: user.record.id,
-      },
-    });
-
-    refreshProducers();
     setShowApprovalModal(null);
     setApprovalDecision('');
     setApprovalRemarks('');
@@ -893,13 +727,9 @@ const ProducersFarmers: React.FC = () => {
   // Handle restrict access
   const handleRestrictAccess = (userId: string) => {
     const user = producersFarmers.find(u => u.id === userId);
-    if (!user || !user.record) return;
-
-    // Change status from verified to unverified
-    updateProducerStatus(user.record.id, 'unverified', {
-      rejectionReason: restrictRemarks || 'Access restricted by Coordinating Agency',
-      pendingNotificationId: null,
-    });
+    if (user && user.metadata?.userId) {
+      userAPI.deactivate(user.metadata.userId).catch(err => console.error('Failed to restrict user:', err));
+    }
 
     // Send notification
     addNotification({
@@ -908,15 +738,16 @@ const ProducersFarmers: React.FC = () => {
       message: `Your access has been restricted. Reason: ${restrictRemarks || 'Access restricted by Coordinating Agency'}`,
       metadata: {
         type: 'producerRegistrationResponse',
-        producerId: user.record.id,
+        producerId: userId,
       },
     });
 
-    refreshProducers();
     setShowRestrictModal(null);
     setRestrictReason('');
     setRestrictRemarks('');
-    setRestrictToast(`🚫 Access restricted for ${user.name}`);
+    if (user) {
+      setRestrictToast(`🚫 Access restricted for ${user.name}`);
+    }
     setTimeout(() => setRestrictToast(null), 3000);
   };
 
@@ -934,26 +765,22 @@ const ProducersFarmers: React.FC = () => {
     const selectedUsers = filteredRestrictUsers.filter(u => selectedRestrictUsers.includes(u.id));
 
     selectedUsers.forEach(user => {
-      if (user.record) {
-        // Use rejectionReason to store restriction details
-        const restrictionMessage = `RESTRICTED: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`;
-        updateProducerStatus(user.record.id, 'unverified', {
-          rejectionReason: restrictionMessage,
-          pendingNotificationId: null,
-        });
-
-        // Send notification to Producer
-        addNotification({
-          role: '🏛️ Coordinating Agency',
-          targetRole: 'producer',
-          message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
-          metadata: {
-            type: 'producerAccessRestricted',
-            producerId: user.record.id,
-            reason: batchRestrictionReason.trim(),
-          },
-        });
+      const backendUserId = user.metadata?.userId;
+      if (backendUserId) {
+        userAPI.deactivate(backendUserId).catch(err => console.error('Failed to restrict user:', err));
       }
+
+      // Send notification to Producer
+      addNotification({
+        role: '🏛️ Coordinating Agency',
+        targetRole: 'producer',
+        message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
+        metadata: {
+          type: 'producerAccessRestricted',
+          producerId: user.id,
+          reason: batchRestrictionReason.trim(),
+        },
+      });
     });
 
     // Close modal and reset
@@ -961,7 +788,6 @@ const ProducersFarmers: React.FC = () => {
     setBatchRestrictionReason('');
     setBatchRestrictionRemarks('');
     setSelectedRestrictUsers([]);
-    refreshProducers();
 
     // Show success message
     setRestrictToast(`🚫 Successfully restricted access for ${selectedUsers.length} Producer/Farmer users`);
@@ -995,98 +821,42 @@ const ProducersFarmers: React.FC = () => {
     const schemeApplications = selectedUsers.filter(u => !!u.notification);
 
     let successCount = 0;
-    const storedSchemes = localStorage.getItem('fundSchemes');
-    if (storedSchemes) {
-      let schemes = JSON.parse(storedSchemes);
 
-      // Update all schemes in memory first
-      schemeApplications.forEach(user => {
-        const notification = user.notification;
-        if (!notification) return;
+    schemeApplications.forEach(user => {
+      const notification = user.notification;
+      if (!notification) return;
 
-        const schemeId = notification.schemeId;
-        const beneficiaryId = notification.metadata?.beneficiaryId;
+      const schemeId = notification.schemeId;
+      const beneficiaryId = notification.metadata?.beneficiaryId;
 
-        if (schemeId && beneficiaryId) {
-          // Find and update the scheme
-          schemes = schemes.map((scheme: any) => {
-            if (scheme.id === schemeId) {
-              if (!scheme.beneficiaryApplications) {
-                scheme.beneficiaryApplications = [];
-              }
+      if (schemeId && beneficiaryId) {
+        updateNotificationStatus(notification.id, 'approved');
 
-              let applicationFound = false;
-              const updatedApplications = scheme.beneficiaryApplications.map((app: any) => {
-                if (app.beneficiaryId === beneficiaryId && app.beneficiaryType === 'Producer/Farmer') {
-                  applicationFound = true;
-                  return {
-                    ...app,
-                    status: 'approved',
-                    reviewedAt: new Date().toISOString(),
-                    reviewNotes: `Amount to be Disbursed: ${batchDisbursementAmount}${batchApprovalRemarks.trim() ? ` | ${batchApprovalRemarks.trim()}` : ''}`,
-                    disbursementAmount: batchDisbursementAmount
-                  };
-                }
-                return app;
-              });
+        addNotification({
+          role: '🏛️ Coordinating Agency',
+          targetRole: 'producer',
+          message: `Your application for scheme "${notification.schemeName}" has been approved. You can now proceed to one of the approved PFIs to withdraw your funds.`,
+          schemeId: notification.schemeId,
+          schemeName: notification.schemeName,
+          metadata: {
+            type: 'beneficiarySchemeApplicationResponse',
+            beneficiaryId,
+            beneficiaryType: 'Producer/Farmer',
+            producerId: beneficiaryId,
+            relatedNotificationId: notification.id,
+            isApproved: true,
+          },
+        });
 
-              if (!applicationFound) {
-                updatedApplications.push({
-                  beneficiaryId,
-                  beneficiaryType: 'Producer/Farmer',
-                  status: 'approved',
-                  submittedAt: new Date().toISOString(),
-                  reviewedAt: new Date().toISOString(),
-                  reviewNotes: `Amount to be Disbursed: ${batchDisbursementAmount}${batchApprovalRemarks.trim() ? ` | ${batchApprovalRemarks.trim()}` : ''}`,
-                  disbursementAmount: batchDisbursementAmount
-                });
-              }
-
-              return {
-                ...scheme,
-                beneficiaryApplications: updatedApplications
-              };
-            }
-            return scheme;
-          });
-
-          // Update notification status
-          updateNotificationStatus(notification.id, 'approved');
-
-          // Notify Producer/Farmer about the approval
-          addNotification({
-            role: '🏛️ Coordinating Agency',
-            targetRole: 'producer',
-            message: `Your application for scheme "${notification.schemeName}" has been approved. You can now proceed to one of the approved PFIs to withdraw your funds.`,
-            schemeId: notification.schemeId,
-            schemeName: notification.schemeName,
-            metadata: {
-              type: 'beneficiarySchemeApplicationResponse',
-              beneficiaryId,
-              beneficiaryType: 'Producer/Farmer',
-              producerId: beneficiaryId,
-              relatedNotificationId: notification.id,
-              isApproved: true,
-            },
-          });
-
-          successCount++;
-        }
-      });
-
-      // Save all updates to localStorage once
-      localStorage.setItem('fundSchemes', JSON.stringify(schemes));
-
-      // Dispatch event to notify other components
-      window.dispatchEvent(new Event('fundSchemes-updated'));
-    }
+        successCount++;
+      }
+    });
 
     // Close modal and reset
     setShowBatchApprovalModal(false);
     setBatchDisbursementAmount('');
     setBatchApprovalRemarks('');
     setSelectedApprovalRightsUsers([]);
-    refreshProducers();
 
     // Show success message
     setFinalApprovalNotice(`✅ Successfully approved ${successCount} Producer/Farmer scheme applications`);
@@ -1303,6 +1073,26 @@ const ProducersFarmers: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Backend Registration Documents */}
+                    {(user as any).metadata?.documentFilenames && (user as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(user as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* View Full Application Section */}
@@ -1333,7 +1123,7 @@ const ProducersFarmers: React.FC = () => {
                           sourceName: user.name,
                           sourceEmail: user.email,
                           sourcePhone: user.phone,
-                          submissionData: user.applicationData || buildProducerApplicationData(user.record?.formData || {} as any),
+                          submissionData: user.applicationData || {},
                           projectType: 'registration',
                         });
                         setShowMEProjectModal(true);
@@ -1431,72 +1221,67 @@ const ProducersFarmers: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Backend Registration Documents (Approval View) */}
+                    {(userData as any).metadata?.documentFilenames && (userData as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(userData as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Scheme Application Details - PFI and IC Selections */}
                     {isSchemeApplication && notification && (() => {
-                      // First, try to get from notification.applicationData
-                      let selectedPFIId = notification.applicationData?.selectedPFI;
-                      let selectedICId = notification.applicationData?.selectedInsuranceCompany;
-                      let produceType = notification.applicationData?.produceType;
+                      // Get from notification.applicationData
+                      const selectedPFIId = notification.applicationData?.selectedPFI;
+                      const selectedICId = notification.applicationData?.selectedInsuranceCompany;
+                      const produceType = notification.applicationData?.produceType;
 
-                      // If not in notification, get from scheme's beneficiaryApplications
-                      if (!selectedPFIId || !selectedICId) {
-                        const storedSchemes = localStorage.getItem('fundSchemes');
-                        if (storedSchemes) {
-                          const schemes = JSON.parse(storedSchemes);
-                          const scheme = schemes.find((s: any) => s.id === notification.schemeId);
-                          if (scheme?.beneficiaryApplications) {
-                            const application = scheme.beneficiaryApplications.find((app: any) =>
-                              app.beneficiaryId === notification.metadata?.beneficiaryId &&
-                              app.beneficiaryType === 'Producer/Farmer'
-                            );
-                            if (application) {
-                              selectedPFIId = selectedPFIId || application.selectedPFI;
-                              selectedICId = selectedICId || application.selectedInsuranceCompany;
-                              produceType = produceType || application.produceType;
-                            }
-                          }
-                        }
-                      }
+                      const selectedPFIName = notification.applicationData?.selectedPFIName;
+                      const selectedICName = notification.applicationData?.selectedICName;
+                      const pfiInterestRate = notification.applicationData?.pfiInterestRate;
+                      const icPremiumRate = notification.applicationData?.icPremiumRate;
 
                       // If we have selections, display them
                       if (selectedPFIId || selectedICId) {
-                        const storedSchemes = localStorage.getItem('fundSchemes');
-                        if (storedSchemes) {
-                          const schemes = JSON.parse(storedSchemes);
-                          const scheme = schemes.find((s: any) => s.id === notification.schemeId);
-                          if (scheme) {
-                            const selectedPFI = scheme.pfiApplications?.find((pfi: any) => pfi.pfiId === selectedPFIId);
-                            const selectedIC = scheme.insuranceCompanySubmissions?.find((ic: any) => ic.insuranceCompanyId === selectedICId);
-
-                            return (
-                              <div className="bg-primary-800 rounded-md p-4">
-                                <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Selected Service Providers</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  {selectedPFI && (
-                                    <div>
-                                      <p className="text-xs text-gray-400 font-serif mb-1">Selected PFI</p>
-                                      <p className="text-sm text-gray-100 font-sans font-medium">{selectedPFI.pfiName || 'PFI'}</p>
-                                      <p className="text-xs text-gray-400 font-serif mt-1">Interest Rate: {selectedPFI.interestRate}%</p>
-                                    </div>
-                                  )}
-                                  {selectedIC && (
-                                    <div>
-                                      <p className="text-xs text-gray-400 font-serif mb-1">Selected Insurance Company</p>
-                                      <p className="text-sm text-gray-100 font-sans font-medium">{selectedIC.insuranceCompanyName || 'Insurance Company'}</p>
-                                      <p className="text-xs text-gray-400 font-serif mt-1">Premium Rate: {selectedIC.premiumRate}%</p>
-                                    </div>
-                                  )}
-                                  {produceType && (
-                                    <div>
-                                      <p className="text-xs text-gray-400 font-serif mb-1">Produce Type</p>
-                                      <p className="text-sm text-gray-100 font-sans">{produceType}</p>
-                                    </div>
-                                  )}
+                        return (
+                          <div className="bg-primary-800 rounded-md p-4">
+                            <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Selected Service Providers</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {selectedPFIId && (
+                                <div>
+                                  <p className="text-xs text-gray-400 font-serif mb-1">Selected PFI</p>
+                                  <p className="text-sm text-gray-100 font-sans font-medium">{selectedPFIName || 'PFI'}</p>
+                                  {pfiInterestRate && <p className="text-xs text-gray-400 font-serif mt-1">Interest Rate: {pfiInterestRate}%</p>}
                                 </div>
-                              </div>
-                            );
-                          }
-                        }
+                              )}
+                              {selectedICId && (
+                                <div>
+                                  <p className="text-xs text-gray-400 font-serif mb-1">Selected Insurance Company</p>
+                                  <p className="text-sm text-gray-100 font-sans font-medium">{selectedICName || 'Insurance Company'}</p>
+                                  {icPremiumRate && <p className="text-xs text-gray-400 font-serif mt-1">Premium Rate: {icPremiumRate}%</p>}
+                                </div>
+                              )}
+                              {produceType && (
+                                <div>
+                                  <p className="text-xs text-gray-400 font-serif mb-1">Produce Type</p>
+                                  <p className="text-sm text-gray-100 font-sans">{produceType}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
                       }
 
                       return null;
@@ -1538,7 +1323,6 @@ const ProducersFarmers: React.FC = () => {
                               type="button"
                               onClick={() => {
                                 const beneficiaryId = notification.metadata?.beneficiaryId as string;
-                                const producerRecord = producerRecords.find(r => r.id === beneficiaryId);
                                 setMEProjectData({
                                   sourceType: 'producer',
                                   sourceId: beneficiaryId || user.id,
@@ -1550,7 +1334,6 @@ const ProducersFarmers: React.FC = () => {
                                     schemeName: notification.schemeName,
                                     applicationType: 'Scheme Application',
                                     applicationData: userData.applicationData || notification.applicationData,
-                                    producerDetails: producerRecord?.formData || {},
                                   },
                                   projectType: 'scheme-application',
                                   schemeId: notification.schemeId,
@@ -2056,6 +1839,26 @@ const ProducersFarmers: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Backend Registration Documents (Approval View) */}
+                    {(user as any).metadata?.documentFilenames && (user as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(user as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* View Full Application Section */}
@@ -2454,4 +2257,5 @@ const ProducersFarmers: React.FC = () => {
 };
 
 export default ProducersFarmers;
+
 

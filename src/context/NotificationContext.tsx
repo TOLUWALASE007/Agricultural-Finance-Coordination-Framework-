@@ -60,42 +60,59 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'afcf_notifications';
-
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    // Load from localStorage on mount
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed: NotificationItem[] = JSON.parse(stored);
-        return parsed.map((notif) => ({
-          ...notif,
-          isViewed: Boolean((notif as any).isViewed),
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading notifications from localStorage:', error);
-    }
-    return [];
-  });
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  // Save to localStorage whenever notifications change
+  // Fetch notifications from MongoDB backend on mount
   useEffect(() => {
-    try {
-      // DEBUG: Track IC notifications
-      const icNotifs = notifications.filter(n => n.metadata?.type === 'insuranceCompanySubmission' || n.metadata?.type === 'insuranceCompanySchemeApplication');
-      const pfiNotifs = notifications.filter(n => n.metadata?.type === 'pfiSchemeApplication');
-      console.log('[NotificationContext] Saving notifications - IC count:', icNotifs.length, 'PFI count:', pfiNotifs.length);
-      if (icNotifs.length > 0) {
-        console.log('[NotificationContext] IC notifications:', icNotifs.map(n => ({ id: n.id, schemeId: n.schemeId, company: n.companyName })));
-      }
+    const fetchNotificationsFromBackend = async () => {
+      try {
+        const token = sessionStorage.getItem('authToken');
+        if (!token) {
+          console.log('[NotificationContext] No auth token');
+          return;
+        }
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
-    } catch (error) {
-      console.error('Error saving notifications to localStorage:', error);
-    }
-  }, [notifications]);
+        // Get current user's role from sessionStorage
+        const rawUser = sessionStorage.getItem('user');
+        const user = rawUser ? JSON.parse(rawUser) : null;
+        const userRole = user?.role || 'coordinating-agency';
+
+        // Import notificationAPI dynamically to avoid circular dependency
+        const { notificationAPI } = await import('../utils/api');
+
+        // Fetch notifications for coordinating agency from MongoDB
+        const response = await notificationAPI.getByRole(userRole, { limit: 1000 });
+
+        if (response.success && response.data) {
+          console.log('[NotificationContext] Loaded', response.data.length, 'notifications from MongoDB for role:', userRole);
+
+          // Convert MongoDB notifications to NotificationItem format
+          const mongoNotifications: NotificationItem[] = response.data.map((n: any) => ({
+            id: n.id || n._id,
+            role: n.metadata?.role || 'Unknown',
+            targetRole: userRole as any,
+            message: n.message,
+            status: 'pending',
+            receivedAt: n.createdAt || new Date().toISOString(),
+            isViewed: n.isRead || false,
+            applicantName: n.metadata?.applicantName,
+            applicantType: 'Company',
+            companyName: n.metadata?.organizationName,
+            organization: n.metadata?.organizationName,
+            contactPersonEmail: n.metadata?.email,
+            metadata: n.metadata,
+          }));
+
+          setNotifications(mongoNotifications);
+        }
+      } catch (error) {
+        console.error('[NotificationContext] Failed to fetch from MongoDB:', error);
+      }
+    };
+
+    fetchNotificationsFromBackend();
+  }, []);
 
   const addNotification = useCallback((notificationData: Omit<NotificationItem, 'id' | 'receivedAt' | 'status' | 'isViewed'>) => {
     const newNotification: NotificationItem = {
@@ -161,7 +178,6 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
-    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   const hasAppliedToScheme = useCallback((schemeId: string, userRole: 'fund-provider' | 'anchor' | 'producer' | 'researcher' | 'pfi' | 'lead-firm') => {

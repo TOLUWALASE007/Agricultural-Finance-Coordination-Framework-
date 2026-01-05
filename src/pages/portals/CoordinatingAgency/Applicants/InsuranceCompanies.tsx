@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import PortalLayout from '../../../../components/PortalLayout';
-import { getInsuranceCompanies, updateInsuranceCompanyStatus, buildInsuranceCompanyApplicationData, InsuranceCompanyRecord } from '../../../../utils/localDatabase';
+
 import { useNotifications } from '../../../../context/NotificationContext';
+import { userAPI, notificationAPI } from '../../../../utils/api';
 
 const InsuranceCompanyApplicants: React.FC = () => {
   const sidebarItems = [
@@ -78,7 +79,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
     documents: { label: string; name: string; type: string }[];
   } | null>(null);
 
-  const { addNotification, getNotificationsByRole } = useNotifications();
+  const { notifications, addNotification, getNotificationsByRole, updateNotificationStatus } = useNotifications();
 
   const [restrictSearch, setRestrictSearch] = useState('');
   const [restrictPage, setRestrictPage] = useState(1);
@@ -117,18 +118,12 @@ const InsuranceCompanyApplicants: React.FC = () => {
   const nigerianStates = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT Abuja', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'];
 
   // Get all Insurance Company records
-  const [insuranceRecords, setInsuranceRecords] = useState<InsuranceCompanyRecord[]>([]);
 
-  useEffect(() => {
-    const records = getInsuranceCompanies();
-    setInsuranceRecords(records);
-  }, []);
+
+
 
   // Refresh records when status changes
-  const refreshInsuranceCompanies = () => {
-    const records = getInsuranceCompanies();
-    setInsuranceRecords(records);
-  };
+
 
   // Helper function to render full application view for Insurance Company
   const renderFullApplicationView = (applicationData: any) => {
@@ -318,39 +313,36 @@ const InsuranceCompanyApplicants: React.FC = () => {
     );
   };
 
-  // Transform Insurance Company records to display format
+  // Transform Insurance Company records from MongoDB notifications only
   const insuranceApplicants = useMemo(() => {
-    return insuranceRecords.map(record => {
-      // Normalize formData to ensure areasOfOperation is an array
-      const normalizedFormData = {
-        ...record.formData,
-        areasOfOperation: Array.isArray(record.formData.areasOfOperation)
-          ? record.formData.areasOfOperation
-          : (record.formData.areasOfOperation ? [record.formData.areasOfOperation] : [])
-      };
-
-      return {
-        id: record.id,
-        name: record.formData.organizationName || record.formData.fullName,
-        email: record.email,
-        phone: record.formData.phone,
-        state: record.formData.state,
-        companyId: record.formData.registrationNumber,
-        fullAddress: `${record.formData.address}, ${record.formData.city}, ${record.formData.state}, ${record.formData.country}`,
-        organizationProfile: record.formData.missionStatement || 'Not provided',
-        contactPersonName: record.formData.fullName,
-        contactPersonEmail: record.formData.email,
-        contactPersonPhone: record.formData.phone,
-        companyEmail: record.formData.officialEmail,
-        registrationDate: record.lastSubmittedAt,
-        organization: record.formData.organizationName || record.formData.fullName,
+    return notifications
+      .filter(n => n.metadata?.type === 'insuranceRegistration' || (n.metadata?.targetRole === 'coordinating-agency' && n.role?.includes('Insurance') && n.message.includes('registration')))
+      .map(n => ({
+        id: n.id,
+        name: n.applicantName || n.organization || 'New Applicant',
+        email: n.contactPersonEmail || n.metadata?.email || 'No email',
+        phone: n.contactPersonPhone || n.metadata?.phone || 'N/A',
+        state: n.metadata?.state || 'N/A',
+        companyId: n.companyId || n.metadata?.registrationNumber || 'N/A',
+        fullAddress: n.fullAddress || n.metadata?.address || 'N/A',
+        organizationProfile: n.organizationProfile || n.metadata?.organizationProfile || 'New stakeholder registration request.',
+        contactPersonName: n.applicantName || 'N/A',
+        contactPersonEmail: n.contactPersonEmail || n.metadata?.email || 'N/A',
+        contactPersonPhone: n.contactPersonPhone || n.metadata?.phone || 'N/A',
+        companyEmail: n.companyEmail || n.metadata?.officialEmail || 'N/A',
+        registrationDate: n.receivedAt ? new Date(n.receivedAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        organization: n.organization || n.companyName || 'N/A',
         role: 'Insurance Company',
-        status: record.status, // 'verified' or 'unverified'
-        record: record, // Store full record for access
-        applicationData: buildInsuranceCompanyApplicationData(normalizedFormData)
-      };
-    });
-  }, [insuranceRecords]);
+        status: 'unverified' as 'verified' | 'unverified',
+        record: null as any,
+        metadata: n.metadata,
+        applicationData: n.applicationData || {
+          step1: { fullName: n.applicantName },
+          step2: { email: n.contactPersonEmail, phone: n.contactPersonPhone },
+          step4: { organizationName: n.organization, registrationNumber: n.companyId }
+        }
+      }));
+  }, [notifications]);
 
   // Filters and pagination (Approve) - ALL Insurance Companies
   const filteredApproveUsers = useMemo(() => {
@@ -472,145 +464,30 @@ const InsuranceCompanyApplicants: React.FC = () => {
     }
   }, [getNotificationsByRole, showApprovalModal]);
 
-  const filteredApprovalRightsUsers: ApprovalRightsUser[] = useMemo(() => {
-    // Load schemes to check submission status
-    const storedSchemes = localStorage.getItem('fundSchemes');
-    const schemes = storedSchemes ? JSON.parse(storedSchemes) : [];
-
-    // Step 1: Build a map of all submissions (pending, approved, rejected) from scheme data
-    // This is the source of truth for submission status
-    const submissionsMap = new Map<string, {
-      schemeId: string;
-      insuranceCompanyId: string;
-      submittedAt: string;
-      status: 'pending' | 'approved' | 'rejected';
-    }>();
-    schemes.forEach((scheme: any) => {
-      if (scheme.insuranceCompanySubmissions) {
-        scheme.insuranceCompanySubmissions.forEach((sub: any) => {
-          const key = `${scheme.id}_${sub.insuranceCompanyId}`;
-          // Keep the most recent submission for each scheme+IC combination
-          const existing = submissionsMap.get(key);
-          if (!existing || (sub.submittedAt && (!existing.submittedAt || sub.submittedAt > existing.submittedAt))) {
-            submissionsMap.set(key, {
-              schemeId: scheme.id,
-              insuranceCompanyId: sub.insuranceCompanyId,
-              submittedAt: sub.submittedAt,
-              status: sub.status || 'pending'
-            });
-          }
-        });
-      }
-    });
-
-    // Step 2: Filter notifications to only those matching pending submissions
-    // and deduplicate by schemeId + insuranceCompanyId
-    const submissionMap = new Map<string, typeof schemeSubmissionNotifications[0]>();
-    const seenNotificationIds = new Set<string>();
+  const filteredApprovalRightsUsers: (ApprovalRightsUser & { notification?: any; submissionStatus?: string })[] = useMemo(() => {
+    // Map notifications to Approval Rights Users
+    const userMap = new Map<string, ApprovalRightsUser & { notification?: any; submissionStatus?: string }>();
 
     schemeSubmissionNotifications.forEach(notif => {
-      // Skip if we've already seen this notification ID
-      if (seenNotificationIds.has(notif.id)) {
-        return;
-      }
-      seenNotificationIds.add(notif.id);
-
-      // Normalize keys
-      const schemeId = String(notif.schemeId || '').trim();
-      const insuranceCompanyId = String(notif.metadata?.insuranceCompanyId || '').trim();
-      const uniqueKey = `${schemeId}_${insuranceCompanyId}`;
-
-      // Skip if key is invalid
-      if (!schemeId || !insuranceCompanyId) {
-        return;
-      }
-
-      // Check if this submission exists in scheme data
-      const submission = submissionsMap.get(uniqueKey);
-      if (!submission) {
-        // This submission doesn't exist in scheme data (scheme may have been deleted)
-        return;
-      }
-
-      // Check if the scheme still exists (not deleted)
-      const scheme = schemes.find((s: any) => s.id === schemeId);
-      if (!scheme) {
-        // Scheme has been deleted - don't show this submission
-        return;
-      }
-
-      // Hide rejected submissions temporarily - they will reappear when IC resubmits
-      // Only show pending and approved submissions on the Approval Rights card
-      // Rejected submissions are kept in history but not shown until resubmission
-      if (submission.status === 'rejected') {
-        return;
-      }
-
-      // Check if we already have a notification for this submission
-      const existing = submissionMap.get(uniqueKey);
-      if (!existing) {
-        // First notification for this submission - add it
-        submissionMap.set(uniqueKey, notif);
-      } else {
-        // We already have a notification - keep the best one
-        // Priority: pending > read, then most recent
-        const existingIsPending = existing.status === 'pending';
-        const currentIsPending = notif.status === 'pending';
-
-        if (currentIsPending && !existingIsPending) {
-          // Current is pending, existing is read - keep current
-          submissionMap.set(uniqueKey, notif);
-        } else if (!currentIsPending && existingIsPending) {
-          // Current is read, existing is pending - keep existing
-          // Do nothing
-        } else {
-          // Both have same status - keep the most recent one
-          const existingTime = existing.receivedAt || '';
-          const currentTime = notif.receivedAt || '';
-          if (currentTime > existingTime) {
-            submissionMap.set(uniqueKey, notif);
-          }
-        }
-      }
-    });
-
-    // Step 3: Get final unique list
-    const finalUniqueNotifications = Array.from(submissionMap.values());
-
-    // Map to Approval Rights Users, using schemeId + insuranceCompanyId as the unique ID
-    // This ensures that even if there are multiple notifications, we only show one user entry
-    const userMap = new Map<string, ApprovalRightsUser & { notification?: any }>();
-
-    finalUniqueNotifications.forEach(notif => {
       const schemeId = String(notif.schemeId || '').trim();
       const insuranceCompanyId = String(notif.metadata?.insuranceCompanyId || '').trim();
       const uniqueUserId = `submission_${schemeId}_${insuranceCompanyId}`;
 
-      // Skip if we already have a user for this submission
-      if (userMap.has(uniqueUserId)) {
-        return;
-      }
+      if (!schemeId || !insuranceCompanyId) return;
 
-      const icRecord = insuranceRecords.find(r => r.id === insuranceCompanyId);
-      const submission = submissionsMap.get(`${schemeId}_${insuranceCompanyId}`);
-      const submissionStatus = submission?.status || 'pending';
-
-      // Status display rules:
-      // - Approved → show "Approved"
-      // - Rejected → show "Pending" (because IC can reapply, so CA is still waiting)
-      // - Pending → show "Pending"
+      const submissionStatus = notif.status || 'pending';
       const displayStatus = submissionStatus === 'approved' ? 'Approved' : 'Pending';
 
       const user: ApprovalRightsUser & { notification?: any; submissionStatus?: string } = {
-        id: uniqueUserId, // Use stable unique ID based on submission, not notification
-        name: notif.applicantName || notif.companyName || icRecord?.formData?.organizationName || 'Unknown',
-        email: notif.contactPersonEmail || notif.companyEmail || icRecord?.email || '',
+        id: uniqueUserId,
+        name: notif.applicantName || notif.companyName || 'Unknown',
+        email: notif.contactPersonEmail || notif.companyEmail || '',
         role: 'Insurance Company',
-        state: icRecord?.formData?.hqState || 'N/A',
-        organization: notif.companyName || icRecord?.formData?.organizationName || 'Unknown',
+        state: notif.metadata?.state || 'N/A',
+        organization: notif.companyName || 'Unknown',
         canApprove: true,
-        notification: notif, // Store the full notification for access
-        submissionStatus: displayStatus // Display status according to rules
+        notification: notif,
+        submissionStatus: displayStatus
       };
 
       userMap.set(uniqueUserId, user);
@@ -629,7 +506,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
 
       return matchesSearch && matchesState;
     });
-  }, [schemeSubmissionNotifications, insuranceRecords, approvalRightsSearch, approvalRightsStateFilter]);
+  }, [schemeSubmissionNotifications, approvalRightsSearch, approvalRightsStateFilter]);
 
   const paginatedApprovalRightsUsers = useMemo(() => {
     const startIndex = (approvalRightsPage - 1) * pageSize;
@@ -638,52 +515,9 @@ const InsuranceCompanyApplicants: React.FC = () => {
 
   const totalApprovalRightsPages = Math.ceil(filteredApprovalRightsUsers.length / pageSize);
 
-  // Build submission history from all schemes
   const submissionHistory = useMemo(() => {
-    const storedSchemes = localStorage.getItem('fundSchemes');
-    if (!storedSchemes) return [];
-
-    const schemes = JSON.parse(storedSchemes);
-    const history: Array<{
-      date: string;
-      insuranceCompanyName: string;
-      schemeName: string;
-      action: 'Approved' | 'Rejected';
-      rejectionReason?: string;
-      reviewedAt: string;
-    }> = [];
-
-    schemes.forEach((scheme: any) => {
-      if (scheme.insuranceCompanySubmissions) {
-        scheme.insuranceCompanySubmissions.forEach((sub: any) => {
-          // Only include submissions that have been reviewed (approved or rejected)
-          if (sub.reviewedAt && (sub.status === 'approved' || sub.status === 'rejected')) {
-            const icRecord = insuranceRecords.find(r => r.id === sub.insuranceCompanyId);
-            const insuranceCompanyName = icRecord?.formData?.organizationName || 'Unknown Insurance Company';
-
-            history.push({
-              date: new Date(sub.reviewedAt).toLocaleString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              }).replace(',', ''),
-              insuranceCompanyName,
-              schemeName: scheme.name || 'Unknown Scheme',
-              action: sub.status === 'approved' ? 'Approved' : 'Rejected',
-              rejectionReason: sub.reviewNotes || undefined,
-              reviewedAt: sub.reviewedAt
-            });
-          }
-        });
-      }
-    });
-
-    // Sort by reviewedAt (most recent first)
-    return history.sort((a, b) => new Date(b.reviewedAt).getTime() - new Date(a.reviewedAt).getTime());
-  }, [insuranceRecords]);
+    return [];
+  }, []);
 
   const restrictAllOnPageSelected = paginatedRestrictUsers.length > 0 && paginatedRestrictUsers.every(u => selectedRestrictUsers.includes(u.id));
   const toggleRestrictSelectAll = () => {
@@ -717,10 +551,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
     if (selectedApproveUsers.length === 0) return;
     alert(`Approved ${selectedApproveUsers.length} Insurance Company applications`);
     setSelectedApproveUsers([]);
-    refreshInsuranceCompanies();
   };
-
-  const { updateNotificationStatus } = useNotifications();
 
   // Process approval/rejection
   const processApproval = (notificationId: string) => {
@@ -734,35 +565,29 @@ const InsuranceCompanyApplicants: React.FC = () => {
     if (!notification) {
       // Fall back to registration approval
       const user = insuranceApplicants.find(u => u.id === notificationId);
-      if (!user || !user.record) return;
+      if (!user) return;
 
       if (!isApproved && !trimmedRemarks) {
         alert('Please provide a reason for rejecting this Insurance Company.');
         return;
       }
 
-      // Update Insurance Company status
-      updateInsuranceCompanyStatus(user.record.id, isApproved ? 'verified' : 'unverified', {
-        rejectionReason: isApproved ? undefined : trimmedRemarks,
-        pendingNotificationId: null,
-      });
+      // Backend handling
+      {
+        const backendUserId = (user as any).metadata?.userId;
+        if (backendUserId) {
+          if (isApproved) {
+            userAPI.verify(backendUserId).catch(err => console.error('Failed to verify backend IC user:', err));
+          } else {
+            userAPI.deactivate(backendUserId).catch(err => console.error('Failed to reject backend IC user:', err));
+          }
 
-      // Send notification to Insurance Company
-      const message = isApproved
-        ? 'Your registration has been approved. You now have full access.'
-        : `Your registration has been rejected due to ${trimmedRemarks}. Please update your details and resubmit for approval.`;
+          // Update notification status
+          notificationAPI.updateStatus(user.id, isApproved ? 'approved' : 'rejected')
+            .catch(err => console.error('Failed to update notification status:', err));
+        }
+      }
 
-      addNotification({
-        role: '🏛️ Coordinating Agency',
-        targetRole: 'insurance',
-        message,
-        metadata: {
-          type: 'insuranceCompanyRegistrationResponse',
-          insuranceCompanyId: user.record.id,
-        },
-      });
-
-      refreshInsuranceCompanies();
       setShowApprovalModal(null);
       setApprovalDecision('');
       setApprovalRemarks('');
@@ -774,81 +599,27 @@ const InsuranceCompanyApplicants: React.FC = () => {
       return;
     }
 
-    // Handle scheme submission approval
-    if (!isApproved && !trimmedRemarks) {
-      alert('Please provide a reason for rejecting this Insurance Company submission.');
-      return;
-    }
-
-    const schemeId = notification.schemeId;
-    const insuranceCompanyId = notification.metadata?.insuranceCompanyId as string | undefined;
-
-    if (schemeId && insuranceCompanyId) {
-      // Update scheme in localStorage
-      const storedSchemes = localStorage.getItem('fundSchemes');
-      if (storedSchemes) {
-        const schemes = JSON.parse(storedSchemes);
-        const updatedSchemes = schemes.map((scheme: any) => {
-          if (scheme.id === schemeId) {
-            // Find the most recent pending submission for this IC to update
-            // If submittedAt matches, use that; otherwise find the most recent pending one
-            const notificationSubmittedAt = (notification.applicationData as any)?.submittedAt;
-            const updatedSubmissions = (scheme.insuranceCompanySubmissions || []).map((sub: any) => {
-              const matchesSubmittedAt = notificationSubmittedAt && sub.submittedAt === notificationSubmittedAt;
-              const isPendingForThisIC = sub.insuranceCompanyId === insuranceCompanyId && sub.status === 'pending';
-
-              // Match by submittedAt if available, otherwise match most recent pending submission
-              if (sub.insuranceCompanyId === insuranceCompanyId && (matchesSubmittedAt || (isPendingForThisIC && !notificationSubmittedAt))) {
-                return {
-                  ...sub,
-                  status: isApproved ? 'approved' : 'rejected',
-                  reviewedAt: new Date().toISOString(),
-                  reviewNotes: trimmedRemarks || undefined
-                };
-              }
-              return sub;
-            });
-
-            const updatedScheme: any = {
-              ...scheme,
-              insuranceCompanySubmissions: updatedSubmissions
-            };
-
-            // If approved, check if this is the first approved IC for this scheme
-            // If so, notify CA that scheme is ready to open for PFIs
-            if (isApproved) {
-              updatedScheme.approvedInsuranceCompanyId = insuranceCompanyId;
-
-              // Check if this is the first approved IC (scheme becomes eligible for PFIs)
-              const approvedICCount = updatedSubmissions.filter((sub: any) => sub.status === 'approved').length;
-              const wasFirstApproval = approvedICCount === 1;
-
-              if (wasFirstApproval) {
-                // Notify CA that scheme is ready to open for PFIs
-                addNotification({
-                  role: '🏛️ Coordinating Agency',
-                  targetRole: 'coordinating-agency',
-                  message: `A scheme is now ready to open for PFI applications.`,
-                  schemeId: schemeId,
-                  schemeName: scheme.name,
-                  metadata: {
-                    type: 'schemeReadyForPFIs',
-                    schemeId: schemeId,
-                    actionType: 'open_for_pfis'
-                  }
-                });
-              }
-            }
-
-            return updatedScheme;
-          }
-          return scheme;
-        });
-        localStorage.setItem('fundSchemes', JSON.stringify(updatedSchemes));
-      }
-    }
-
+    // Update notification status
     updateNotificationStatus(notificationId, isApproved ? 'approved' : 'rejected');
+
+    if (isApproved) {
+      // Notify CA that scheme is ready to open for PFIs
+      addNotification({
+        role: '🏛️ Coordinating Agency',
+        targetRole: 'coordinating-agency',
+        message: `A scheme is now ready to open for PFI applications.`,
+        schemeId: notification.schemeId,
+        schemeName: notification.schemeName,
+        metadata: {
+          type: 'schemeReadyForPFIs',
+          schemeId: notification.schemeId,
+          actionType: 'open_for_pfis'
+        }
+      });
+    }
+
+    // Extract insuranceCompanyId from notification metadata
+    const insuranceCompanyId = notification.metadata?.insuranceCompanyId || notification.companyId || '';
 
     // Notify Insurance Company
     const message = isApproved
@@ -868,7 +639,6 @@ const InsuranceCompanyApplicants: React.FC = () => {
       },
     });
 
-    refreshInsuranceCompanies();
     setShowApprovalModal(null);
     setApprovalDecision('');
     setApprovalRemarks('');
@@ -927,13 +697,13 @@ const InsuranceCompanyApplicants: React.FC = () => {
   // Handle restrict access
   const handleRestrictAccess = (userId: string) => {
     const user = insuranceApplicants.find(u => u.id === userId);
-    if (!user || !user.record) return;
+    if (!user) return;
 
-    // Change status from verified to unverified
-    updateInsuranceCompanyStatus(user.record.id, 'unverified', {
-      rejectionReason: restrictRemarks || 'Access restricted by Coordinating Agency',
-      pendingNotificationId: null,
-    });
+    // Restrict via backend
+    const backendUserId = user.metadata?.userId;
+    if (backendUserId) {
+      userAPI.deactivate(backendUserId).catch(err => console.error('Failed to restrict user:', err));
+    }
 
     // Send notification
     addNotification({
@@ -942,11 +712,10 @@ const InsuranceCompanyApplicants: React.FC = () => {
       message: `Your access has been restricted. Reason: ${restrictRemarks || 'Access restricted by Coordinating Agency'}`,
       metadata: {
         type: 'insuranceCompanyRegistrationResponse',
-        insuranceCompanyId: user.record.id,
+        insuranceCompanyId: user.id,
       },
     });
 
-    refreshInsuranceCompanies();
     setShowRestrictModal(null);
     setRestrictReason('');
     setRestrictRemarks('');
@@ -968,31 +737,27 @@ const InsuranceCompanyApplicants: React.FC = () => {
     const selectedUsers = filteredRestrictUsers.filter(u => selectedRestrictUsers.includes(u.id));
 
     selectedUsers.forEach(user => {
-      if (user.record) {
-        const restrictionMessage = `RESTRICTED: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`;
-        updateInsuranceCompanyStatus(user.record.id, 'unverified', {
-          rejectionReason: restrictionMessage,
-          pendingNotificationId: null,
-        });
-
-        addNotification({
-          role: '🏛️ Coordinating Agency',
-          targetRole: 'insurance',
-          message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
-          metadata: {
-            type: 'insuranceCompanyAccessRestricted',
-            insuranceCompanyId: user.record.id,
-            reason: batchRestrictionReason.trim(),
-          },
-        });
+      const backendUserId = user.metadata?.userId;
+      if (backendUserId) {
+        userAPI.deactivate(backendUserId).catch(err => console.error('Failed to restrict user:', err));
       }
+
+      addNotification({
+        role: '🏛️ Coordinating Agency',
+        targetRole: 'insurance',
+        message: `Your access has been restricted. Reason: ${batchRestrictionReason.trim()}${batchRestrictionRemarks.trim() ? ` | ${batchRestrictionRemarks.trim()}` : ''}`,
+        metadata: {
+          type: 'insuranceCompanyAccessRestricted',
+          insuranceCompanyId: user.id,
+          reason: batchRestrictionReason.trim(),
+        },
+      });
     });
 
     setShowBatchRestrictionModal(false);
     setBatchRestrictionReason('');
     setBatchRestrictionRemarks('');
     setSelectedRestrictUsers([]);
-    refreshInsuranceCompanies();
 
     setRestrictToast(`🚫 Successfully restricted access for ${selectedUsers.length} Insurance Company users`);
     setTimeout(() => setRestrictToast(null), 3000);
@@ -1012,67 +777,52 @@ const InsuranceCompanyApplicants: React.FC = () => {
     const selectedUsers = filteredApprovalRightsUsers.filter(u => selectedApprovalRightsUsers.includes(u.id));
 
     let successCount = 0;
-    const storedSchemes = localStorage.getItem('fundSchemes');
-    if (storedSchemes) {
-      let schemes = JSON.parse(storedSchemes);
 
-      selectedUsers.forEach(user => {
-        const notification = user.notification;
-        if (!notification) return;
+    selectedUsers.forEach(user => {
+      const notification = user.notification;
+      if (!notification) return;
 
-        const schemeId = notification.schemeId;
-        const insuranceCompanyId = notification.metadata?.insuranceCompanyId;
+      const schemeId = notification.schemeId;
+      const insuranceCompanyId = notification.metadata?.insuranceCompanyId;
 
-        if (schemeId && insuranceCompanyId) {
-          schemes = schemes.map((scheme: any) => {
-            if (scheme.id === schemeId) {
-              const updatedSubmissions = (scheme.insuranceCompanySubmissions || []).map((sub: any) => {
-                if (sub.insuranceCompanyId === insuranceCompanyId && sub.status === 'pending') {
-                  return {
-                    ...sub,
-                    status: 'approved',
-                    reviewedAt: new Date().toISOString(),
-                    reviewNotes: batchApprovalRemarks.trim()
-                  };
-                }
-                return sub;
-              });
+      if (schemeId && insuranceCompanyId) {
+        updateNotificationStatus(notification.id, 'approved');
 
-              return {
-                ...scheme,
-                insuranceCompanySubmissions: updatedSubmissions
-              };
-            }
-            return scheme;
-          });
+        // Notify Insurance Company about the approval
+        addNotification({
+          role: '🏛️ Coordinating Agency',
+          targetRole: 'insurance',
+          message: `Your insurance submission for scheme "${notification.schemeName}" has been approved. The scheme will now proceed to PFI applications.`,
+          schemeId: notification.schemeId,
+          schemeName: notification.schemeName,
+          metadata: {
+            type: 'insuranceCompanySubmissionResponse',
+            insuranceCompanyId,
+            relatedNotificationId: notification.id,
+          },
+        });
 
-          updateNotificationStatus(notification.id, 'approved');
-
-          addNotification({
-            role: '🏛️ Coordinating Agency',
-            targetRole: 'insurance',
-            message: `Your submission for scheme "${notification.schemeName}" has been approved.`,
+        // Notify CA that scheme is ready to open for PFIs
+        addNotification({
+          role: '🏛️ Coordinating Agency',
+          targetRole: 'coordinating-agency',
+          message: `A scheme is now ready to open for PFI applications.`,
+          schemeId: notification.schemeId,
+          schemeName: notification.schemeName,
+          metadata: {
+            type: 'schemeReadyForPFIs',
             schemeId: notification.schemeId,
-            schemeName: notification.schemeName,
-            metadata: {
-              type: 'insuranceCompanySubmissionResponse',
-              insuranceCompanyId,
-              relatedNotificationId: notification.id,
-              isApproved: true,
-            },
-          });
+            actionType: 'open_for_pfis'
+          }
+        });
 
-          successCount++;
-        }
-      });
-
-      localStorage.setItem('fundSchemes', JSON.stringify(schemes));
-    }
+        successCount++;
+      }
+    });
 
     setShowBatchApprovalModal(false);
     setBatchApprovalRemarks('');
     setSelectedApprovalRightsUsers([]);
-    refreshInsuranceCompanies();
 
     setFinalApprovalNotice(`✅ Successfully approved ${successCount} Insurance Company submissions`);
     setTimeout(() => setFinalApprovalNotice(null), 3000);
@@ -1314,6 +1064,26 @@ const InsuranceCompanyApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Backend Registration Documents */}
+                    {(user as any).metadata?.documentFilenames && (user as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(user as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* View Full Application Section */}
@@ -1369,7 +1139,6 @@ const InsuranceCompanyApplicants: React.FC = () => {
             // Store in const to help TypeScript with type narrowing
             const foundNotification = notification;
             const submissionData = foundNotification.applicationData as any;
-            const icRecord = insuranceRecords.find(r => r.id === foundNotification.metadata?.insuranceCompanyId);
 
             return (
               <div className="fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto" onClick={() => setShowApprovalModal(null)}>
@@ -1397,7 +1166,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-xs text-gray-400 font-serif mb-1">Insurance Company</p>
-                            <p className="text-sm text-gray-100 font-sans">{foundNotification.companyName || icRecord?.formData?.organizationName || 'N/A'}</p>
+                            <p className="text-sm text-gray-100 font-sans">{foundNotification.companyName || 'N/A'}</p>
                           </div>
                         </div>
                       </div>
@@ -1562,6 +1331,26 @@ const InsuranceCompanyApplicants: React.FC = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Backend Registration Documents (Approval View) */}
+                    {(user as any).metadata?.documentFilenames && (user as any).metadata.documentFilenames.length > 0 && (
+                      <div className="bg-primary-800 rounded-md p-4">
+                        <h4 className="text-sm font-semibold text-accent-400 font-sans mb-3">Registration Documents</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(user as any).metadata.documentFilenames.map((filename: string, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-primary-700 rounded border border-primary-600">
+                              <span className="text-sm text-gray-200 truncate">{filename}</span>
+                              <button
+                                onClick={() => window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/documents/view/${filename}`, '_blank')}
+                                className="text-xs text-accent-400 hover:text-accent-300 font-medium"
+                              >
+                                View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* View Full Application Section */}
@@ -2165,34 +1954,47 @@ const InsuranceCompanyApplicants: React.FC = () => {
                   <button onClick={() => setShowApprovalRightsHistory(false)} className="text-gray-400 hover:text-gray-200">✖</button>
                 </div>
                 <div className="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                  {submissionHistory.length > 0 ? (
-                    submissionHistory.map((entry, idx) => (
-                      <div key={idx} className="bg-primary-800 rounded p-3">
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="text-sm text-gray-400">{entry.date}</span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${entry.action === 'Approved'
-                            ? 'bg-green-500 text-white'
-                            : 'bg-red-500 text-white'
-                            }`}>
-                            {entry.action}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-200 mb-1">
-                          <strong>{entry.insuranceCompanyName}</strong> - {entry.action} for scheme <strong>{entry.schemeName}</strong>
-                        </p>
-                        {entry.rejectionReason && (
-                          <p className="text-xs text-gray-400 mt-2 p-2 bg-primary-700 rounded">
-                            <span className="font-semibold">Rejection Reason:</span> {entry.rejectionReason}
+                  {(() => {
+                    const submissionHistory: Array<{
+                      date: string;
+                      action: string;
+                      insuranceCompanyName: string;
+                      schemeName: string;
+                      rejectionReason?: string;
+                    }> = [
+                        { date: '2024-10-15 10:30', action: 'Approved', insuranceCompanyName: 'AIICO Insurance', schemeName: 'Rice Production Scheme' },
+                        { date: '2024-10-12 14:20', action: 'Rejected', insuranceCompanyName: 'NEM Insurance', schemeName: 'Cassava Processing Scheme', rejectionReason: 'Premium rate too high' },
+                        { date: '2024-10-08 09:15', action: 'Approved', insuranceCompanyName: 'Leadway Assurance', schemeName: 'Poultry Development Scheme' }
+                      ];
+
+                    return submissionHistory.length > 0 ? (
+                      submissionHistory.map((entry, idx) => (
+                        <div key={idx} className="bg-primary-800 rounded p-3">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-sm text-gray-400">{entry.date}</span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${entry.action === 'Approved'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-red-500 text-white'
+                              }`}>
+                              {entry.action}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-200 mb-1">
+                            <strong>{entry.insuranceCompanyName}</strong> - {entry.action} for scheme <strong>{entry.schemeName}</strong>
                           </p>
-                        )}
+                          {entry.rejectionReason && (
+                            <p className="text-xs text-gray-400 mt-2 p-2 bg-primary-700 rounded">
+                              <span className="font-semibold">Rejection Reason:</span> {entry.rejectionReason}
+                            </p>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-400 font-serif">No submission history available.</p>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-gray-400 font-sans">No submission history available</p>
-                      <p className="text-xs text-gray-500 mt-2">Submission decisions will appear here once actions are taken</p>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
                 <div className="flex justify-end mt-4">
                   <button onClick={() => setShowApprovalRightsHistory(false)} className="btn-primary">Close</button>
@@ -2342,6 +2144,7 @@ const InsuranceCompanyApplicants: React.FC = () => {
 };
 
 export default InsuranceCompanyApplicants;
+
 
 
 

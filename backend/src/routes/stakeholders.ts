@@ -11,13 +11,13 @@ const router: Router = express.Router();
 // @access  Private
 router.get('/', authenticateToken, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      stakeholderType, 
-      verificationStatus, 
+    const {
+      page = 1,
+      limit = 10,
+      stakeholderType,
+      verificationStatus,
       portalAccess,
-      search 
+      search
     } = req.query;
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
@@ -88,7 +88,7 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response): P
 
     // Check access permissions
     const userIdStr = String(stakeholder.userId);
-    if (req.user!.userId !== userIdStr && req.user!.userType !== 'admin') {
+    if (req.user!.userId !== userIdStr && req.user!.userType !== 'admin' && req.user!.userType !== 'coordinating-agency') {
       res.status(403).json({ error: 'Access denied' });
       return;
     }
@@ -221,7 +221,7 @@ router.put('/:id', [
 
     // Check access permissions
     const userIdStr = String(stakeholder.userId);
-    if (req.user!.userId !== userIdStr && req.user!.userType !== 'admin') {
+    if (req.user!.userId !== userIdStr && req.user!.userType !== 'admin' && req.user!.userType !== 'coordinating-agency') {
       res.status(403).json({ error: 'Access denied' });
       return;
     }
@@ -291,9 +291,9 @@ router.put('/:id/verify', [
   body('verificationNotes').optional().trim()
 ], async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Check if user is admin
-    if (req.user!.userType !== 'admin') {
-      res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+    // Check if user is admin or CA
+    if (req.user!.userType !== 'admin' && req.user!.userType !== 'coordinating-agency') {
+      res.status(403).json({ error: 'Access denied. Privileged session required.' });
       return;
     }
 
@@ -337,9 +337,9 @@ router.put('/:id/verify', [
 // @access  Private
 router.get('/stats/overview', authenticateToken, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Check if user is admin
-    if (req.user!.userType !== 'admin') {
-      res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+    // Check if user is admin or CA
+    if (req.user!.userType !== 'admin' && req.user!.userType !== 'coordinating-agency') {
+      res.status(403).json({ error: 'Access denied. Privileged session required.' });
       return;
     }
 
@@ -397,9 +397,9 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response)
       return;
     }
 
-    // Only admin or the stakeholder owner can delete
+    // Only admin, CA or the stakeholder owner can delete
     const userIdStr = String(stakeholder.userId);
-    if (req.user!.userId !== userIdStr && req.user!.userType !== 'admin') {
+    if (req.user!.userId !== userIdStr && req.user!.userType !== 'admin' && req.user!.userType !== 'coordinating-agency') {
       res.status(403).json({ error: 'Access denied' });
       return;
     }
