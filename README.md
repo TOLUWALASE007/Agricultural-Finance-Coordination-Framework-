@@ -14,11 +14,12 @@ To become Nigeria's premier digital platform for agricultural finance coordinati
 
 ### 🔄 Current Status (January 2026)
 - **Frontend**: ✅ 100% Complete - Full production-ready React/TypeScript application
-- **Backend API**: 🚧 In Active Development - Node.js/Express/MongoDB implementation
+- **Backend API**: ✅ Operational - Node.js/Express/MongoDB server running on port 5000
 - **Integration**: 🔄 Ongoing - Frontend-backend API integration in progress
 - **Database**: ✅ MongoDB Atlas configured and operational
-- **Authentication**: ✅ JWT-based auth system implemented
+- **Authentication**: ✅ JWT-based auth system implemented and functional
 - **Document Management**: ✅ File upload system with Multer integration
+- **Server Status**: ✅ Backend server running locally at http://localhost:5000
 
 ### 🌍 Impact
 - **Financial Inclusion**: Connecting smallholder farmers to formal financial services
@@ -68,19 +69,35 @@ To become Nigeria's premier digital platform for agricultural finance coordinati
    cd Agricultural-Finance-Coordination-Framework-
    ```
 
-2. **Install Dependencies**
+2. **Install Frontend Dependencies**
    ```bash
    npm install
    ```
 
-3. **Start Development Server**
+3. **Setup Backend**
+   ```bash
+   cd backend
+   npm install
+   cp env.example .env
+   # Edit .env with your MongoDB URI and JWT secret
+   ```
+
+4. **Start Backend Server**
+   ```bash
+   cd backend
+   npm run dev
+   # Backend will run on http://localhost:5000
+   ```
+
+5. **Start Frontend Development Server** (in a new terminal)
    ```bash
    npm start
    ```
 
-4. **Access the Application**
-   - The server will automatically open your browser to `http://localhost:3000`
-   - If it doesn't open automatically, manually navigate to `http://localhost:3000`
+6. **Access the Application**
+   - Frontend: `http://localhost:3000` (automatically opens in browser)
+   - Backend API: `http://localhost:5000`
+   - API Health Check: `http://localhost:5000/health`
    - The application will automatically reload when you make changes
 
 ### Alternative: Use Convenience Scripts
@@ -469,31 +486,65 @@ All data cards include:
 
 ### 🖥️ Server Management
 
-#### Starting the Server
+#### Starting the Servers
+
+**Frontend Server:**
 ```bash
-# Start the development server
+# Start the frontend development server
 npm start
+# Runs on http://localhost:3000
 
 # Or use convenience scripts
 # Windows: Double-click start-dev.bat
 # Mac/Linux: ./start-dev.sh
 ```
 
-#### Stopping the Server
+**Backend Server:**
+```bash
+# Navigate to backend directory
+cd backend
+
+# Start the backend development server
+npm run dev
+# Runs on http://localhost:5000
+
+# Or build and run in production mode
+npm run build
+npm start
+```
+
+#### Stopping the Servers
 - Press `Ctrl + C` in the terminal where the server is running
 - Or close the terminal window
 
 #### Checking Server Status
+
+**Frontend (Port 3000):**
 ```bash
 # Check if port 3000 is in use
 netstat -an | findstr :3000  # Windows
 lsof -i :3000                # Mac/Linux
 ```
 
-#### Restarting the Server
+**Backend (Port 5000):**
+```bash
+# Check if port 5000 is in use
+netstat -an | findstr :5000  # Windows
+lsof -i :5000                # Mac/Linux
+
+# Test backend health endpoint
+curl http://localhost:5000/health
+```
+
+#### Restarting the Servers
 ```bash
 # Stop the server (Ctrl + C) then restart
+# Frontend:
 npm start
+
+# Backend:
+cd backend
+npm run dev
 ```
 
 ## 🏢 Portal Structure
@@ -916,6 +967,47 @@ Before deploying, ensure:
 - HTTPS enforced on GitHub Pages
 - Regular dependency updates for security patches
 
+## 🔌 Backend API Documentation
+
+### Running the Backend
+
+The backend server is a Node.js/Express application that provides RESTful API endpoints for the AFCF platform.
+
+**Quick Start:**
+```bash
+cd backend
+npm install
+cp env.example .env
+# Configure .env with your MongoDB URI and JWT secret
+npm run dev
+```
+
+**API Base URL:** `http://localhost:5000/api`
+
+**Health Check:** `http://localhost:5000/health`
+
+### Available Endpoints
+
+See [backend/README.md](backend/README.md) for complete API documentation including:
+- Authentication endpoints (register, login, profile)
+- User management endpoints
+- Scheme management endpoints
+- Notification endpoints
+- Document upload/download endpoints
+- Stakeholder relationship endpoints
+- Loan processing endpoints
+
+### Environment Configuration
+
+Create a `.env` file in the `backend/` directory with:
+```env
+PORT=5000
+NODE_ENV=development
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+FRONTEND_URL=http://localhost:3000
+```
+
 ## 📞 Support
 
 For support and inquiries:
@@ -924,6 +1016,7 @@ For support and inquiries:
 - Documentation: [AFCF Documentation](docs/)
 - GitHub: [AFCF Repository](https://github.com/TOLUWALASE007/Agricultural-Finance-Coordination-Framework-)
 - Live Demo: [AFCF Platform](https://TOLUWALASE007.github.io/Agricultural-Finance-Coordination-Framework-/)
+- Backend API: [Backend README](backend/README.md)
 
 ## 📊 Project Statistics & Achievements
 
@@ -1120,22 +1213,25 @@ For support and inquiries:
 
 ### 🚧 In Progress (v1.1 - Active Development)
 
-#### Backend Infrastructure ✅ (80% Complete)
-- [x] **Express.js API Server** - RESTful API with TypeScript
-- [x] **MongoDB Atlas Integration** - Cloud database configured
+#### Backend Infrastructure ✅ (100% Complete & Operational)
+- [x] **Express.js API Server** - RESTful API with TypeScript ✅ Running on port 5000
+- [x] **MongoDB Atlas Integration** - Cloud database configured and connected
 - [x] **Mongoose Models** - 7 complete models (User, Scheme, Notification, Document, Stakeholder, Loan, Transaction)
-- [x] **JWT Authentication** - Token-based auth system
+- [x] **JWT Authentication** - Token-based auth system fully functional
 - [x] **Document Upload System** - Multer integration with file validation
-- [x] **API Routes** - 6 complete route modules
-  - Authentication (register, login)
-  - User management (list, verify, activate/deactivate)
-  - Scheme management (CRUD, status updates)
-  - Notifications (send, broadcast, read status)
-  - Documents (upload, download, link to user)
-  - Stakeholders (relationship management)
+- [x] **API Routes** - 7 complete route modules
+  - Authentication (register, login, profile) ✅
+  - User management (list, verify, activate/deactivate) ✅
+  - Scheme management (CRUD, status updates) ✅
+  - Notifications (send, broadcast, read status) ✅
+  - Documents (upload, download, link to user) ✅
+  - Stakeholders (relationship management) ✅
+  - Loans (application, approval, disbursement) ✅
 - [x] **Error Handling** - Global error middleware
 - [x] **Logging System** - Winston logger with file rotation
 - [x] **Security** - Helmet, CORS, rate limiting
+- [x] **Health Check Endpoint** - `/health` endpoint for monitoring
+- [x] **Server Deployment** - Local development server operational
 
 #### Frontend-Backend Integration 🔄 (60% Complete)
 - [x] **API Utility Layer** - Complete API client (`src/utils/api.ts`)
@@ -1205,4 +1301,6 @@ For support and inquiries:
 - [ ] Supply chain tracking
 - [ ] Digital wallet integration
 - [ ] Microfinance integration
+- [ ] Cooperative management tools
+
 - [ ] Cooperative management tools
